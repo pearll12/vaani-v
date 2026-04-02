@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
+import { supabase } from '@/lib/supabase'
+
 const NAV = [
   { href: '/dashboard',           icon: '▦',  label: 'Dashboard',  color: '#38bdf8' },
   { href: '/dashboard/inventory', icon: '⬡',  label: 'Inventory',  color: '#a3e635' },
@@ -11,12 +13,53 @@ const NAV = [
   { href: '/dashboard/payments',  icon: '◈',  label: 'Payments',   color: '#00e5c3' },
   { href: '/dashboard/khata',     icon: '📒', label: 'Khata',      color: '#fb7185' },
   { href: '/dashboard/buyers',    icon: '◉',  label: 'Buyers',     color: '#a78bfa' },
+  { href: '/dashboard/settings',  icon: '⚙️',  label: 'Settings',   color: '#cbd5e1' },
 ]
+
+function LoginScreen() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleLogin(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+    if (err) setError(err.message)
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+      <form onSubmit={handleLogin} style={{ background: 'var(--surface)', padding: 40, borderRadius: 16, width: 360, outline: '1px solid var(--border)' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 8px', color: '#fff' }}>Sign In</h2>
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>to access Vaani Settings & Dashboard</p>
+        
+        {error && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: 12, borderRadius: 8, fontSize: 13, marginBottom: 16 }}>{error}</div>}
+        
+        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
+          style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', marginBottom: 12 }} required />
+        
+        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
+          style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', marginBottom: 24 }} required />
+        
+        <button type="submit" disabled={loading}
+          style={{ width: '100%', background: 'linear-gradient(135deg, #00e5c3, #818cf8)', color: '#000', fontWeight: 800, padding: 14, borderRadius: 8, border: 'none', cursor: loading ? 'wait' : 'pointer' }}>
+          {loading ? 'Signing in...' : 'Sign In'}
+        </button>
+      </form>
+    </div>
+  )
+}
 
 export default function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [user, setUser] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const pathname = usePathname()
 
   // Detect mobile
@@ -32,7 +75,22 @@ export default function DashboardLayout({ children }) {
     if (isMobile) setMobileOpen(false)
   }, [pathname, isMobile])
 
+  // Auth check
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setAuthLoading(false)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
   const sidebarWidth = isMobile ? 260 : (collapsed ? 64 : 236)
+
+  if (authLoading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--muted)' }}>Loading...</div>
+  if (!user) return <LoginScreen />
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
