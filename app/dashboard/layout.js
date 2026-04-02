@@ -111,37 +111,28 @@ export default function DashboardLayout({ children }) {
         {/* Sidebar top glow */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 200,
-          background: 'radial-gradient(ellipse at 50% -20%, rgba(0,229,195,0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at 50% -20%, rgba(99,102,241,0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
         {/* Brand */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: (collapsed && !isMobile) ? '0 16px' : '0 20px',
+          padding: (collapsed && !isMobile) ? '0 12px' : '0 20px',
           height: 62, borderBottom: '1px solid var(--border)',
           flexShrink: 0, position: 'relative',
         }}>
-          {profile?.logo_url ? (
-            <img src={profile.logo_url} alt="Logo" style={{
-              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              objectFit: 'contain', background: '#fff'
-            }} />
-          ) : (
-            <div style={{
-              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: 'linear-gradient(135deg, #00e5c3 0%, #818cf8 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 15, fontWeight: 900, color: '#021a15',
-              boxShadow: '0 4px 16px rgba(0,229,195,0.35)',
-            }}>{profile?.business_name ? profile.business_name[0].toUpperCase() : 'B'}</div>
-          )}
+          <img src={profile?.logo_url || "/logo.png"} alt="Logo" style={{
+            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+            objectFit: 'contain', background: '#fff',
+            padding: 2, border: '1px solid var(--border-mid)'
+          }} />
           {(!collapsed || isMobile) && (
-            <div>
-              <p style={{ fontWeight: 800, fontSize: 15, color: '#fff', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
+            <div style={{ overflow: 'hidden' }}>
+              <p style={{ fontWeight: 800, fontSize: 14.5, color: '#fff', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
                 {profile?.business_name || 'BusinessVaani'}
               </p>
-              <p style={{ fontSize: 9.5, color: 'var(--muted)', margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>Business Hub</p>
+              <p style={{ fontSize: 9, color: 'var(--muted)', margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>Management Hub</p>
             </div>
           )}
           {/* Mobile close button */}
@@ -203,8 +194,8 @@ export default function DashboardLayout({ children }) {
         {(!collapsed || isMobile) && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
             <div style={{
-              background: 'rgba(0,229,195,0.06)',
-              border: '1px solid rgba(0,229,195,0.15)',
+              background: 'rgba(99,102,241,0.06)',
+              border: '1px solid rgba(99,102,241,0.15)',
               borderRadius: 10, padding: '10px 12px',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>

@@ -424,15 +424,18 @@ export default function InventoryPage() {
             )}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="bv-table-wrap">
             <table className="bv-table">
               <thead>
                 <tr>
-                  <th>Item</th><th>Category</th><th>SKU</th>
-                  <th style={{ textAlign: 'right' }}>Price</th>
-                  <th style={{ textAlign: 'right' }}>Qty</th>
-                  <th style={{ textAlign: 'right' }}>Stock Value</th>
-                  <th>Status</th><th>Actions</th>
+                  <th style={{ width: 220 }}>Item Name</th>
+                  <th style={{ width: 140 }}>Category</th>
+                  <th style={{ width: 120 }}>SKU</th>
+                  <th style={{ width: 110, textAlign: 'right' }}>Price</th>
+                  <th style={{ width: 100, textAlign: 'right' }}>Qty</th>
+                  <th style={{ width: 130, textAlign: 'right' }}>Stock Value</th>
+                  <th style={{ width: 120 }}>Status</th>
+                  <th style={{ width: 160 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -442,16 +445,19 @@ export default function InventoryPage() {
                   return (
                     <tr key={item.id}>
                       <td>
-                        <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{item.name}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{item.name}</span>
+                          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{item.sku || 'No SKU'}</span>
+                        </div>
                       </td>
                       <td>
                         <span style={{
-                          fontSize: 11, padding: '2px 9px', borderRadius: 5, fontWeight: 700,
-                          background: cm.bg, color: cm.color,
+                          fontSize: 10, padding: '3px 8px', borderRadius: 6, fontWeight: 700,
+                          background: cm.bg, color: cm.color, border: `1px solid ${cm.color}20`
                         }}>{item.category}</span>
                       </td>
                       <td>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)' }}>{item.sku || '—'}</span>
+                        <code style={{ fontSize: 11.5, color: 'var(--muted-light)' }}>{item.sku || '—'}</code>
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>₹{Number(item.price).toLocaleString('en-IN')}</td>
                       <td style={{ textAlign: 'right' }}>
@@ -460,20 +466,21 @@ export default function InventoryPage() {
                         </span>
                         <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 4 }}>{item.unit}</span>
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN')}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--text-dim)' }}>₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN')}</td>
                       <td><span className={`badge ${low ? 'badge-low' : 'badge-ok'}`}>{low ? 'Low Stock' : 'In Stock'}</span></td>
                       <td>
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <button className="btn-ghost" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => setModal(item)}>Edit</button>
+                          <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setModal(item)}>Edit</button>
                           <button
                             onClick={() => handleDelete(item.id)}
                             style={{
-                              background: 'var(--rose-dim)', color: 'var(--rose)',
-                              border: '1px solid var(--rose-border)', padding: '5px 12px',
-                              borderRadius: 9, fontSize: 12, cursor: 'pointer',
-                              fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600,
-                              transition: 'all 0.15s',
+                              background: 'rgba(244, 96, 123, 0.08)', color: '#f4607b',
+                              border: '1px solid rgba(244, 96, 123, 0.2)', padding: '6px 12px',
+                              borderRadius: 10, fontSize: 12, cursor: 'pointer',
+                              fontWeight: 700, transition: 'all 0.2s',
                             }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(244, 96, 123, 0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(244, 96, 123, 0.08)'}
                           >Delete</button>
                         </div>
                       </td>

@@ -14,10 +14,10 @@
   --muted: #5a6a82;
   --muted-light: #8498b4;
 
-  --teal: #00e5c3;
-  --teal-mid: #00c9aa;
-  --teal-dim: rgba(0,229,195,0.08);
-  --teal-border: rgba(0,229,195,0.2);
+  --teal: #6366f1;
+  --teal-mid: #4f46e5;
+  --teal-dim: rgba(99, 102, 241, 0.08);
+  --teal-border: rgba(99, 102, 241, 0.2);
   --indigo: #818cf8;
   --indigo-dim: rgba(129,140,248,0.09);
   --indigo-border: rgba(129,140,248,0.22);
@@ -34,9 +34,9 @@
   --lime-dim: rgba(163,230,53,0.09);
 
   /* legacy compat */
-  --emerald: #00e5c3;
-  --emerald-dim: rgba(0,229,195,0.08);
-  --emerald-border: rgba(0,229,195,0.2);
+  --emerald: #6366f1;
+  --emerald-dim: rgba(99, 102, 241, 0.08);
+  --emerald-border: rgba(99, 102, 241, 0.2);
   --violet: #818cf8;
   --violet-dim: rgba(129,140,248,0.09);
   --blue: #38bdf8;
@@ -95,24 +95,26 @@ body {
 /* TABLE */
 .bv-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .bv-table thead th {
-  text-align: left; padding: 11px 16px;
+  text-align: left; padding: 14px 18px;
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--muted);
   background: rgba(255,255,255,0.02);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
-.bv-table thead th:first-child { padding-left: 22px; }
-.bv-table thead th:last-child  { padding-right: 22px; }
+.bv-table thead th:first-child { padding-left: 28px; }
+.bv-table thead th:last-child  { padding-right: 28px; }
 .bv-table tbody td {
-  padding: 14px 16px; font-size: 13px; color: var(--text-soft);
+  padding: 12px 18px; font-size: 12.5px; color: var(--text-soft);
   border-bottom: 1px solid rgba(255,255,255,0.04);
   transition: background 0.12s; vertical-align: middle;
 }
-.bv-table tbody td:first-child { padding-left: 22px; }
-.bv-table tbody td:last-child  { padding-right: 22px; }
+.bv-table tbody td:first-child { padding-left: 24px; }
+.bv-table tbody td:last-child  { padding-right: 24px; }
 .bv-table tbody tr:last-child td { border-bottom: none; }
 .bv-table tbody tr:hover td { background: rgba(255,255,255,0.025); color: var(--text); }
+.bv-table-wrap { overflow-x: auto; width: 100%; }
+.bv-table-scroll { min-width: 960px; width: 100%; }
 
 /* SKELETON */
 .skeleton {
@@ -139,6 +141,20 @@ body {
 .badge-low::before      { background: var(--rose); }
 .badge-ok       { background: var(--teal-dim);   color: var(--teal);   border: 1px solid var(--teal-border); }
 .badge-ok::before       { background: var(--teal); }
+
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;  
+  overflow: hidden;
+}
 
 /* MODAL */
 .modal-overlay {
