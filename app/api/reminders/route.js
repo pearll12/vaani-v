@@ -57,6 +57,7 @@ export async function GET() {
       .lt('invoice_sent_at', cutoff24h)
       .or(`last_reminder_at.is.null,last_reminder_at.lt.${cutoff48h}`)
       .lt('reminder_count', 3) // max 3 reminders
+      .order('total_amount', { ascending: false })
 
     let sent = 0
     for (const order of orders) {

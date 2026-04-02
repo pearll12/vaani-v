@@ -3,44 +3,34 @@ import { supabase } from '@/lib/supabase'
 import { sendWhatsApp } from '@/lib/twilio'
 import { extractOrder } from '@/lib/nlu'
 import { transcribeVoiceNote } from '@/lib/transcribe'
-import fs from 'fs'
-import path from 'path'
 
 const OWNER_PHONE = process.env.BUSINESS_OWNER_PHONE || null
 
 // ───── Inventory Helpers ─────
 
-function loadInventory() {
-  try {
-    const invPath = path.join(process.cwd(), 'data', 'inventory.json')
-    if (!fs.existsSync(invPath)) return []
-    return JSON.parse(fs.readFileSync(invPath, 'utf-8'))
-  } catch { return [] }
+async function loadInventory() {
+  const { data } = await supabase.from('inventory').select('*')
+  return data || []
 }
 
-function saveInventory(items) {
-  try {
-    const invPath = path.join(process.cwd(), 'data', 'inventory.json')
-    fs.writeFileSync(invPath, JSON.stringify(items, null, 2))
-  } catch (err) { console.error('Save inventory error:', err) }
+async function saveInventory(items) {
+  const { error } = await supabase.from('inventory').upsert(items, { onConflict: 'id' })
+  if (error) console.error('Save inventory error:', error)
 }
 
-function lookupInventoryPrices(items) {
-  const inventory = loadInventory()
+async function lookupInventoryPrices(items) {
+  const inventory = await loadInventory()
   return items.map(item => {
     const itemNameLower = (item.name || '').toLowerCase().trim()
-    // Try exact match first
-    let match = inventory.find(inv =>
-      (inv.name || '').toLowerCase().trim() === itemNameLower
-    )
-    // Try partial/fuzzy match
+    let match = inventory.find(inv => (inv.name || '').toLowerCase().trim() === itemNameLower)
+    
     if (!match) {
       match = inventory.find(inv => {
         const invName = (inv.name || '').toLowerCase().trim()
         return invName.includes(itemNameLower) || itemNameLower.includes(invName)
       })
     }
-    // Try word-by-word match (e.g. "rice" matches "Rice Bag")
+    
     if (!match) {
       const words = itemNameLower.split(/\s+/)
       match = inventory.find(inv => {
@@ -48,10 +38,11 @@ function lookupInventoryPrices(items) {
         return words.some(w => w.length > 2 && invName.includes(w))
       })
     }
+    
     if (match) {
       return {
         ...item,
-        name: match.name, // Use canonical inventory name
+        name: match.name,
         price: Number(match.price) || 0,
         unit: match.unit || item.unit || 'pcs',
         inventoryId: match.id,
@@ -61,10 +52,10 @@ function lookupInventoryPrices(items) {
   })
 }
 
-// Deduct stock after order and check low stock
-function deductAndCheckStock(items) {
-  const inventory = loadInventory()
+async function deductAndCheckStock(items) {
+  const inventory = await loadInventory()
   const lowStockAlerts = []
+  const itemsToUpdate = []
 
   items.forEach(item => {
     if (!item.inventoryId) return
@@ -73,6 +64,7 @@ function deductAndCheckStock(items) {
 
     const qty = Number(item.quantity) || 1
     inventory[idx].quantity = Math.max(0, (Number(inventory[idx].quantity) || 0) - qty)
+    itemsToUpdate.push(inventory[idx])
 
     const threshold = Number(inventory[idx].lowStockThreshold) || 10
     if (inventory[idx].quantity <= threshold) {
@@ -84,15 +76,16 @@ function deductAndCheckStock(items) {
     }
   })
 
-  saveInventory(inventory)
+  if (itemsToUpdate.length > 0) {
+    await saveInventory(itemsToUpdate)
+  }
   return lowStockAlerts
 }
 
 // ───── Catalog Builder ─────
 
-function buildCatalog(language) {
-  const inventory = loadInventory()
-  // De-duplicate by name (keep first occurrence)
+async function buildCatalog(language) {
+  const inventory = await loadInventory()
   const seen = new Set()
   const available = inventory.filter(i => {
     if ((Number(i.quantity) || 0) <= 0) return false
@@ -139,7 +132,11 @@ function buildCatalog(language) {
     })
   }
 
-  msg += `\n💬 _Reply: "1, 3, 5" ya "2 Rice Bag aur 3 Wheat Flour"_`
+  msg += `\n──────────────\n`
+  msg += `💬 *Order Kaise Karein?*\n`
+  msg += `🔢 Reply karein sirf numbers: *"1, 3, 5"*\n`
+  msg += `📝 Ya likh kar bhejein: *"2 Rice Bag aur 1 Wheat Flour"*\n`
+  msg += `🎙️ Ya ek *Voice Note* bhejein!`
 
   return { message: msg, catalogMap }
 }
@@ -208,7 +205,7 @@ export async function POST(req) {
     // ═══════════════════════════════
     if (extracted.intent === 'GREETING') {
       const lang = extracted.language || 'hinglish'
-      const catalog = buildCatalog(lang)
+      const catalog = await buildCatalog(lang)
 
       // Welcome + catalog together
       const welcomeMsg = lang === 'english'
@@ -420,7 +417,7 @@ export async function POST(req) {
     // ═══════════════════════════════
     if (extracted.intent === 'CATALOG' || extracted.intent === 'INQUIRY') {
       const lang = extracted.language || 'hinglish'
-      const catalog = buildCatalog(lang)
+      const catalog = await buildCatalog(lang)
 
       try {
         await supabase.from('sessions').upsert({
@@ -455,7 +452,7 @@ export async function POST(req) {
 
       if (!catalogMap) {
         // No session? Send catalog first
-        const catalog = buildCatalog(extracted.language || 'hinglish')
+        const catalog = await buildCatalog(extracted.language || 'hinglish')
         try {
           await supabase.from('sessions').upsert({
             phone: from,
@@ -499,7 +496,7 @@ export async function POST(req) {
       console.log(`✅ Selection order: #${order.id} — ₹${totalAmount}`)
 
       // Deduct stock + alert owner
-      handleStockAlerts(selectedItems)
+      await handleStockAlerts(selectedItems)
 
       // Send confirmation with price breakdown
       const confirmMsg = buildConfirmation(selectedItems, order.id, totalAmount, extracted.language)
@@ -549,7 +546,7 @@ export async function POST(req) {
     // ═══════════════════════════════
     if (extracted.intent === 'ORDER' && extracted.items?.length > 0) {
       // Look up prices from inventory
-      const itemsWithPrices = lookupInventoryPrices(extracted.items)
+      const itemsWithPrices = await lookupInventoryPrices(extracted.items)
 
       // Calculate total
       const totalAmount = itemsWithPrices.reduce((sum, item) => {
@@ -562,7 +559,7 @@ export async function POST(req) {
 
       // If NO prices found at all → tell customer what's available
       if (totalAmount === 0 && itemsWithPrices.every(i => !i.price)) {
-        const catalog = buildCatalog(extracted.language || 'hinglish')
+        const catalog = await buildCatalog(extracted.language || 'hinglish')
         try {
           await supabase.from('sessions').upsert({
             phone: from, catalog_map: catalog.catalogMap, updated_at: new Date().toISOString(),
@@ -591,7 +588,7 @@ export async function POST(req) {
       console.log(`✅ Direct order: #${order.id} — ₹${order.total_amount}`)
 
       // Deduct stock + alert owner
-      handleStockAlerts(itemsWithPrices)
+      await handleStockAlerts(itemsWithPrices)
 
       // Confirmation with price breakdown
       const confirmMsg = buildConfirmation(
@@ -636,7 +633,7 @@ export async function POST(req) {
     // ═══════════════════════════════
     // OTHER / Unknown — Show help + catalog
     // ═══════════════════════════════
-    const catalog = buildCatalog(extracted.language || 'hinglish')
+    const catalog = await buildCatalog(extracted.language || 'hinglish')
     try {
       await supabase.from('sessions').upsert({
         phone: from, catalog_map: catalog.catalogMap, updated_at: new Date().toISOString(),
@@ -662,8 +659,8 @@ export async function POST(req) {
 
 // ───── Stock Alert Helper ─────
 
-function handleStockAlerts(items) {
-  const lowStockAlerts = deductAndCheckStock(items)
+async function handleStockAlerts(items) {
+  const lowStockAlerts = await deductAndCheckStock(items)
   if (lowStockAlerts.length > 0 && OWNER_PHONE) {
     const alertMsg = `🚨 *Low Stock Alert!*\n\n` +
       lowStockAlerts.map(a =>
