@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { sendWhatsApp } from '@/lib/twilio'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 import PDFDocument from 'pdfkit'
 import Razorpay from 'razorpay'
 
@@ -96,8 +97,8 @@ export async function POST(req) {
 
     console.log('--- INVOICE GENERATION START ---', { orderId, contactPhone })
 
-    // 6. PDF generation
-    const invoicesDir = path.join(process.cwd(), 'tmp')
+    // 6. PDF generation - Use OS temp dir for serverless/Vercel compatibility
+    const invoicesDir = os.tmpdir()
     if (!fs.existsSync(invoicesDir)) {
       fs.mkdirSync(invoicesDir, { recursive: true })
     }
