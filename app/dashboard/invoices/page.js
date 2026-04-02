@@ -163,7 +163,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* GST Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+      <div className="stat-grid-3">
         {[
           { label: 'Invoiced Subtotal', value: `₹${totalSub.toLocaleString('en-IN')}`, color: 'var(--violet)', bg: 'var(--violet-dim)', border: 'rgba(124,109,248,0.2)' },
           { label: 'GST Collected (18%)',  value: `₹${totalGST.toLocaleString('en-IN')}`, color: 'var(--amber)', bg: 'var(--amber-dim)', border: 'rgba(245,166,35,0.2)' },

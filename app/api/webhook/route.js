@@ -1,79 +1,657 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { sendWhatsApp } from '@/lib/twilio'
-import { extractOrder } from '@/lib/nlu'        // next step mein banayenge
+import { extractOrder } from '@/lib/nlu'
+import { transcribeVoiceNote } from '@/lib/transcribe'
+import fs from 'fs'
+import path from 'path'
+
+const OWNER_PHONE = process.env.BUSINESS_OWNER_PHONE || null
+
+// ───── Inventory Helpers ─────
+
+function loadInventory() {
+  try {
+    const invPath = path.join(process.cwd(), 'data', 'inventory.json')
+    if (!fs.existsSync(invPath)) return []
+    return JSON.parse(fs.readFileSync(invPath, 'utf-8'))
+  } catch { return [] }
+}
+
+function saveInventory(items) {
+  try {
+    const invPath = path.join(process.cwd(), 'data', 'inventory.json')
+    fs.writeFileSync(invPath, JSON.stringify(items, null, 2))
+  } catch (err) { console.error('Save inventory error:', err) }
+}
+
+function lookupInventoryPrices(items) {
+  const inventory = loadInventory()
+  return items.map(item => {
+    const itemNameLower = (item.name || '').toLowerCase().trim()
+    // Try exact match first
+    let match = inventory.find(inv =>
+      (inv.name || '').toLowerCase().trim() === itemNameLower
+    )
+    // Try partial/fuzzy match
+    if (!match) {
+      match = inventory.find(inv => {
+        const invName = (inv.name || '').toLowerCase().trim()
+        return invName.includes(itemNameLower) || itemNameLower.includes(invName)
+      })
+    }
+    // Try word-by-word match (e.g. "rice" matches "Rice Bag")
+    if (!match) {
+      const words = itemNameLower.split(/\s+/)
+      match = inventory.find(inv => {
+        const invName = (inv.name || '').toLowerCase().trim()
+        return words.some(w => w.length > 2 && invName.includes(w))
+      })
+    }
+    if (match) {
+      return {
+        ...item,
+        name: match.name, // Use canonical inventory name
+        price: Number(match.price) || 0,
+        unit: match.unit || item.unit || 'pcs',
+        inventoryId: match.id,
+      }
+    }
+    return item
+  })
+}
+
+// Deduct stock after order and check low stock
+function deductAndCheckStock(items) {
+  const inventory = loadInventory()
+  const lowStockAlerts = []
+
+  items.forEach(item => {
+    if (!item.inventoryId) return
+    const idx = inventory.findIndex(inv => inv.id === item.inventoryId)
+    if (idx === -1) return
+
+    const qty = Number(item.quantity) || 1
+    inventory[idx].quantity = Math.max(0, (Number(inventory[idx].quantity) || 0) - qty)
+
+    const threshold = Number(inventory[idx].lowStockThreshold) || 10
+    if (inventory[idx].quantity <= threshold) {
+      lowStockAlerts.push({
+        name: inventory[idx].name,
+        remaining: inventory[idx].quantity,
+        threshold,
+      })
+    }
+  })
+
+  saveInventory(inventory)
+  return lowStockAlerts
+}
+
+// ───── Catalog Builder ─────
+
+function buildCatalog(language) {
+  const inventory = loadInventory()
+  // De-duplicate by name (keep first occurrence)
+  const seen = new Set()
+  const available = inventory.filter(i => {
+    if ((Number(i.quantity) || 0) <= 0) return false
+    const key = (i.name || '').toLowerCase().trim()
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  if (available.length === 0) {
+    return { message: '😕 Abhi koi item available nahi hai.', catalogMap: [] }
+  }
+
+  const header = {
+    hindi: '📦 *Hamare Products:*\n_Order ke liye number bhejein (jaise: 1, 3, 5)_\n',
+    tamil: '📦 *எங்கள் பொருட்கள்:*\n_ஆர்டர் செய்ய எண்களை அனுப்புங்கள் (எ.கா: 1, 3, 5)_\n',
+    telugu: '📦 *మా ఉత్పత్తులు:*\n_ఆర్డర్ చేయడానికి నంబర్లు పంపండి (ఉదా: 1, 3, 5)_\n',
+    english: '📦 *Our Products:*\n_Reply with item numbers to order (e.g: 1, 3, 5)_\n',
+    hinglish: '📦 *Hamare Products:*\n_Order ke liye number bhejein (jaise: 1, 3, 5)_\n',
+  }
+
+  let msg = header[language] || header.hinglish
+  const categories = {}
+
+  available.forEach((item) => {
+    const cat = item.category || 'General'
+    if (!categories[cat]) categories[cat] = []
+    categories[cat].push(item)
+  })
+
+  let idx = 1
+  const catalogMap = []
+
+  for (const [cat, items] of Object.entries(categories)) {
+    msg += `\n📁 *${cat}*\n`
+    items.forEach(item => {
+      const price = Number(item.price) || 0
+      const stock = Number(item.quantity) || 0
+      const threshold = Number(item.lowStockThreshold) || 10
+      const stockLabel = stock <= threshold ? ' ⚠️' : ''
+      msg += `  ${idx}⃣  ${item.name} — *₹${price}*/${item.unit}${stockLabel}\n`
+      catalogMap.push({ idx, item })
+      idx++
+    })
+  }
+
+  msg += `\n💬 _Reply: "1, 3, 5" ya "2 Rice Bag aur 3 Wheat Flour"_`
+
+  return { message: msg, catalogMap }
+}
+
+// ───── Selection → Order ─────
+
+function buildOrderFromSelection(selectedNumbers, catalogMap) {
+  const items = []
+  for (const num of selectedNumbers) {
+    const entry = catalogMap.find(c => c.idx === num)
+    if (entry) {
+      items.push({
+        name: entry.item.name,
+        quantity: 1,
+        unit: entry.item.unit || 'pcs',
+        price: Number(entry.item.price) || 0,
+        inventoryId: entry.item.id,
+      })
+    }
+  }
+  return items
+}
+
+// ───── Main Webhook ─────
 
 export async function POST(req) {
   try {
     const formData = await req.formData()
     
-    // Twilio se aane wala data
     const from      = formData.get('From')?.replace('whatsapp:', '')
     const body      = formData.get('Body') || ''
-    const numMedia  = parseInt(formData.get('NumMedia') || '0')
-    const mediaUrl  = formData.get('MediaUrl0')
     const mediaType = formData.get('MediaContentType0')
+    const mediaUrl  = formData.get('MediaUrl0')
     
     console.log(`📩 Message from ${from}: ${body}`)
     
-    // Voice note hai ya text?
-    const isVoiceNote = mediaType?.includes('audio') || mediaType?.includes('ogg')
-    
+    // ═══════════════════════════════
+    // VOICE NOTE → Transcribe with Groq Whisper
+    // ═══════════════════════════════
     let messageText = body
-    
-    // Voice note → transcribe (Step 3 mein add karenge)
-    if (isVoiceNote && mediaUrl) {
-      messageText = await transcribeVoiceNote(mediaUrl)  
-      console.log(`🎤 Transcribed: ${messageText}`)
+    if (mediaType?.includes('audio') && mediaUrl) {
+      console.log(`🎙️ Voice note detected! Type: ${mediaType}, URL: ${mediaUrl}`)
+      try {
+        const transcribedText = await transcribeVoiceNote(mediaUrl)
+        messageText = transcribedText
+        console.log(`✅ Voice transcribed: "${messageText}"`)
+        
+        // Acknowledge voice note to user
+        await sendWhatsApp(from, `🎙️ _Voice note samjha:_ "${messageText}"\n\n⏳ Processing...`)
+      } catch (err) {
+        console.error('❌ Voice transcription failed:', err)
+        await sendWhatsApp(from,
+          `❌ Voice note samajh nahi aaya. Please text mein bhejein.\n\n` +
+          `📝 Type karein: "5 Rice Bag aur 2 Wheat Flour"\n` +
+          `📦 Ya "hi" bhejein catalog dekhne ke liye!`
+        )
+        return new NextResponse('OK', { status: 200 })
+      }
     }
 
-    // Sirf "hi", "hello" ignore karo
-    const greetings = ['hi', 'hello', 'hey', 'hii', 'helo']
-    if (greetings.includes(messageText.trim().toLowerCase())) {
-      await sendWhatsApp(from, 
-        `Namaste! 🙏 Vaani mein aapka swagat hai.\n\nBas apna order WhatsApp pe bhejein — hum automatically process kar denge!\n\n_Supported: Hindi, Tamil, Telugu, Marathi, English_`
-      )
-      return new NextResponse('OK', { status: 200 })
-    }
-
-    // NLU se order extract karo
+    // NLU extraction
     const extracted = await extractOrder(messageText)
     
-    if (!extracted || extracted.intent !== 'ORDER') {
-      // Order nahi lagta — acknowledge karo
-      await sendWhatsApp(from,
-        `✅ Message mila! Agar yeh order hai, thoda clearly likhein jaise:\n"5 red saree aur 2 blue dupatta bhejdo"`
-      )
+    // ═══════════════════════════════
+    // GREETING — Auto-show catalog!
+    // ═══════════════════════════════
+    if (extracted.intent === 'GREETING') {
+      const lang = extracted.language || 'hinglish'
+      const catalog = buildCatalog(lang)
+
+      // Welcome + catalog together
+      const welcomeMsg = lang === 'english'
+        ? `🙏 Hello! Welcome to *Vaani Business*\n\nHere\'s what we have:\n`
+        : `🙏 Namaste! *Vaani Business* mein aapka swagat hai!\n\nYe rahi hamari product list:\n`
+
+      if (catalog.catalogMap.length > 0) {
+        // Store catalog map for selection
+        try {
+          await supabase.from('sessions').upsert({
+            phone: from,
+            catalog_map: catalog.catalogMap,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'phone' })
+        } catch(e) {
+          console.log('Session store skipped (table may not exist):', e.message)
+        }
+
+        await sendWhatsApp(from, welcomeMsg + catalog.message)
+      } else {
+        await sendWhatsApp(from, welcomeMsg + catalog.message)
+      }
       return new NextResponse('OK', { status: 200 })
     }
 
-    // Customer upsert karo
-    const { data: customer } = await supabase
-      .from('customers')
-      .upsert({ phone: from }, { onConflict: 'phone' })
-      .select()
-      .single()
+    // ═══════════════════════════════
+    // HELP — Show available commands
+    // ═══════════════════════════════
+    if (extracted.intent === 'HELP') {
+      const lang = extracted.language || 'hinglish'
+      const helpMsg = lang === 'english'
+        ? `📖 *Vaani Help Guide*\n\n` +
+          `Here's what you can do:\n\n` +
+          `📦 *"hi"* or *"catalog"* — View product list\n` +
+          `🛒 *"5 Rice Bag"* — Place an order directly\n` +
+          `🔢 *"1, 3, 5"* — Select items from catalog\n` +
+          `📋 *"track"* — Track your latest order\n` +
+          `✅ *"confirm"* — Confirm pending order\n` +
+          `❌ *"cancel"* — Cancel pending order\n` +
+          `📄 *"invoice"* — Get bill/invoice\n` +
+          `💰 *"hisab"* — Check payment status\n` +
+          `🎙️ *Voice Note* — Send voice order!\n` +
+          `❓ *"help"* — Show this guide\n\n` +
+          `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
+        : `📖 *Vaani Help Guide*\n\n` +
+          `Aap ye sab kar sakte hain:\n\n` +
+          `📦 *"hi"* ya *"catalog"* — Product list dekhein\n` +
+          `🛒 *"5 Rice Bag"* — Direct order karein\n` +
+          `🔢 *"1, 3, 5"* — Catalog se select karein\n` +
+          `📋 *"track"* — Order ka status dekhein\n` +
+          `✅ *"confirm"* — Pending order confirm karein\n` +
+          `❌ *"cancel"* — Order cancel karein\n` +
+          `📄 *"invoice"* — Bill/invoice mangein\n` +
+          `💰 *"hisab"* — Payment status check karein\n` +
+          `🎙️ *Voice Note* — Voice se order bhejein!\n` +
+          `❓ *"help"* — Ye guide dikhao\n\n` +
+          `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
 
-    // Order save karo
-    const { data: order } = await supabase
-      .from('orders')
-      .insert({
-        customer_phone: from,
-        raw_message: messageText,
-        items: extracted.items,
-        language: extracted.language,
-        status: 'pending',
-        total_amount: extracted.estimatedTotal || 0,
-      })
-      .select()
-      .single()
+      await sendWhatsApp(from, helpMsg)
+      return new NextResponse('OK', { status: 200 })
+    }
 
-    console.log(`✅ Order saved: #${order.id}`)
+    // ═══════════════════════════════
+    // TRACK — Track order status
+    // ═══════════════════════════════
+    if (extracted.intent === 'TRACK') {
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('customer_phone', from)
+        .order('created_at', { ascending: false })
+        .limit(3)
 
-    // Confirmation reply bhejo — SAME LANGUAGE mein
-    const confirmMsg = buildConfirmation(extracted, order.id)
-    await sendWhatsApp(from, confirmMsg)
+      if (!orders || orders.length === 0) {
+        await sendWhatsApp(from,
+          `ℹ️ Koi order nahi mila.\n📦 "hi" bhejein products dekhne ke liye!`
+        )
+      } else {
+        const statusEmojis = {
+          pending: '⏳ Pending',
+          confirmed: '✅ Confirmed',
+          preparing: '👨‍🍳 Preparing',
+          ready: '📦 Ready',
+          shipped: '🚚 Shipped',
+          delivered: '✅ Delivered',
+          paid: '💰 Paid',
+          invoiced: '📄 Invoiced',
+          cancelled: '❌ Cancelled',
+        }
 
+        let msg = `📋 *Your Recent Orders:*\n\n`
+        orders.forEach(o => {
+          const items = Array.isArray(o.items) ? o.items : []
+          const itemNames = items.map(i => `${i.quantity || 1}× ${i.name}`).join(', ')
+          const amt = Number(o.total_amount || 0)
+          const grand = +(amt * 1.18).toFixed(2)
+          const st = statusEmojis[o.status] || `📌 ${o.status}`
+          const date = new Date(o.created_at).toLocaleDateString('en-IN')
+
+          msg += `🔖 *Order #${String(o.id).padStart(4, '0')}*\n`
+          msg += `   📅 ${date}\n`
+          msg += `   📦 ${itemNames || 'N/A'}\n`
+          msg += `   💰 ₹${grand}\n`
+          msg += `   📌 ${st}\n\n`
+        })
+
+        msg += `_"confirm" ya "cancel" bhejein pending order ke liye_`
+        await sendWhatsApp(from, msg)
+      }
+      return new NextResponse('OK', { status: 200 })
+    }
+
+    // ═══════════════════════════════
+    // CONFIRM — Confirm pending order
+    // ═══════════════════════════════
+    if (extracted.intent === 'CONFIRM') {
+      const { data: pendingOrder } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('customer_phone', from)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (!pendingOrder) {
+        await sendWhatsApp(from,
+          `ℹ️ Koi pending order nahi mila.\n📦 "hi" bhejein naya order dene ke liye!`
+        )
+      } else {
+        await supabase
+          .from('orders')
+          .update({ status: 'confirmed' })
+          .eq('id', pendingOrder.id)
+
+        const items = Array.isArray(pendingOrder.items) ? pendingOrder.items : []
+        const itemNames = items.map(i => `${i.quantity || 1}× ${i.name}`).join(', ')
+        const amt = Number(pendingOrder.total_amount || 0)
+        const grand = +(amt * 1.18).toFixed(2)
+
+        await sendWhatsApp(from,
+          `✅ *Order #${String(pendingOrder.id).padStart(4, '0')} Confirmed!*\n\n` +
+          `📦 ${itemNames}\n` +
+          `💰 Total: ₹${grand}\n\n` +
+          `📄 "invoice" bhejein bill ke liye 🙏`
+        )
+
+        // Notify owner
+        if (OWNER_PHONE) {
+          sendWhatsApp(OWNER_PHONE,
+            `🔔 *Order Confirmed!*\n` +
+            `📱 ${from}\n` +
+            `📦 ${itemNames}\n` +
+            `💰 ₹${grand}\n` +
+            `#${String(pendingOrder.id).padStart(4, '0')}`
+          ).catch(e => console.error('Owner notify failed:', e))
+        }
+      }
+      return new NextResponse('OK', { status: 200 })
+    }
+
+    // ═══════════════════════════════
+    // CANCEL — Cancel pending order
+    // ═══════════════════════════════
+    if (extracted.intent === 'CANCEL') {
+      const { data: pendingOrder } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('customer_phone', from)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (!pendingOrder) {
+        await sendWhatsApp(from,
+          `ℹ️ Koi pending order nahi mila cancel karne ke liye.\n📦 "hi" bhejein products dekhne ke liye!`
+        )
+      } else {
+        // Restore stock
+        if (Array.isArray(pendingOrder.items)) {
+          const inventory = loadInventory()
+          pendingOrder.items.forEach(item => {
+            if (!item.inventoryId) return
+            const idx = inventory.findIndex(inv => inv.id === item.inventoryId)
+            if (idx !== -1) {
+              inventory[idx].quantity = (Number(inventory[idx].quantity) || 0) + (Number(item.quantity) || 1)
+            }
+          })
+          saveInventory(inventory)
+        }
+
+        await supabase
+          .from('orders')
+          .update({ status: 'cancelled' })
+          .eq('id', pendingOrder.id)
+
+        await sendWhatsApp(from,
+          `❌ *Order #${String(pendingOrder.id).padStart(4, '0')} Cancel ho gaya!*\n\n` +
+          `📦 Stock restore kar diya gaya hai.\n` +
+          `🛒 "hi" bhejein naya order dene ke liye!`
+        )
+      }
+      return new NextResponse('OK', { status: 200 })
+    }
+
+    // ═══════════════════════════════
+    // CATALOG / INQUIRY — Send product list
+    // ═══════════════════════════════
+    if (extracted.intent === 'CATALOG' || extracted.intent === 'INQUIRY') {
+      const lang = extracted.language || 'hinglish'
+      const catalog = buildCatalog(lang)
+
+      try {
+        await supabase.from('sessions').upsert({
+          phone: from,
+          catalog_map: catalog.catalogMap,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'phone' })
+      } catch(e) {
+        console.log('Session store skipped:', e.message)
+      }
+
+      await sendWhatsApp(from, catalog.message)
+      return new NextResponse('OK', { status: 200 })
+    }
+
+    // ═══════════════════════════════
+    // SELECTION — User picked from catalog (e.g. "1, 3, 5")
+    // ═══════════════════════════════
+    if (extracted.intent === 'SELECTION' && extracted.selectedNumbers) {
+      // Get stored catalog map
+      let catalogMap = null
+      try {
+        const { data: session } = await supabase
+          .from('sessions')
+          .select('catalog_map')
+          .eq('phone', from)
+          .single()
+        catalogMap = session?.catalog_map
+      } catch(e) {
+        console.log('Session lookup skipped:', e.message)
+      }
+
+      if (!catalogMap) {
+        // No session? Send catalog first
+        const catalog = buildCatalog(extracted.language || 'hinglish')
+        try {
+          await supabase.from('sessions').upsert({
+            phone: from,
+            catalog_map: catalog.catalogMap,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'phone' })
+        } catch {}
+        await sendWhatsApp(from,
+          `❌ Pehle catalog dekhein, phir number se select karein:\n\n` + catalog.message
+        )
+        return new NextResponse('OK', { status: 200 })
+      }
+
+      const selectedItems = buildOrderFromSelection(extracted.selectedNumbers, catalogMap)
+
+      if (selectedItems.length === 0) {
+        await sendWhatsApp(from,
+          `❌ Invalid selection. Sahi numbers bhejein catalog se.`)
+        return new NextResponse('OK', { status: 200 })
+      }
+
+      // Calculate & save order
+      const totalAmount = selectedItems.reduce((sum, i) =>
+        sum + (Number(i.quantity) || 1) * (Number(i.price) || 0), 0
+      )
+
+      await supabase.from('customers').upsert({ phone: from }, { onConflict: 'phone' })
+
+      const { data: order } = await supabase
+        .from('orders')
+        .insert({
+          customer_phone: from,
+          raw_message: messageText,
+          items: selectedItems,
+          language: extracted.language,
+          status: 'pending',
+          total_amount: totalAmount,
+        })
+        .select().single()
+
+      console.log(`✅ Selection order: #${order.id} — ₹${totalAmount}`)
+
+      // Deduct stock + alert owner
+      handleStockAlerts(selectedItems)
+
+      // Send confirmation with price breakdown
+      const confirmMsg = buildConfirmation(selectedItems, order.id, totalAmount, extracted.language)
+      await sendWhatsApp(from, confirmMsg)
+
+      // Clear session
+      try { await supabase.from('sessions').delete().eq('phone', from) } catch {}
+
+      return new NextResponse('OK', { status: 200 })
+    }
+
+    // ═══════════════════════════════
+    // PAYMENT_STATUS — "hisab batao"
+    // ═══════════════════════════════
+    if (extracted.intent === 'PAYMENT_STATUS') {
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('customer_phone', from)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (!orders || orders.length === 0) {
+        await sendWhatsApp(from, `ℹ️ Aapka koi order nahi mila.\n📦 "hi" bhejein products dekhne ke liye!`)
+      } else {
+        let msg = `📋 *Aapke Recent Orders:*\n\n`
+        let totalDue = 0
+        orders.forEach(o => {
+          const amt = Number(o.total_amount || 0)
+          const grand = +(amt * 1.18).toFixed(2)
+          const st = o.status === 'paid' ? '✅ Paid' : o.status === 'invoiced' ? '📄 Invoiced' : o.status === 'cancelled' ? '❌ Cancelled' : '⏳ Pending'
+          msg += `#${String(o.id).padStart(4, '0')} — ₹${grand} — ${st}\n`
+          if (o.status !== 'paid' && o.status !== 'cancelled') totalDue += grand
+        })
+        if (totalDue > 0) {
+          msg += `\n💰 *Total Pending:* ₹${totalDue.toFixed(2)}`
+        } else {
+          msg += `\n✅ *Sab paid hai!* Thank you 🙏`
+        }
+        await sendWhatsApp(from, msg)
+      }
+      return new NextResponse('OK', { status: 200 })
+    }
+
+    // ═══════════════════════════════
+    // ORDER — Direct order ("5 Rice Bag bhejdo")
+    // ═══════════════════════════════
+    if (extracted.intent === 'ORDER' && extracted.items?.length > 0) {
+      // Look up prices from inventory
+      const itemsWithPrices = lookupInventoryPrices(extracted.items)
+
+      // Calculate total
+      const totalAmount = itemsWithPrices.reduce((sum, item) => {
+        const qty = Number(item.quantity) || 1
+        const price = Number(item.price) || 0
+        return sum + (qty * price)
+      }, 0)
+
+      console.log(`💰 Order items:`, itemsWithPrices.map(i => `${i.name}: ₹${i.price} x ${i.quantity}`))
+
+      // If NO prices found at all → tell customer what's available
+      if (totalAmount === 0 && itemsWithPrices.every(i => !i.price)) {
+        const catalog = buildCatalog(extracted.language || 'hinglish')
+        try {
+          await supabase.from('sessions').upsert({
+            phone: from, catalog_map: catalog.catalogMap, updated_at: new Date().toISOString(),
+          }, { onConflict: 'phone' })
+        } catch {}
+        await sendWhatsApp(from,
+          `⚠️ Ye items hamari inventory mein nahi mile.\n\nYe hai hamare available products:\n\n` + catalog.message
+        )
+        return new NextResponse('OK', { status: 200 })
+      }
+
+      await supabase.from('customers').upsert({ phone: from }, { onConflict: 'phone' })
+
+      const { data: order } = await supabase
+        .from('orders')
+        .insert({
+          customer_phone: from,
+          raw_message: messageText,
+          items: itemsWithPrices,
+          language: extracted.language,
+          status: 'pending',
+          total_amount: totalAmount || extracted.estimatedTotal || 0,
+        })
+        .select().single()
+
+      console.log(`✅ Direct order: #${order.id} — ₹${order.total_amount}`)
+
+      // Deduct stock + alert owner
+      handleStockAlerts(itemsWithPrices)
+
+      // Confirmation with price breakdown
+      const confirmMsg = buildConfirmation(
+        itemsWithPrices, order.id, order.total_amount, extracted.language
+      )
+      await sendWhatsApp(from, confirmMsg)
+
+      return new NextResponse('OK', { status: 200 })
+    }
+
+    // ═══════════════════════════════
+    // INVOICE — Request invoice
+    // ═══════════════════════════════
+    if (extracted.intent === 'INVOICE') {
+      const { data: lastOrder } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('customer_phone', from)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (lastOrder) {
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+          await fetch(`${baseUrl}/api/invoice`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: lastOrder.id, phone: from }),
+          })
+        } catch (err) {
+          console.error('Auto-invoice error:', err)
+          await sendWhatsApp(from, `✅ Invoice generate ho raha hai. Thoda wait karein! 🙏`)
+        }
+      } else {
+        await sendWhatsApp(from, `ℹ️ Koi pending order nahi mila.\n📦 "hi" bhejein products dekhne ke liye!`)
+      }
+      return new NextResponse('OK', { status: 200 })
+    }
+
+    // ═══════════════════════════════
+    // OTHER / Unknown — Show help + catalog
+    // ═══════════════════════════════
+    const catalog = buildCatalog(extracted.language || 'hinglish')
+    try {
+      await supabase.from('sessions').upsert({
+        phone: from, catalog_map: catalog.catalogMap, updated_at: new Date().toISOString(),
+      }, { onConflict: 'phone' })
+    } catch {}
+
+    await sendWhatsApp(from,
+      `👋 Vaani Business mein aapka swagat hai!\n\n` +
+      `Ye rahi hamari product list:\n\n` +
+      catalog.message + `\n\n` +
+      `📝 Ya directly likh sakte hain:\n_"5 Rice Bag aur 2 Wheat Flour bhejdo"_\n\n` +
+      `💰 "hisab" — Payment status\n` +
+      `📋 "track" — Order status\n` +
+      `❓ "help" — Sab commands dekhein`
+    )
     return new NextResponse('OK', { status: 200 })
 
   } catch (err) {
@@ -82,19 +660,47 @@ export async function POST(req) {
   }
 }
 
-// Language-aware confirmation message
-function buildConfirmation(extracted, orderId) {
-  const itemList = extracted.items
-    .map(i => `  • ${i.quantity}x ${i.name}`)
+// ───── Stock Alert Helper ─────
+
+function handleStockAlerts(items) {
+  const lowStockAlerts = deductAndCheckStock(items)
+  if (lowStockAlerts.length > 0 && OWNER_PHONE) {
+    const alertMsg = `🚨 *Low Stock Alert!*\n\n` +
+      lowStockAlerts.map(a =>
+        `⚠️ *${a.name}* — Only ${a.remaining} left (threshold: ${a.threshold})`
+      ).join('\n') +
+      `\n\n_Restock karein!_`
+    sendWhatsApp(OWNER_PHONE, alertMsg).catch(e => console.error('Stock alert failed:', e))
+  }
+}
+
+// ───── Confirmation with Prices ─────
+
+function buildConfirmation(items, orderId, totalAmount, language) {
+  const itemList = items
+    .map(i => {
+      const qty = Number(i.quantity) || 1
+      const price = Number(i.price) || 0
+      const total = qty * price
+      if (price > 0) {
+        return `  • ${qty}× ${i.name} — ₹${price}/${i.unit || 'pcs'} = *₹${total}*`
+      }
+      return `  • ${qty}× ${i.name}`
+    })
     .join('\n')
 
+  const sub = Number(totalAmount) || 0
+  const gst = +(sub * 0.18).toFixed(2)
+  const grand = +(sub + gst).toFixed(2)
+
   const templates = {
-    tamil:   `✅ Order பதிவு செய்யப்பட்டது! (#${orderId})\n\n${itemList}\n\nInvoice அனுப்புகிறோம் 🙏`,
-    marathi: `✅ ऑर्डर नोंदवला! (#${orderId})\n\n${itemList}\n\nInvoice पाठवत आहोत 🙏`,
-    telugu:  `✅ ఆర్డర్ నమోదు అయింది! (#${orderId})\n\n${itemList}\n\nInvoice పంపుతున్నాం 🙏`,
-    hindi:   `✅ Order record ho gaya! (#${orderId})\n\n${itemList}\n\nInvoice bhej rahe hain 🙏`,
-    english: `✅ Order confirmed! (#${orderId})\n\n${itemList}\n\nSending your invoice shortly 🙏`,
+    tamil: `✅ *Order பதிவு! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Order confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" — Bill mangein 🙏`,
+    marathi: `✅ *ऑर्डर नोंदवला! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Order confirm करा\n❌ "cancel" — Cancel करा\n📄 "invoice" लिहा bill साठी 🙏`,
+    telugu: `✅ *ఆర్డర్ నమోదు! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Confirm చేయండి\n❌ "cancel" — Cancel చేయండి\n📄 "invoice" పంపండి bill కోసం 🙏`,
+    english: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ Reply "confirm" to confirm\n❌ Reply "cancel" to cancel\n📄 Reply "invoice" for bill 🙏`,
+    hindi: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" bhejein bill ke liye 🙏`,
+    hinglish: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" bhejein bill ke liye 🙏`,
   }
 
-  return templates[extracted.language] || templates.hindi
+  return templates[language] || templates.hinglish
 }

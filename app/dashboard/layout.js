@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
@@ -9,26 +9,55 @@ const NAV = [
   { href: '/dashboard/orders',    icon: '◦',  label: 'Orders',     color: '#818cf8' },
   { href: '/dashboard/invoices',  icon: '⬕',  label: 'Invoices',   color: '#f59e0b' },
   { href: '/dashboard/payments',  icon: '◈',  label: 'Payments',   color: '#00e5c3' },
-  { href: '/dashboard/buyers',    icon: '◉',  label: 'Buyers',     color: '#fb7185' },
+  { href: '/dashboard/khata',     icon: '📒', label: 'Khata',      color: '#fb7185' },
+  { href: '/dashboard/buyers',    icon: '◉',  label: 'Buyers',     color: '#a78bfa' },
 ]
 
 export default function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const pathname = usePathname()
+
+  // Detect mobile
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // Close sidebar on nav on mobile
+  useEffect(() => {
+    if (isMobile) setMobileOpen(false)
+  }, [pathname, isMobile])
+
+  const sidebarWidth = isMobile ? 260 : (collapsed ? 64 : 236)
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
+
+      {/* Mobile overlay */}
+      {isMobile && mobileOpen && (
+        <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside style={{
-        width: collapsed ? 64 : 236,
-        minWidth: collapsed ? 64 : 236,
-        background: 'var(--surface)',
-        borderRight: '1px solid var(--border)',
-        display: 'flex', flexDirection: 'column',
-        transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1), min-width 0.25s cubic-bezier(0.4,0,0.2,1)',
-        overflow: 'hidden',
-        position: 'relative',
-      }}>
+      <aside
+        className={`dashboard-sidebar ${isMobile && mobileOpen ? 'open' : ''}`}
+        style={{
+          width: sidebarWidth,
+          minWidth: sidebarWidth,
+          background: 'var(--surface)',
+          borderRight: '1px solid var(--border)',
+          display: 'flex', flexDirection: 'column',
+          transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1), min-width 0.25s cubic-bezier(0.4,0,0.2,1), transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+          overflow: 'hidden',
+          position: isMobile ? 'fixed' : 'relative',
+          zIndex: isMobile ? 100 : 'auto',
+          top: 0, bottom: 0, left: 0,
+          transform: (isMobile && !mobileOpen) ? 'translateX(-100%)' : 'translateX(0)',
+        }}>
         {/* Sidebar top glow */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 200,
@@ -39,7 +68,7 @@ export default function DashboardLayout({ children }) {
         {/* Brand */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: collapsed ? '0 16px' : '0 20px',
+          padding: (collapsed && !isMobile) ? '0 16px' : '0 20px',
           height: 62, borderBottom: '1px solid var(--border)',
           flexShrink: 0, position: 'relative',
         }}>
@@ -50,17 +79,26 @@ export default function DashboardLayout({ children }) {
             fontSize: 15, fontWeight: 900, color: '#021a15',
             boxShadow: '0 4px 16px rgba(0,229,195,0.35)',
           }}>V</div>
-          {!collapsed && (
+          {(!collapsed || isMobile) && (
             <div>
               <p style={{ fontWeight: 800, fontSize: 15, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>Vaani</p>
               <p style={{ fontSize: 9.5, color: 'var(--muted)', margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>Business Hub</p>
             </div>
           )}
+          {/* Mobile close button */}
+          {isMobile && (
+            <button onClick={() => setMobileOpen(false)} style={{
+              marginLeft: 'auto', width: 32, height: 32, borderRadius: 8,
+              border: '1px solid var(--border-mid)', background: 'rgba(255,255,255,0.04)',
+              color: 'var(--muted-light)', cursor: 'pointer', fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>×</button>
+          )}
         </div>
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 3, position: 'relative' }}>
-          {!collapsed && (
+          {(!collapsed || isMobile) && (
             <p style={{
               fontSize: 9.5, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.1em',
               textTransform: 'uppercase', padding: '4px 12px 6px', margin: 0,
@@ -71,7 +109,7 @@ export default function DashboardLayout({ children }) {
             return (
               <Link key={href} href={href} style={{
                 display: 'flex', alignItems: 'center',
-                gap: 10, padding: collapsed ? '10px 15px' : '9px 12px',
+                gap: 10, padding: (collapsed && !isMobile) ? '10px 15px' : '9px 12px',
                 borderRadius: 11, textDecoration: 'none',
                 fontSize: 13.5, fontWeight: active ? 700 : 500,
                 color: active ? color : 'var(--muted-light)',
@@ -96,14 +134,14 @@ export default function DashboardLayout({ children }) {
                   opacity: active ? 1 : 0.65,
                   color: active ? color : 'inherit',
                 }}>{icon}</span>
-                {!collapsed && <span>{label}</span>}
+                {(!collapsed || isMobile) && <span>{label}</span>}
               </Link>
             )
           })}
         </nav>
 
         {/* Bottom status */}
-        {!collapsed && (
+        {(!collapsed || isMobile) && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
             <div style={{
               background: 'rgba(0,229,195,0.06)',
@@ -120,35 +158,37 @@ export default function DashboardLayout({ children }) {
           </div>
         )}
 
-        {/* Collapse */}
-        <button
-          onClick={() => setCollapsed(c => !c)}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
-            gap: 8, padding: collapsed ? '14px 20px' : '14px 18px',
-            border: 'none', cursor: 'pointer',
-            borderTop: '1px solid var(--border)',
-            background: 'transparent', color: 'var(--muted)',
-            fontSize: 12, transition: 'color 0.15s, background 0.15s',
-            fontFamily: 'Plus Jakarta Sans, sans-serif',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.background = 'transparent' }}
-        >
-          <span style={{
-            fontSize: 13,
-            transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)',
-            transition: 'transform 0.25s',
-            display: 'inline-block',
-          }}>‹</span>
-          {!collapsed && <span style={{ fontWeight: 500 }}>Collapse</span>}
-        </button>
+        {/* Collapse — desktop only */}
+        {!isMobile && (
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+              gap: 8, padding: collapsed ? '14px 20px' : '14px 18px',
+              border: 'none', cursor: 'pointer',
+              borderTop: '1px solid var(--border)',
+              background: 'transparent', color: 'var(--muted)',
+              fontSize: 12, transition: 'color 0.15s, background 0.15s',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.background = 'transparent' }}
+          >
+            <span style={{
+              fontSize: 13,
+              transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+              transition: 'transform 0.25s',
+              display: 'inline-block',
+            }}>‹</span>
+            {!collapsed && <span style={{ fontWeight: 500 }}>Collapse</span>}
+          </button>
+        )}
       </aside>
 
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+      <div className="dashboard-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         {/* Topbar */}
-        <header style={{
+        <header className="dashboard-topbar" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 28px', height: 62, flexShrink: 0,
           background: 'rgba(15,22,35,0.88)', backdropFilter: 'blur(14px)',
@@ -156,6 +196,19 @@ export default function DashboardLayout({ children }) {
           position: 'sticky', top: 0, zIndex: 20,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Hamburger — mobile only */}
+            <button className="hamburger-btn" onClick={() => setMobileOpen(true)}
+              style={{
+                display: isMobile ? 'flex' : 'none',
+                alignItems: 'center', justifyContent: 'center',
+                width: 36, height: 36, borderRadius: 10,
+                border: '1px solid var(--border-mid)',
+                background: 'rgba(255,255,255,0.04)',
+                color: 'var(--muted-light)', cursor: 'pointer',
+                fontSize: 18, transition: 'all 0.15s',
+                marginRight: 8,
+              }}
+            >☰</button>
             <span className="live-dot" style={{ width: 7, height: 7, background: 'var(--teal)' }} />
             <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>Live</span>
           </div>
@@ -180,7 +233,7 @@ export default function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <main style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+        <main className="dashboard-content" style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
           {children}
         </main>
       </div>

@@ -6,7 +6,7 @@
     "category": "Food & Grocery",
     "quantity": 10,
     "unit": "kg",
-    "price": 100,
+    "price": "105",
     "lowStockThreshold": 1,
     "createdAt": "2026-04-02T10:10:35.567Z"
   },
@@ -94,7 +94,7 @@
     "category": "General",
     "quantity": 100,
     "unit": "pcs",
-    "price": 6,
+    "price": "7",
     "lowStockThreshold": 20,
     "createdAt": "2026-04-02T13:05:13.149Z"
   },

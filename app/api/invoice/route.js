@@ -26,12 +26,40 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // 2. GST Calculation
-    const subtotal = Number(order.total_amount)
+    // 2. If total_amount is 0, try to fill prices from inventory
+    let orderItems = order.items || []
+    let subtotal = Number(order.total_amount) || 0
 
-if (!subtotal || subtotal <= 0) {
-  console.error("❌ Invalid amount:", order.total_amount)
-}
+    if (subtotal <= 0) {
+      try {
+        const invPath = path.join(process.cwd(), 'data', 'inventory.json')
+        const inventory = JSON.parse(fs.readFileSync(invPath, 'utf-8'))
+        orderItems = orderItems.map(item => {
+          if (Number(item.price) > 0) return item
+          const itemNameLower = (item.name || '').toLowerCase().trim()
+          const match = inventory.find(inv =>
+            (inv.name || '').toLowerCase().trim() === itemNameLower
+          ) || inventory.find(inv => {
+            const invName = (inv.name || '').toLowerCase().trim()
+            return invName.includes(itemNameLower) || itemNameLower.includes(invName)
+          }) || inventory.find(inv => {
+            const invName = (inv.name || '').toLowerCase().trim()
+            return itemNameLower.split(/\s+/).some(w => w.length > 2 && invName.includes(w))
+          })
+          if (match) return { ...item, name: match.name, price: Number(match.price) || 0 }
+          return item
+        })
+        subtotal = orderItems.reduce((s, i) => s + (Number(i.quantity) || 1) * (Number(i.price) || 0), 0)
+        // Update order in DB with correct prices
+        if (subtotal > 0) {
+          await supabase.from('orders').update({ items: orderItems, total_amount: subtotal }).eq('id', orderId)
+        }
+      } catch(e) { console.error('Inventory lookup for invoice:', e) }
+    }
+
+    if (subtotal <= 0) {
+      console.error("❌ Invalid amount:", order.total_amount)
+    }
     const cgst       = +(subtotal * 0.09).toFixed(2)
     const sgst       = +(subtotal * 0.09).toFixed(2)
     const grandTotal = +(subtotal + cgst + sgst).toFixed(2)

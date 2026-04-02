@@ -161,7 +161,7 @@ export default function PaymentsPage() {
       )}
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+      <div className="kpi-grid" style={{ gap: 14 }}>
         {[
           { label: 'Pending',  count: stats.pending,  ...STATUS.pending },
           { label: 'Invoiced', count: stats.invoiced, ...STATUS.invoiced },
