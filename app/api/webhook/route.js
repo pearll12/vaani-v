@@ -57,13 +57,17 @@ async function deductAndCheckStock(items) {
   const lowStockAlerts = []
   const itemsToUpdate = []
 
-  items.forEach(item => {
+  // Ensure items is an array
+  const orderItems = Array.isArray(items) ? items : []
+
+  orderItems.forEach(item => {
     if (!item.inventoryId) return
     const idx = inventory.findIndex(inv => inv.id === item.inventoryId)
     if (idx === -1) return
 
     const qty = Number(item.quantity) || 1
-    inventory[idx].quantity = Math.max(0, (Number(inventory[idx].quantity) || 0) - qty)
+    const currentQty = Number(inventory[idx].quantity) || 0
+    inventory[idx].quantity = Math.max(0, currentQty - qty)
     itemsToUpdate.push(inventory[idx])
 
     const threshold = Number(inventory[idx].lowStockThreshold) || 10
@@ -209,8 +213,8 @@ export async function POST(req) {
 
       // Welcome + catalog together
       const welcomeMsg = lang === 'english'
-        ? `🙏 Hello! Welcome to *Vaani Business*\n\nHere\'s what we have:\n`
-        : `🙏 Namaste! *Vaani Business* mein aapka swagat hai!\n\nYe rahi hamari product list:\n`
+        ? `🙏 Hello! Welcome to *BusinessVaani*\n\nHere\'s what we have:\n`
+        : `🙏 Namaste! *BusinessVaani* mein aapka swagat hai!\n\nYe rahi hamari product list:\n`
 
       if (catalog.catalogMap.length > 0) {
         // Store catalog map for selection
@@ -237,7 +241,7 @@ export async function POST(req) {
     if (extracted.intent === 'HELP') {
       const lang = extracted.language || 'hinglish'
       const helpMsg = lang === 'english'
-        ? `📖 *Vaani Help Guide*\n\n` +
+        ? `📖 *BusinessVaani Help Guide*\n\n` +
           `Here's what you can do:\n\n` +
           `📦 *"hi"* or *"catalog"* — View product list\n` +
           `🛒 *"5 Rice Bag"* — Place an order directly\n` +
@@ -250,7 +254,7 @@ export async function POST(req) {
           `🎙️ *Voice Note* — Send voice order!\n` +
           `❓ *"help"* — Show this guide\n\n` +
           `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
-        : `📖 *Vaani Help Guide*\n\n` +
+        : `📖 *BusinessVaani Help Guide*\n\n` +
           `Aap ye sab kar sakte hain:\n\n` +
           `📦 *"hi"* ya *"catalog"* — Product list dekhein\n` +
           `🛒 *"5 Rice Bag"* — Direct order karein\n` +
@@ -387,15 +391,22 @@ export async function POST(req) {
       } else {
         // Restore stock
         if (Array.isArray(pendingOrder.items)) {
-          const inventory = loadInventory()
+          const inventory = await loadInventory()
+          const itemsToUpdate = []
+          
           pendingOrder.items.forEach(item => {
             if (!item.inventoryId) return
             const idx = inventory.findIndex(inv => inv.id === item.inventoryId)
             if (idx !== -1) {
-              inventory[idx].quantity = (Number(inventory[idx].quantity) || 0) + (Number(item.quantity) || 1)
+              const currentQty = Number(inventory[idx].quantity) || 0
+              inventory[idx].quantity = currentQty + (Number(item.quantity) || 1)
+              itemsToUpdate.push(inventory[idx])
             }
           })
-          saveInventory(inventory)
+          
+          if (itemsToUpdate.length > 0) {
+            await saveInventory(itemsToUpdate)
+          }
         }
 
         await supabase
@@ -641,7 +652,7 @@ export async function POST(req) {
     } catch {}
 
     await sendWhatsApp(from,
-      `👋 Vaani Business mein aapka swagat hai!\n\n` +
+      `👋 BusinessVaani mein aapka swagat hai!\n\n` +
       `Ye rahi hamari product list:\n\n` +
       catalog.message + `\n\n` +
       `📝 Ya directly likh sakte hain:\n_"5 Rice Bag aur 2 Wheat Flour bhejdo"_\n\n` +

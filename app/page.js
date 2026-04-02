@@ -38,7 +38,7 @@ export default function Home() {
           }}>
             <Mic size={20} strokeWidth={2.5} />
           </div>
-          <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', color: '#fff' }}>Vaani</span>
+          <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', color: '#fff' }}>BusinessVaani</span>
         </div>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <Link href="/login" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, fontWeight: 600, textDecoration: 'none', transition: 'color 0.2s' }}
@@ -302,11 +302,11 @@ export default function Home() {
           
           <div style={{ marginTop: 120, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.05)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 14 }}>V</div>
-              <span style={{ fontWeight: 800, color: '#fff', fontSize: 18 }}>Vaani.</span>
+              <div style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.05)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 14 }}>B</div>
+              <span style={{ fontWeight: 800, color: '#fff', fontSize: 18 }}>BusinessVaani.</span>
             </div>
             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, fontWeight: 500 }}>
-              &copy; {new Date().getFullYear()} Vaani Tech. The Future of Commerce.
+              &copy; {new Date().getFullYear()} BusinessVaani Tech. The Future of Commerce.
             </div>
           </div>
         </div>

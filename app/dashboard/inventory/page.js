@@ -46,7 +46,7 @@ function Modal({ item, onClose, onSave }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Item Name *</label>
-            <input className="vaani-input" type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Basmati Rice Premium" />
+            <input className="bv-input" type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Basmati Rice Premium" />
           </div>
           {[
             { label: 'SKU', key: 'sku', type: 'text', placeholder: 'e.g. SKU-001' },
@@ -56,18 +56,18 @@ function Modal({ item, onClose, onSave }) {
           ].map(f => (
             <div key={f.key}>
               <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>{f.label}</label>
-              <input className="vaani-input" type={f.type} value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder} />
+              <input className="bv-input" type={f.type} value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder} />
             </div>
           ))}
           <div>
             <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Unit</label>
-            <select className="vaani-input" value={form.unit} onChange={e => set('unit', e.target.value)}>
+            <select className="bv-input" value={form.unit} onChange={e => set('unit', e.target.value)}>
               {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
           </div>
           <div>
             <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Category</label>
-            <select className="vaani-input" value={form.category} onChange={e => set('category', e.target.value)}>
+            <select className="bv-input" value={form.category} onChange={e => set('category', e.target.value)}>
               {CATS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -188,7 +188,7 @@ function CSVUploadModal({ onClose, onImport }) {
             </div>
 
             <div style={{ maxHeight: 280, overflowY: 'auto', borderRadius: 10, border: '1px solid var(--border)', marginBottom: 16 }}>
-              <table className="vaani-table">
+              <table className="bv-table">
                 <thead>
                   <tr>
                     <th>Name</th><th>SKU</th><th>Category</th>
@@ -385,7 +385,7 @@ export default function InventoryPage() {
         <div style={{ position: 'relative', flex: '1', maxWidth: 340 }}>
           <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 14, pointerEvents: 'none' }}>⌕</span>
           <input
-            className="vaani-input"
+            className="bv-input"
             style={{ paddingLeft: 34 }}
             placeholder="Search items, SKUs, categories…"
             value={search}
@@ -425,7 +425,7 @@ export default function InventoryPage() {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="vaani-table">
+            <table className="bv-table">
               <thead>
                 <tr>
                   <th>Item</th><th>Category</th><th>SKU</th>

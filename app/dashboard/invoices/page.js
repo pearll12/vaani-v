@@ -202,7 +202,7 @@ export default function InvoicesPage() {
           <EmptyState filter={filter} />
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="vaani-table">
+            <table className="bv-table">
               <thead>
                 <tr>
                   <th>Order</th>

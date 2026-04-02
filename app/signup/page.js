@@ -62,7 +62,7 @@ export default function SignupPage() {
         </div>
 
         <h2 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 8px', textAlign: 'center', letterSpacing: '-0.02em' }}>Create an account</h2>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32, textAlign: 'center' }}>Set up your Vaani store in seconds</p>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32, textAlign: 'center' }}>Set up your BusinessVaani store in seconds</p>
         
         {error && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.2)', padding: '12px 16px', borderRadius: 12, fontSize: 13, marginBottom: 20, fontWeight: 500 }}>{error}</div>}
         {success && <div style={{ background: 'rgba(0,229,195,0.1)', color: '#00e5c3', border: '1px solid rgba(0,229,195,0.2)', padding: '12px 16px', borderRadius: 12, fontSize: 13, marginBottom: 20, fontWeight: 500 }}>{success}</div>}

@@ -121,7 +121,7 @@ export default function SettingsPage() {
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--muted-light)', marginBottom: 8 }}>Business Name</label>
           <input type="text" value={profile.business_name || ''} onChange={e => setProfile({ ...profile, business_name: e.target.value })}
-            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff' }} placeholder="e.g. Vaani Fresh Mart" />
+            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff' }} placeholder="e.g. BusinessVaani Fresh Mart" />
         </div>
 
         <div style={{ marginBottom: 20 }}>

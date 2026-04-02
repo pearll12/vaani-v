@@ -16,60 +16,6 @@ const NAV = [
   { href: '/dashboard/settings',  icon: '⚙️',  label: 'Settings',   color: '#cbd5e1' },
 ]
 
-function LoginScreen() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  async function handleLogin(e) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password })
-    if (err) setError(err.message)
-    setLoading(false)
-  }
-
-  async function handleSignup() {
-    if (!email || !password) return setError('Email and password required for signup.')
-    setLoading(true)
-    setError('')
-    const { error: err } = await supabase.auth.signUp({ email, password })
-    if (err) setError(err.message)
-    else setError('Signed up! If email confirmation is off, you are now logged in.')
-    setLoading(false)
-  }
-
-  return (
-    <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-      <form onSubmit={handleLogin} style={{ background: 'var(--surface)', padding: 40, borderRadius: 16, width: 360, outline: '1px solid var(--border)' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 8px', color: '#fff' }}>Sign In</h2>
-        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>to access Vaani Settings & Dashboard</p>
-        
-        {error && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: 12, borderRadius: 8, fontSize: 13, marginBottom: 16 }}>{error}</div>}
-        
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
-          style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', marginBottom: 12 }} required />
-        
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
-          style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', marginBottom: 24 }} required />
-        
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button type="submit" disabled={loading}
-            style={{ flex: 1, background: 'linear-gradient(135deg, #00e5c3, #818cf8)', color: '#000', fontWeight: 800, padding: 14, borderRadius: 8, border: 'none', cursor: loading ? 'wait' : 'pointer' }}>
-            {loading ? 'Wait...' : 'Sign In'}
-          </button>
-          
-          <button type="button" disabled={loading} onClick={handleSignup}
-            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', color: '#fff', fontWeight: 800, padding: 14, borderRadius: 8, border: '1px solid var(--border)', cursor: loading ? 'wait' : 'pointer' }}>
-            Sign Up
-          </button>
-        </div>
-      </form>
-    </div>
-  )
-}
 
 export default function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -130,7 +76,13 @@ export default function DashboardLayout({ children }) {
   const sidebarWidth = isMobile ? 260 : (collapsed ? 64 : 236)
 
   if (authLoading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--muted)' }}>Loading...</div>
-  if (!user) return <LoginScreen />
+  
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return null
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
@@ -182,12 +134,12 @@ export default function DashboardLayout({ children }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 15, fontWeight: 900, color: '#021a15',
               boxShadow: '0 4px 16px rgba(0,229,195,0.35)',
-            }}>{profile?.business_name ? profile.business_name[0].toUpperCase() : 'V'}</div>
+            }}>{profile?.business_name ? profile.business_name[0].toUpperCase() : 'B'}</div>
           )}
           {(!collapsed || isMobile) && (
             <div>
               <p style={{ fontWeight: 800, fontSize: 15, color: '#fff', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
-                {profile?.business_name || 'Vaani'}
+                {profile?.business_name || 'BusinessVaani'}
               </p>
               <p style={{ fontSize: 9.5, color: 'var(--muted)', margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>Business Hub</p>
             </div>

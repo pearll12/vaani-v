@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Vaani — Business Dashboard",
+  title: "BusinessVaani — Business Dashboard",
   description: "WhatsApp AI business dashboard — orders, invoices, inventory & payments",
 };
 

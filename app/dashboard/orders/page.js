@@ -145,7 +145,7 @@ function EditOrderModal({ order, inventory, onClose, onSave, saving }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginBottom: 8 }}>
                 <div>
                   <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Item Name</label>
-                  <input className="vaani-input" value={item.name}
+                  <input className="bv-input" value={item.name}
                     onChange={e => handleNameChange(idx, e.target.value)}
                     placeholder="e.g. Rice Bag"
                     list={`inv-list-${idx}`}
@@ -168,21 +168,21 @@ function EditOrderModal({ order, inventory, onClose, onSave, saving }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                 <div>
                   <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Qty</label>
-                  <input className="vaani-input" type="number" min="1" value={item.quantity}
+                  <input className="bv-input" type="number" min="1" value={item.quantity}
                     onChange={e => updateItem(idx, 'quantity', e.target.value)}
                     style={{ fontSize: 13 }}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Price (₹)</label>
-                  <input className="vaani-input" type="number" min="0" value={item.price}
+                  <input className="bv-input" type="number" min="0" value={item.price}
                     onChange={e => updateItem(idx, 'price', e.target.value)}
                     style={{ fontSize: 13 }}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Unit</label>
-                  <select className="vaani-input" value={item.unit}
+                  <select className="bv-input" value={item.unit}
                     onChange={e => updateItem(idx, 'unit', e.target.value)}
                     style={{ fontSize: 13 }}
                   >
@@ -671,7 +671,7 @@ export default function OrdersPage() {
       <div className="search-filters-row">
         <div style={{ position: 'relative', flex: 1, maxWidth: 320, minWidth: 200 }}>
           <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 14, pointerEvents: 'none' }}>⌕</span>
-          <input className="vaani-input" style={{ paddingLeft: 34 }}
+          <input className="bv-input" style={{ paddingLeft: 34 }}
             placeholder="Search by phone, item, or order #"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
@@ -706,7 +706,7 @@ export default function OrdersPage() {
           <>
             {/* Desktop table */}
             <div className="orders-table-wrap" style={{ overflowX: 'auto' }}>
-              <table className="vaani-table">
+              <table className="bv-table">
                 <thead>
                   <tr>
                     <th>Order</th><th>Customer</th><th>Items</th>
