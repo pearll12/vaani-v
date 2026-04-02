@@ -49,7 +49,7 @@ export async function POST(req) {
             `🆔 Payment ID: ${paymentId || 'N/A'}`,
             ``,
             `Your order will be processed soon. Thank you! 🙏`,
-            `— Vaani Business`,
+            `— BusinessVaani`,
           ].join('\n'))
         }
       }

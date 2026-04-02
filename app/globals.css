@@ -14,10 +14,10 @@
   --muted: #5a6a82;
   --muted-light: #8498b4;
 
-  --teal: #00e5c3;
-  --teal-mid: #00c9aa;
-  --teal-dim: rgba(0,229,195,0.08);
-  --teal-border: rgba(0,229,195,0.2);
+  --teal: #6366f1;
+  --teal-mid: #4f46e5;
+  --teal-dim: rgba(99, 102, 241, 0.08);
+  --teal-border: rgba(99, 102, 241, 0.2);
   --indigo: #818cf8;
   --indigo-dim: rgba(129,140,248,0.09);
   --indigo-border: rgba(129,140,248,0.22);
@@ -34,9 +34,9 @@
   --lime-dim: rgba(163,230,53,0.09);
 
   /* legacy compat */
-  --emerald: #00e5c3;
-  --emerald-dim: rgba(0,229,195,0.08);
-  --emerald-border: rgba(0,229,195,0.2);
+  --emerald: #6366f1;
+  --emerald-dim: rgba(99, 102, 241, 0.08);
+  --emerald-border: rgba(99, 102, 241, 0.2);
   --violet: #818cf8;
   --violet-dim: rgba(129,140,248,0.09);
   --blue: #38bdf8;
@@ -59,6 +59,8 @@ body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 999px; }
+
+
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
@@ -91,26 +93,28 @@ body {
 .live-dot { animation: pulseGlow 2s ease-in-out infinite; border-radius: 50%; display: inline-block; }
 
 /* TABLE */
-.vaani-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.vaani-table thead th {
-  text-align: left; padding: 11px 16px;
+.bv-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.bv-table thead th {
+  text-align: left; padding: 14px 18px;
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--muted);
   background: rgba(255,255,255,0.02);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
-.vaani-table thead th:first-child { padding-left: 22px; }
-.vaani-table thead th:last-child  { padding-right: 22px; }
-.vaani-table tbody td {
-  padding: 14px 16px; font-size: 13px; color: var(--text-soft);
+.bv-table thead th:first-child { padding-left: 28px; }
+.bv-table thead th:last-child  { padding-right: 28px; }
+.bv-table tbody td {
+  padding: 12px 18px; font-size: 12.5px; color: var(--text-soft);
   border-bottom: 1px solid rgba(255,255,255,0.04);
   transition: background 0.12s; vertical-align: middle;
 }
-.vaani-table tbody td:first-child { padding-left: 22px; }
-.vaani-table tbody td:last-child  { padding-right: 22px; }
-.vaani-table tbody tr:last-child td { border-bottom: none; }
-.vaani-table tbody tr:hover td { background: rgba(255,255,255,0.025); color: var(--text); }
+.bv-table tbody td:first-child { padding-left: 24px; }
+.bv-table tbody td:last-child  { padding-right: 24px; }
+.bv-table tbody tr:last-child td { border-bottom: none; }
+.bv-table tbody tr:hover td { background: rgba(255,255,255,0.025); color: var(--text); }
+.bv-table-wrap { overflow-x: auto; width: 100%; }
+.bv-table-scroll { min-width: 960px; width: 100%; }
 
 /* SKELETON */
 .skeleton {
@@ -138,6 +142,20 @@ body {
 .badge-ok       { background: var(--teal-dim);   color: var(--teal);   border: 1px solid var(--teal-border); }
 .badge-ok::before       { background: var(--teal); }
 
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;  
+  overflow: hidden;
+}
+
 /* MODAL */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 50;
@@ -154,20 +172,20 @@ body {
 }
 
 /* INPUT */
-.vaani-input {
+.bv-input {
   width: 100%; background: rgba(255,255,255,0.05);
   border: 1px solid var(--border-strong); border-radius: 11px;
   padding: 10px 14px; font-size: 13.5px; color: var(--text);
   font-family: 'Plus Jakarta Sans', sans-serif; outline: none;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
-.vaani-input:focus {
+.bv-input:focus {
   border-color: var(--teal);
   background: rgba(0,229,195,0.04);
   box-shadow: 0 0 0 3px rgba(0,229,195,0.12);
 }
-.vaani-input::placeholder { color: var(--muted); }
-.vaani-input option { background: #1a2640; }
+.bv-input::placeholder { color: var(--muted); }
+.bv-input option { background: #1a2640; }
 
 /* BUTTONS */
 .btn-primary {
@@ -482,7 +500,7 @@ button:disabled {
 }
 
 /* Input styling */
-.vaani-input {
+.bv-input {
   width: 100%;
   padding: 9px 12px;
   background: rgba(255,255,255,0.05);
@@ -495,24 +513,24 @@ button:disabled {
   outline: none;
   box-sizing: border-box;
 }
-.vaani-input:focus {
+.bv-input:focus {
   border-color: var(--teal);
   box-shadow: 0 0 0 2px rgba(0,229,195,0.1);
 }
-.vaani-input::placeholder {
+.bv-input::placeholder {
   color: var(--muted);
 }
 
 /* Table row hover */
-.vaani-table tbody tr {
+.bv-table tbody tr {
   transition: background 0.12s;
 }
-.vaani-table tbody tr:hover {
+.bv-table tbody tr:hover {
   background: rgba(255,255,255,0.025);
 }
 
 /* Ensure table clickable */
-.vaani-table tbody tr {
+.bv-table tbody tr {
   cursor: pointer;
 }
 

@@ -145,7 +145,7 @@ function EditOrderModal({ order, inventory, onClose, onSave, saving }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginBottom: 8 }}>
                 <div>
                   <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Item Name</label>
-                  <input className="vaani-input" value={item.name}
+                  <input className="bv-input" value={item.name}
                     onChange={e => handleNameChange(idx, e.target.value)}
                     placeholder="e.g. Rice Bag"
                     list={`inv-list-${idx}`}
@@ -168,21 +168,21 @@ function EditOrderModal({ order, inventory, onClose, onSave, saving }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                 <div>
                   <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Qty</label>
-                  <input className="vaani-input" type="number" min="1" value={item.quantity}
+                  <input className="bv-input" type="number" min="1" value={item.quantity}
                     onChange={e => updateItem(idx, 'quantity', e.target.value)}
                     style={{ fontSize: 13 }}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Price (₹)</label>
-                  <input className="vaani-input" type="number" min="0" value={item.price}
+                  <input className="bv-input" type="number" min="0" value={item.price}
                     onChange={e => updateItem(idx, 'price', e.target.value)}
                     style={{ fontSize: 13 }}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Unit</label>
-                  <select className="vaani-input" value={item.unit}
+                  <select className="bv-input" value={item.unit}
                     onChange={e => updateItem(idx, 'unit', e.target.value)}
                     style={{ fontSize: 13 }}
                   >
@@ -671,7 +671,7 @@ export default function OrdersPage() {
       <div className="search-filters-row">
         <div style={{ position: 'relative', flex: 1, maxWidth: 320, minWidth: 200 }}>
           <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 14, pointerEvents: 'none' }}>⌕</span>
-          <input className="vaani-input" style={{ paddingLeft: 34 }}
+          <input className="bv-input" style={{ paddingLeft: 34 }}
             placeholder="Search by phone, item, or order #"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
@@ -705,17 +705,26 @@ export default function OrdersPage() {
         ) : (
           <>
             {/* Desktop table */}
-            <div className="orders-table-wrap" style={{ overflowX: 'auto' }}>
-              <table className="vaani-table">
-                <thead>
-                  <tr>
-                    <th>Order</th><th>Customer</th><th>Items</th>
-                    <th style={{ textAlign: 'right' }}>Subtotal</th>
-                    <th style={{ textAlign: 'right' }}>w/ GST</th>
-                    <th>Status</th><th>Time</th><th></th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="bv-table-wrap" style={{ 
+              background: 'var(--card)', 
+              border: '1px solid var(--border)', 
+              borderRadius: 16, 
+              overflow: 'hidden' 
+            }}>
+              <div className="bv-table-scroll">
+                <table className="bv-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 80 }}>Order</th>
+                      <th style={{ width: 140 }}>Customer</th>
+                      <th>Items</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>Subtotal</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>w/ GST</th>
+                      <th style={{ width: 110 }}>Status</th>
+                      <th style={{ width: 100 }}>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                   {filtered.map(order => {
                     // FIX: use calcGST helper, not the imprecise * 1.18
                     const { sub, grand } = calcGST(order.total_amount)
@@ -736,8 +745,8 @@ export default function OrdersPage() {
                             {isOverdue && <span title="Payment overdue" style={{ fontSize: 12 }}>⏰</span>}
                           </div>
                         </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <td style={{ width: 180 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 170 }}>
                             <div style={{
                               width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
                               background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
@@ -747,8 +756,8 @@ export default function OrdersPage() {
                             }}>
                               {order.customer_phone?.slice(-2)}
                             </div>
-                            <div>
-                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>{order.customer_phone}</p>
+                            <div style={{ minWidth: 0 }}>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{order.customer_phone}</p>
                               <span style={{
                                 fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 600, textTransform: 'capitalize',
                                 background: `${langColor}15`, color: langColor, border: `1px solid ${langColor}25`,
@@ -756,35 +765,35 @@ export default function OrdersPage() {
                             </div>
                           </div>
                         </td>
-                        <td style={{ maxWidth: 200 }}>
-                          <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <td style={{ maxWidth: 220 }}>
+                          <p className="line-clamp-1" style={{ margin: 0, fontSize: 12, color: 'var(--muted-light)' }}>
                             {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
                           </p>
                         </td>
-                        <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--muted-light)' }}>
+                        <td style={{ textAlign: 'right', width: 110, fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--muted-light)' }}>
                           ₹{sub.toFixed(2)}
                         </td>
-                        <td style={{ textAlign: 'right' }}>
+                        <td style={{ textAlign: 'right', width: 110 }}>
                           <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>
                             ₹{grand.toFixed(2)}
                           </span>
                         </td>
-                        <td><StatusBadge status={order.status} /></td>
-                        <td style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                        <td style={{ width: 110 }}><StatusBadge status={order.status} /></td>
+                        <td style={{ width: 100, fontSize: 11.5, color: 'var(--muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
                           {isToday
                             ? date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
                             : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                         </td>
-                        <td><span style={{ fontSize: 12, color: 'var(--muted)', opacity: 0.5 }}>›</span></td>
                       </tr>
                     )
                   })}
                 </tbody>
               </table>
             </div>
+          </div>
 
-            {/* Mobile card list */}
-            <div className="orders-card-list">
+          {/* Mobile card list */}
+          <div className="orders-card-list">
               {filtered.map(order => {
                 const { sub, grand } = calcGST(order.total_amount)
                 const date      = new Date(order.created_at)
@@ -821,10 +830,10 @@ export default function OrdersPage() {
                       <StatusBadge status={order.status} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <p style={{ margin: 0, fontSize: 12, color: 'var(--muted-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
+                      <p className="line-clamp-1" style={{ margin: 0, fontSize: 11.5, color: 'var(--muted-light)', maxWidth: '70%' }}>
                         {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
                       </p>
-                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 14, fontWeight: 700, color: 'var(--teal)' }}>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: 'var(--teal)' }}>
                         ₹{grand.toFixed(2)}
                       </span>
                     </div>

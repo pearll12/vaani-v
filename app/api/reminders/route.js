@@ -27,7 +27,7 @@ export async function POST(req) {
         ? `💳 *Pay now:*\n${order.payment_link}`
         : `Please pay ₹${grandTotal.toFixed(2)} at your earliest convenience.`,
       ``,
-      `Thank you! 🙏 — Vaani Business`,
+      `Thank you! 🙏 — BusinessVaani`,
     ].join('\n')
 
     await sendWhatsApp(order.customer_phone, msg)
@@ -73,7 +73,7 @@ export async function GET() {
           ``,
           order.payment_link ? `💳 Pay now: ${order.payment_link}` : `Please pay ₹${grand.toFixed(2)} at your earliest convenience.`,
           ``,
-          count >= 3 ? `This is our final reminder. Thank you! — Vaani Business` : `Thank you! 🙏 — Vaani Business`,
+          count >= 3 ? `This is our final reminder. Thank you! — BusinessVaani` : `Thank you! 🙏 — BusinessVaani`,
         ].join('\n')
 
         await sendWhatsApp(order.customer_phone, msg)

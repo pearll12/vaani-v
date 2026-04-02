@@ -16,49 +16,13 @@ const NAV = [
   { href: '/dashboard/settings',  icon: '⚙️',  label: 'Settings',   color: '#cbd5e1' },
 ]
 
-function LoginScreen() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  async function handleLogin(e) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password })
-    if (err) setError(err.message)
-    setLoading(false)
-  }
-
-  return (
-    <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-      <form onSubmit={handleLogin} style={{ background: 'var(--surface)', padding: 40, borderRadius: 16, width: 360, outline: '1px solid var(--border)' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 8px', color: '#fff' }}>Sign In</h2>
-        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>to access Vaani Settings & Dashboard</p>
-        
-        {error && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: 12, borderRadius: 8, fontSize: 13, marginBottom: 16 }}>{error}</div>}
-        
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
-          style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', marginBottom: 12 }} required />
-        
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
-          style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', marginBottom: 24 }} required />
-        
-        <button type="submit" disabled={loading}
-          style={{ width: '100%', background: 'linear-gradient(135deg, #00e5c3, #818cf8)', color: '#000', fontWeight: 800, padding: 14, borderRadius: 8, border: 'none', cursor: loading ? 'wait' : 'pointer' }}>
-          {loading ? 'Signing in...' : 'Sign In'}
-        </button>
-      </form>
-    </div>
-  )
-}
 
 export default function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const pathname = usePathname()
 
@@ -77,20 +41,48 @@ export default function DashboardLayout({ children }) {
 
   // Auth check
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
+    async function fetchProfile(userId) {
+      const { data } = await supabase.from('business_profiles').select('*').eq('id', userId).single()
+      if (data) setProfile(data)
       setAuthLoading(false)
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null
+      setUser(u)
+      if (u) fetchProfile(u.id)
+      else setAuthLoading(false)
     })
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      const u = session?.user ?? null
+      setUser(u)
+      if (u) fetchProfile(u.id)
     })
-    return () => subscription.unsubscribe()
+
+    const handleProfileUpdate = () => {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) fetchProfile(user.id)
+      })
+    }
+    window.addEventListener('profileUpdated', handleProfileUpdate)
+
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('profileUpdated', handleProfileUpdate)
+    }
   }, [])
 
   const sidebarWidth = isMobile ? 260 : (collapsed ? 64 : 236)
 
   if (authLoading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--muted)' }}>Loading...</div>
-  if (!user) return <LoginScreen />
+  
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return null
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
@@ -119,28 +111,28 @@ export default function DashboardLayout({ children }) {
         {/* Sidebar top glow */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 200,
-          background: 'radial-gradient(ellipse at 50% -20%, rgba(0,229,195,0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at 50% -20%, rgba(99,102,241,0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
         {/* Brand */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: (collapsed && !isMobile) ? '0 16px' : '0 20px',
+          padding: (collapsed && !isMobile) ? '0 12px' : '0 20px',
           height: 62, borderBottom: '1px solid var(--border)',
           flexShrink: 0, position: 'relative',
         }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-            background: 'linear-gradient(135deg, #00e5c3 0%, #818cf8 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 15, fontWeight: 900, color: '#021a15',
-            boxShadow: '0 4px 16px rgba(0,229,195,0.35)',
-          }}>V</div>
+          <img src={profile?.logo_url || "/logo.png"} alt="Logo" style={{
+            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+            objectFit: 'contain', background: '#fff',
+            padding: 2, border: '1px solid var(--border-mid)'
+          }} />
           {(!collapsed || isMobile) && (
-            <div>
-              <p style={{ fontWeight: 800, fontSize: 15, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>Vaani</p>
-              <p style={{ fontSize: 9.5, color: 'var(--muted)', margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>Business Hub</p>
+            <div style={{ overflow: 'hidden' }}>
+              <p style={{ fontWeight: 800, fontSize: 14.5, color: '#fff', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
+                {profile?.business_name || 'BusinessVaani'}
+              </p>
+              <p style={{ fontSize: 9, color: 'var(--muted)', margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>Management Hub</p>
             </div>
           )}
           {/* Mobile close button */}
@@ -202,8 +194,8 @@ export default function DashboardLayout({ children }) {
         {(!collapsed || isMobile) && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
             <div style={{
-              background: 'rgba(0,229,195,0.06)',
-              border: '1px solid rgba(0,229,195,0.15)',
+              background: 'rgba(99,102,241,0.06)',
+              border: '1px solid rgba(99,102,241,0.15)',
               borderRadius: 10, padding: '10px 12px',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
@@ -216,30 +208,54 @@ export default function DashboardLayout({ children }) {
           </div>
         )}
 
-        {/* Collapse — desktop only */}
+        {/* Collapse & Logout — desktop only */}
         {!isMobile && (
-          <button
-            onClick={() => setCollapsed(c => !c)}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
-              gap: 8, padding: collapsed ? '14px 20px' : '14px 18px',
-              border: 'none', cursor: 'pointer',
-              borderTop: '1px solid var(--border)',
-              background: 'transparent', color: 'var(--muted)',
-              fontSize: 12, transition: 'color 0.15s, background 0.15s',
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.background = 'transparent' }}
-          >
-            <span style={{
-              fontSize: 13,
-              transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)',
-              transition: 'transform 0.25s',
-              display: 'inline-block',
-            }}>‹</span>
-            {!collapsed && <span style={{ fontWeight: 500 }}>Collapse</span>}
-          </button>
+          <div style={{ display: 'flex', flexDirection: collapsed ? 'column' : 'row', borderTop: '1px solid var(--border)' }}>
+            <button
+              onClick={() => setCollapsed(c => !c)}
+              style={{
+                flex: collapsed ? 'none' : 1,
+                display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+                gap: 8, padding: collapsed ? '14px 20px' : '14px 18px',
+                border: 'none', cursor: 'pointer',
+                background: 'transparent', color: 'var(--muted)',
+                fontSize: 12, transition: 'color 0.15s, background 0.15s',
+                fontFamily: 'Plus Jakarta Sans, sans-serif',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.background = 'transparent' }}
+            >
+              <span style={{
+                fontSize: 13,
+                transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+                transition: 'transform 0.25s',
+                display: 'inline-block',
+              }}>‹</span>
+              {!collapsed && <span style={{ fontWeight: 500 }}>Collapse</span>}
+            </button>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut()
+                window.location.href = '/'
+              }}
+              style={{
+                flex: collapsed ? 'none' : 1,
+                display: 'flex', padding: collapsed ? '14px 20px' : '14px 18px',
+                alignItems: 'center', justifyContent: 'center',
+                border: 'none', cursor: 'pointer',
+                borderLeft: collapsed ? 'none' : '1px solid var(--border)',
+                borderTop: collapsed ? '1px solid var(--border)' : 'none',
+                background: 'transparent', color: '#ef4444',
+                fontSize: 12, fontWeight: 600, transition: 'background 0.15s',
+                fontFamily: 'Plus Jakarta Sans, sans-serif',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+              title="Logout"
+            >
+              {collapsed ? '⎋' : 'Logout'}
+            </button>
+          </div>
         )}
       </aside>
 
@@ -282,12 +298,22 @@ export default function DashboardLayout({ children }) {
                 {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
               </span>
             </div>
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #00e5c3 0%, #818cf8 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 13, fontWeight: 800, color: '#021a15',
-            }}>V</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600, display: isMobile ? 'none' : 'block' }}>{user?.email}</span>
+              {profile?.logo_url ? (
+                <img src={profile.logo_url} alt="Logo" style={{
+                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                  objectFit: 'contain', background: '#fff'
+                }} />
+              ) : (
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #00e5c3 0%, #818cf8 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 800, color: '#021a15',
+                }}>{profile?.business_name ? profile.business_name[0].toUpperCase() : 'V'}</div>
+              )}
+            </div>
           </div>
         </header>
 

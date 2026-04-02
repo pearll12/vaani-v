@@ -164,7 +164,7 @@ export default function BuyersPage() {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="vaani-table">
+            <table className="bv-table">
               <thead>
                 <tr>
                   <th>#</th>

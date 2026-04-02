@@ -92,7 +92,7 @@ export async function POST(req) {
       ).join('\n')
 
       const msg = [
-        `💰 *Udhaar Reminder — Vaani Business*`,
+        `💰 *Udhaar Reminder — BusinessVaani*`,
         ``,
         `Namaste! Aapke kuch pending payments hain:`,
         ``,
@@ -104,7 +104,7 @@ export async function POST(req) {
           ? `💳 *Pay now:* ${orders[0].payment_link}`
           : `Kripya jald se jald payment kar dein.`,
         ``,
-        `Thank you! 🙏 — Vaani Business`,
+        `Thank you! 🙏 — BusinessVaani`,
       ].join('\n')
 
       await sendWhatsApp(phone, msg)

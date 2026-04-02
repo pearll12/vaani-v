@@ -202,7 +202,7 @@ export default function InvoicesPage() {
           <EmptyState filter={filter} />
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="vaani-table">
+            <table className="bv-table">
               <thead>
                 <tr>
                   <th>Order</th>
@@ -251,7 +251,7 @@ export default function InvoicesPage() {
                             <span key={idx}>
                               {idx > 0 && <span style={{ color: 'var(--muted)', margin: '0 4px' }}>·</span>}
                               <span style={{ color: '#b8c5d4', fontWeight: 500 }}>{i.name}</span>
-                              <span style={{ color: 'var(--muted)', fontSize: 11 }}> ×{i.quantity}</span>
+                              <span style={{ color: 'var(--muted)', fontSize: 11 }}> (₹{i.price}) ×{i.quantity}</span>
                             </span>
                           ))}
                         </div>

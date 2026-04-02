@@ -1,8 +1,9 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Vaani — Business Dashboard",
-  description: "WhatsApp AI business dashboard — orders, invoices, inventory & payments",
+  title: "BusinessVaani — Smart Business Management",
+  description: "Automate your retail storefront with AI-powered invoicing, inventory, and WhatsApp integration.",
+
 };
 
 export default function RootLayout({ children }) {

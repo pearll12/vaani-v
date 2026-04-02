@@ -46,7 +46,7 @@ function Modal({ item, onClose, onSave }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Item Name *</label>
-            <input className="vaani-input" type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Basmati Rice Premium" />
+            <input className="bv-input" type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Basmati Rice Premium" />
           </div>
           {[
             { label: 'SKU', key: 'sku', type: 'text', placeholder: 'e.g. SKU-001' },
@@ -56,18 +56,18 @@ function Modal({ item, onClose, onSave }) {
           ].map(f => (
             <div key={f.key}>
               <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>{f.label}</label>
-              <input className="vaani-input" type={f.type} value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder} />
+              <input className="bv-input" type={f.type} value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder} />
             </div>
           ))}
           <div>
             <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Unit</label>
-            <select className="vaani-input" value={form.unit} onChange={e => set('unit', e.target.value)}>
+            <select className="bv-input" value={form.unit} onChange={e => set('unit', e.target.value)}>
               {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
           </div>
           <div>
             <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Category</label>
-            <select className="vaani-input" value={form.category} onChange={e => set('category', e.target.value)}>
+            <select className="bv-input" value={form.category} onChange={e => set('category', e.target.value)}>
               {CATS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -188,7 +188,7 @@ function CSVUploadModal({ onClose, onImport }) {
             </div>
 
             <div style={{ maxHeight: 280, overflowY: 'auto', borderRadius: 10, border: '1px solid var(--border)', marginBottom: 16 }}>
-              <table className="vaani-table">
+              <table className="bv-table">
                 <thead>
                   <tr>
                     <th>Name</th><th>SKU</th><th>Category</th>
@@ -385,7 +385,7 @@ export default function InventoryPage() {
         <div style={{ position: 'relative', flex: '1', maxWidth: 340 }}>
           <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 14, pointerEvents: 'none' }}>⌕</span>
           <input
-            className="vaani-input"
+            className="bv-input"
             style={{ paddingLeft: 34 }}
             placeholder="Search items, SKUs, categories…"
             value={search}
@@ -424,15 +424,18 @@ export default function InventoryPage() {
             )}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="vaani-table">
+          <div className="bv-table-wrap">
+            <table className="bv-table">
               <thead>
                 <tr>
-                  <th>Item</th><th>Category</th><th>SKU</th>
-                  <th style={{ textAlign: 'right' }}>Price</th>
-                  <th style={{ textAlign: 'right' }}>Qty</th>
-                  <th style={{ textAlign: 'right' }}>Stock Value</th>
-                  <th>Status</th><th>Actions</th>
+                  <th style={{ width: 220 }}>Item Name</th>
+                  <th style={{ width: 140 }}>Category</th>
+                  <th style={{ width: 120 }}>SKU</th>
+                  <th style={{ width: 110, textAlign: 'right' }}>Price</th>
+                  <th style={{ width: 100, textAlign: 'right' }}>Qty</th>
+                  <th style={{ width: 130, textAlign: 'right' }}>Stock Value</th>
+                  <th style={{ width: 120 }}>Status</th>
+                  <th style={{ width: 160 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -442,16 +445,19 @@ export default function InventoryPage() {
                   return (
                     <tr key={item.id}>
                       <td>
-                        <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{item.name}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{item.name}</span>
+                          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{item.sku || 'No SKU'}</span>
+                        </div>
                       </td>
                       <td>
                         <span style={{
-                          fontSize: 11, padding: '2px 9px', borderRadius: 5, fontWeight: 700,
-                          background: cm.bg, color: cm.color,
+                          fontSize: 10, padding: '3px 8px', borderRadius: 6, fontWeight: 700,
+                          background: cm.bg, color: cm.color, border: `1px solid ${cm.color}20`
                         }}>{item.category}</span>
                       </td>
                       <td>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)' }}>{item.sku || '—'}</span>
+                        <code style={{ fontSize: 11.5, color: 'var(--muted-light)' }}>{item.sku || '—'}</code>
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>₹{Number(item.price).toLocaleString('en-IN')}</td>
                       <td style={{ textAlign: 'right' }}>
@@ -460,20 +466,21 @@ export default function InventoryPage() {
                         </span>
                         <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 4 }}>{item.unit}</span>
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN')}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--text-dim)' }}>₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN')}</td>
                       <td><span className={`badge ${low ? 'badge-low' : 'badge-ok'}`}>{low ? 'Low Stock' : 'In Stock'}</span></td>
                       <td>
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <button className="btn-ghost" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => setModal(item)}>Edit</button>
+                          <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setModal(item)}>Edit</button>
                           <button
                             onClick={() => handleDelete(item.id)}
                             style={{
-                              background: 'var(--rose-dim)', color: 'var(--rose)',
-                              border: '1px solid var(--rose-border)', padding: '5px 12px',
-                              borderRadius: 9, fontSize: 12, cursor: 'pointer',
-                              fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600,
-                              transition: 'all 0.15s',
+                              background: 'rgba(244, 96, 123, 0.08)', color: '#f4607b',
+                              border: '1px solid rgba(244, 96, 123, 0.2)', padding: '6px 12px',
+                              borderRadius: 10, fontSize: 12, cursor: 'pointer',
+                              fontWeight: 700, transition: 'all 0.2s',
                             }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(244, 96, 123, 0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(244, 96, 123, 0.08)'}
                           >Delete</button>
                         </div>
                       </td>
