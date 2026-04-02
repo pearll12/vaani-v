@@ -6,7 +6,7 @@
     "category": "Food & Grocery",
     "quantity": 10,
     "unit": "kg",
-    "price": 100,
+    "price": "105",
     "lowStockThreshold": 1,
     "createdAt": "2026-04-02T10:10:35.567Z"
   },
@@ -94,7 +94,7 @@
     "category": "General",
     "quantity": 100,
     "unit": "pcs",
-    "price": 6,
+    "price": "7",
     "lowStockThreshold": 20,
     "createdAt": "2026-04-02T13:05:13.149Z"
   },
@@ -119,5 +119,225 @@
     "price": 120,
     "lowStockThreshold": 7,
     "createdAt": "2026-04-02T13:05:13.209Z"
+  },
+  {
+    "id": "1775137022422",
+    "name": "Rice Bag",
+    "sku": "SKU001",
+    "category": "General",
+    "quantity": 50,
+    "unit": "kg",
+    "price": 60,
+    "lowStockThreshold": 10,
+    "createdAt": "2026-04-02T13:37:02.422Z"
+  },
+  {
+    "id": "1775137022533",
+    "name": "Wheat Flour",
+    "sku": "SKU002",
+    "category": "General",
+    "quantity": 40,
+    "unit": "kg",
+    "price": 45,
+    "lowStockThreshold": 8,
+    "createdAt": "2026-04-02T13:37:02.533Z"
+  },
+  {
+    "id": "1775137022598",
+    "name": "Sugar",
+    "sku": "SKU003",
+    "category": "General",
+    "quantity": 30,
+    "unit": "kg",
+    "price": 42,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T13:37:02.598Z"
+  },
+  {
+    "id": "1775137022666",
+    "name": "Salt",
+    "sku": "SKU004",
+    "category": "General",
+    "quantity": 20,
+    "unit": "kg",
+    "price": 20,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T13:37:02.666Z"
+  },
+  {
+    "id": "1775137022729",
+    "name": "Cooking Oil",
+    "sku": "SKU005",
+    "category": "General",
+    "quantity": 25,
+    "unit": "pcs",
+    "price": 150,
+    "lowStockThreshold": 6,
+    "createdAt": "2026-04-02T13:37:02.729Z"
+  },
+  {
+    "id": "1775137022816",
+    "name": "Milk Pack",
+    "sku": "SKU006",
+    "category": "General",
+    "quantity": 60,
+    "unit": "pcs",
+    "price": 55,
+    "lowStockThreshold": 15,
+    "createdAt": "2026-04-02T13:37:02.816Z"
+  },
+  {
+    "id": "1775137022897",
+    "name": "Butter",
+    "sku": "SKU007",
+    "category": "General",
+    "quantity": 15,
+    "unit": "kg",
+    "price": 500,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T13:37:02.897Z"
+  },
+  {
+    "id": "1775137022990",
+    "name": "Egg Tray",
+    "sku": "SKU008",
+    "category": "General",
+    "quantity": 100,
+    "unit": "pcs",
+    "price": 6,
+    "lowStockThreshold": 20,
+    "createdAt": "2026-04-02T13:37:02.990Z"
+  },
+  {
+    "id": "1775137023051",
+    "name": "Soap Bar",
+    "sku": "SKU009",
+    "category": "General",
+    "quantity": 70,
+    "unit": "pcs",
+    "price": 35,
+    "lowStockThreshold": 10,
+    "createdAt": "2026-04-02T13:37:03.051Z"
+  },
+  {
+    "id": "1775137023108",
+    "name": "Shampoo Bottle",
+    "sku": "SKU010",
+    "category": "General",
+    "quantity": 35,
+    "unit": "pcs",
+    "price": 120,
+    "lowStockThreshold": 7,
+    "createdAt": "2026-04-02T13:37:03.108Z"
+  },
+  {
+    "id": "1775138476084",
+    "name": "Rice Bag",
+    "sku": "SKU001",
+    "category": "General",
+    "quantity": 50,
+    "unit": "kg",
+    "price": 60,
+    "lowStockThreshold": 10,
+    "createdAt": "2026-04-02T14:01:16.084Z"
+  },
+  {
+    "id": "1775138476167",
+    "name": "Wheat Flour",
+    "sku": "SKU002",
+    "category": "General",
+    "quantity": 40,
+    "unit": "kg",
+    "price": 45,
+    "lowStockThreshold": 8,
+    "createdAt": "2026-04-02T14:01:16.168Z"
+  },
+  {
+    "id": "1775138476266",
+    "name": "Sugar",
+    "sku": "SKU003",
+    "category": "General",
+    "quantity": 30,
+    "unit": "kg",
+    "price": 42,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T14:01:16.266Z"
+  },
+  {
+    "id": "1775138476372",
+    "name": "Salt",
+    "sku": "SKU004",
+    "category": "General",
+    "quantity": 20,
+    "unit": "kg",
+    "price": 20,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T14:01:16.372Z"
+  },
+  {
+    "id": "1775138476452",
+    "name": "Cooking Oil",
+    "sku": "SKU005",
+    "category": "General",
+    "quantity": 25,
+    "unit": "pcs",
+    "price": 150,
+    "lowStockThreshold": 6,
+    "createdAt": "2026-04-02T14:01:16.452Z"
+  },
+  {
+    "id": "1775138476521",
+    "name": "Milk Pack",
+    "sku": "SKU006",
+    "category": "General",
+    "quantity": 60,
+    "unit": "pcs",
+    "price": 55,
+    "lowStockThreshold": 15,
+    "createdAt": "2026-04-02T14:01:16.521Z"
+  },
+  {
+    "id": "1775138476602",
+    "name": "Butter",
+    "sku": "SKU007",
+    "category": "General",
+    "quantity": 15,
+    "unit": "kg",
+    "price": 500,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T14:01:16.602Z"
+  },
+  {
+    "id": "1775138476658",
+    "name": "Egg Tray",
+    "sku": "SKU008",
+    "category": "General",
+    "quantity": 100,
+    "unit": "pcs",
+    "price": 6,
+    "lowStockThreshold": 20,
+    "createdAt": "2026-04-02T14:01:16.658Z"
+  },
+  {
+    "id": "1775138476726",
+    "name": "Soap Bar",
+    "sku": "SKU009",
+    "category": "General",
+    "quantity": 70,
+    "unit": "pcs",
+    "price": 35,
+    "lowStockThreshold": 10,
+    "createdAt": "2026-04-02T14:01:16.726Z"
+  },
+  {
+    "id": "1775138476796",
+    "name": "Shampoo Bottle",
+    "sku": "SKU010",
+    "category": "General",
+    "quantity": 35,
+    "unit": "pcs",
+    "price": 120,
+    "lowStockThreshold": 7,
+    "createdAt": "2026-04-02T14:01:16.796Z"
   }
 ]

@@ -18,6 +18,31 @@ const STATUS_META = {
   paid:     { label: 'Paid',     color: '#00e5c3', bg: 'var(--teal-dim)',   border: 'var(--teal-border)' },
 }
 
+// Enrich order items with inventory prices if missing
+function enrichOrdersWithPrices(orders, inventory) {
+  if (!inventory || inventory.length === 0) return orders
+  return orders.map(order => {
+    const items = (order.items || []).map(item => {
+      if (Number(item.price) > 0) return item // already has price
+      const itemNameLower = (item.name || '').toLowerCase().trim()
+      const match = inventory.find(inv =>
+        (inv.name || '').toLowerCase().trim() === itemNameLower
+      ) || inventory.find(inv =>
+        (inv.name || '').toLowerCase().trim().includes(itemNameLower) ||
+        itemNameLower.includes((inv.name || '').toLowerCase().trim())
+      )
+      if (match) {
+        return { ...item, price: Number(match.price) || 0, unit: match.unit || item.unit || 'pcs' }
+      }
+      return item
+    })
+    // Recalculate total if it was 0
+    const calcTotal = items.reduce((s, i) => s + (Number(i.quantity) || 1) * (Number(i.price) || 0), 0)
+    const total_amount = Number(order.total_amount) > 0 ? Number(order.total_amount) : calcTotal
+    return { ...order, items, total_amount }
+  })
+}
+
 // Consistent GST calculation used everywhere
 function calcGST(totalAmount) {
   const sub   = Number(totalAmount) || 0
@@ -41,7 +66,179 @@ function StatusBadge({ status }) {
   )
 }
 
-function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, sending, reminding }) {
+function EditOrderModal({ order, inventory, onClose, onSave, saving }) {
+  const [items, setItems] = useState(
+    (order.items || []).map(i => ({
+      name: i.name || '',
+      quantity: Number(i.quantity) || 1,
+      price: Number(i.price) || 0,
+      unit: i.unit || 'pcs',
+      notes: i.notes || '',
+    }))
+  )
+
+  const updateItem = (idx, key, val) => {
+    setItems(prev => prev.map((item, i) => i === idx ? { ...item, [key]: val } : item))
+  }
+
+  const removeItem = (idx) => {
+    setItems(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const addItem = () => {
+    setItems(prev => [...prev, { name: '', quantity: 1, price: 0, unit: 'pcs', notes: '' }])
+  }
+
+  // Auto-fill price from inventory when name changes
+  const handleNameChange = (idx, val) => {
+    updateItem(idx, 'name', val)
+    const match = inventory.find(inv =>
+      (inv.name || '').toLowerCase().trim() === val.toLowerCase().trim()
+    )
+    if (match) {
+      updateItem(idx, 'price', Number(match.price) || 0)
+      updateItem(idx, 'unit', match.unit || 'pcs')
+    }
+  }
+
+  const subtotal = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.price) || 0), 0)
+  const { cgst, sgst, grand } = calcGST(subtotal)
+
+  const handleSave = () => {
+    onSave({
+      id: order.id,
+      items: items.map(i => ({
+        ...i,
+        quantity: Number(i.quantity) || 1,
+        price: Number(i.price) || 0,
+      })),
+      total_amount: subtotal,
+    })
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 560, width: '95vw' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: 12,
+            background: 'var(--indigo-dim)', border: '1px solid var(--indigo-border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+          }}>✎</div>
+          <div>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+              Edit Order #{String(order.id).padStart(4, '0')}
+            </h2>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
+              Modify items, quantities, and prices
+            </p>
+          </div>
+        </div>
+
+        {/* Items */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '50vh', overflowY: 'auto', paddingRight: 4 }}>
+          {items.map((item, idx) => (
+            <div key={idx} style={{
+              background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+              borderRadius: 12, padding: '12px 14px',
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginBottom: 8 }}>
+                <div>
+                  <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Item Name</label>
+                  <input className="vaani-input" value={item.name}
+                    onChange={e => handleNameChange(idx, e.target.value)}
+                    placeholder="e.g. Rice Bag"
+                    list={`inv-list-${idx}`}
+                    style={{ fontSize: 13 }}
+                  />
+                  <datalist id={`inv-list-${idx}`}>
+                    {inventory.map(inv => (
+                      <option key={inv.id} value={inv.name}>{inv.name} — ₹{inv.price}/{inv.unit}</option>
+                    ))}
+                  </datalist>
+                </div>
+                <button onClick={() => removeItem(idx)} style={{
+                  alignSelf: 'flex-end',
+                  background: 'var(--rose-dim)', color: 'var(--rose)',
+                  border: '1px solid var(--rose-border)', padding: '8px 12px',
+                  borderRadius: 9, fontSize: 12, cursor: 'pointer',
+                  fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600,
+                }}>✕</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Qty</label>
+                  <input className="vaani-input" type="number" min="1" value={item.quantity}
+                    onChange={e => updateItem(idx, 'quantity', e.target.value)}
+                    style={{ fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Price (₹)</label>
+                  <input className="vaani-input" type="number" min="0" value={item.price}
+                    onChange={e => updateItem(idx, 'price', e.target.value)}
+                    style={{ fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>Unit</label>
+                  <select className="vaani-input" value={item.unit}
+                    onChange={e => updateItem(idx, 'unit', e.target.value)}
+                    style={{ fontSize: 13 }}
+                  >
+                    {['pcs', 'kg', 'g', 'L', 'ml', 'box', 'pack', 'dozen'].map(u => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 700, textAlign: 'right', marginTop: 8, fontFamily: 'JetBrains Mono, monospace' }}>
+                = ₹{((Number(item.quantity) || 0) * (Number(item.price) || 0)).toFixed(2)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={addItem} style={{
+          marginTop: 10, width: '100%', padding: '10px', borderRadius: 10,
+          background: 'rgba(255,255,255,0.04)', border: '1px dashed var(--border-mid)',
+          color: 'var(--muted-light)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          fontFamily: 'Plus Jakarta Sans, sans-serif', transition: 'all 0.15s',
+        }}>+ Add Item</button>
+
+        {/* Totals */}
+        <div style={{
+          marginTop: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '14px 16px',
+        }}>
+          {[
+            { label: 'Subtotal',  value: `₹${subtotal.toFixed(2)}`,  color: 'var(--text-soft)' },
+            { label: 'CGST (9%)', value: `₹${cgst.toFixed(2)}`, color: 'var(--indigo)' },
+            { label: 'SGST (9%)', value: `₹${sgst.toFixed(2)}`, color: 'var(--indigo)' },
+          ].map(r => (
+            <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 6 }}>
+              <span style={{ color: 'var(--muted-light)' }}>{r.label}</span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', color: r.color, fontWeight: 600 }}>{r.value}</span>
+            </div>
+          ))}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+            <span style={{ fontWeight: 700, color: 'var(--text)' }}>Grand Total</span>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 800, color: 'var(--teal)' }}>₹{grand.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+          <button className="btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? '⏳ Saving...' : '✓ Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, onEdit, sending, reminding }) {
   if (!order) return null
   const { sub, cgst, sgst, grand } = calcGST(order.total_amount)
   const date = new Date(order.created_at)
@@ -56,9 +253,9 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, sending, r
         position: 'fixed', inset: 0, zIndex: 40,
         background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
       }} />
-      <div style={{
+      <div className="order-drawer" style={{
         position: 'fixed', right: 0, top: 0, bottom: 0, zIndex: 50,
-        width: 420, background: '#141e2e',
+        width: 420, maxWidth: '100vw', background: '#141e2e',
         borderLeft: '1px solid var(--border-mid)',
         display: 'flex', flexDirection: 'column',
         boxShadow: '-24px 0 80px rgba(0,0,0,0.6)',
@@ -78,19 +275,29 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, sending, r
               Order Details
             </h3>
           </div>
-          <button onClick={onClose} style={{
-            width: 34, height: 34, borderRadius: 9, border: '1px solid var(--border-mid)',
-            background: 'rgba(255,255,255,0.04)', color: 'var(--muted-light)',
-            cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.15s',
-          }}>×</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {order.status === 'pending' && (
+              <button onClick={() => onEdit(order)} style={{
+                width: 34, height: 34, borderRadius: 9, border: '1px solid var(--indigo-border)',
+                background: 'var(--indigo-dim)', color: 'var(--indigo)',
+                cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.15s',
+              }} title="Edit order">✎</button>
+            )}
+            <button onClick={onClose} style={{
+              width: 34, height: 34, borderRadius: 9, border: '1px solid var(--border-mid)',
+              background: 'rgba(255,255,255,0.04)', color: 'var(--muted-light)',
+              cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s',
+            }}>×</button>
+          </div>
         </div>
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Status row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <StatusBadge status={order.status} />
             <span style={{ fontSize: 12, color: 'var(--muted)' }}>
               {date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -124,10 +331,10 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, sending, r
                 width: 42, height: 42, borderRadius: '50%',
                 background: 'linear-gradient(135deg, var(--teal), var(--indigo))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14, fontWeight: 800, color: '#fff',
+                fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0,
               }}>{order.customer_phone?.slice(-2)}</div>
-              <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace', wordBreak: 'break-all' }}>
                   {order.customer_phone}
                 </p>
                 {order.language && (
@@ -159,7 +366,7 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, sending, r
                       <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--text)' }}>{item.name}</p>
                       {item.notes && <p style={{ margin: '2px 0 0', fontSize: 11.5, color: 'var(--muted)' }}>{item.notes}</p>}
                     </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
                       <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--text-soft)', fontWeight: 600 }}>×{qty}</span>
                       {unitPrice > 0 && (
                         <p style={{ margin: 0, fontSize: 11, color: 'var(--teal)', fontFamily: 'JetBrains Mono, monospace' }}>
@@ -215,10 +422,16 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, sending, r
         {/* Footer actions */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
           {order.status === 'pending' && (
-            <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
-              onClick={() => onSendInvoice(order)} disabled={sending}>
-              {sending ? '⏳ Sending…' : '📲 Send Invoice via WhatsApp'}
-            </button>
+            <>
+              <button className="btn-indigo" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+                onClick={() => onEdit(order)}>
+                ✎ Edit Order
+              </button>
+              <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+                onClick={() => onSendInvoice(order)} disabled={sending}>
+                {sending ? '⏳ Sending…' : '📲 Send Invoice via WhatsApp'}
+              </button>
+            </>
           )}
           {order.status === 'invoiced' && (
             <button className="btn-indigo" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
@@ -253,18 +466,31 @@ export default function OrdersPage() {
   const [filter, setFilter]       = useState('all')
   const [search, setSearch]       = useState('')
   const [toast, setToast]         = useState(null)
+  const [editOrder, setEditOrder] = useState(null)
+  const [saving, setSaving]       = useState(false)
+  const [inventory, setInventory] = useState([])
   const intervalRef               = useRef(null)
 
   // FIX: useCallback so the interval always uses a stable reference
   const fetchOrders = useCallback(async () => {
+    // Fetch inventory for price enrichment
+    let inv = []
+    try {
+      const invRes = await fetch('/api/inventory')
+      inv = await invRes.json()
+      if (Array.isArray(inv)) setInventory(inv)
+    } catch {}
+
     const { data } = await supabase
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false })
     if (data) {
-      setOrders(data)
+      // 🔥 FIX: Enrich old orders that have price=0 with actual inventory prices
+      const enriched = enrichOrdersWithPrices(data, inv)
+      setOrders(enriched)
       // FIX: keep drawer in sync with live data
-      setSelected(prev => prev ? (data.find(o => o.id === prev.id) ?? prev) : null)
+      setSelected(prev => prev ? (enriched.find(o => o.id === prev.id) ?? prev) : null)
     }
     setLoading(false)
   }, [])
@@ -324,6 +550,29 @@ export default function OrdersPage() {
     setReminding(false)
   }
 
+  async function handleEditSave(updatedOrder) {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedOrder),
+      })
+      const data = await res.json()
+      if (data.success) {
+        showToast('✓ Order updated successfully')
+        setEditOrder(null)
+        setSelected(null)
+        await fetchOrders()
+      } else {
+        showToast('Failed: ' + (data.error || 'Unknown error'), 'error')
+      }
+    } catch {
+      showToast('Network error', 'error')
+    }
+    setSaving(false)
+  }
+
   const filtered = orders.filter(o => {
     const matchFilter = filter === 'all' || o.status === filter
     const q = search.toLowerCase()
@@ -354,7 +603,7 @@ export default function OrdersPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-up">
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="orders-header">
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Orders</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
@@ -376,6 +625,7 @@ export default function OrdersPage() {
           background: 'var(--amber-dim)', border: '1px solid var(--amber-border)',
           borderRadius: 12, padding: '12px 18px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 10,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 18 }}>⏰</span>
@@ -395,7 +645,7 @@ export default function OrdersPage() {
       )}
 
       {/* Stat pills */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <div className="stat-pills-grid">
         {[
           { key: 'pending',  label: 'Pending',  ...STATUS_META.pending },
           { key: 'invoiced', label: 'Invoiced', ...STATUS_META.invoiced },
@@ -418,14 +668,14 @@ export default function OrdersPage() {
       </div>
 
       {/* Search + filters */}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+      <div className="search-filters-row">
+        <div style={{ position: 'relative', flex: 1, maxWidth: 320, minWidth: 200 }}>
           <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 14, pointerEvents: 'none' }}>⌕</span>
           <input className="vaani-input" style={{ paddingLeft: 34 }}
             placeholder="Search by phone, item, or order #"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="filter-tabs-wrap">
           {[
             { key: 'all',      label: 'All' },
             { key: 'pending',  label: 'Pending' },
@@ -453,83 +703,136 @@ export default function OrdersPage() {
             <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>Orders come in via WhatsApp automatically</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="vaani-table">
-              <thead>
-                <tr>
-                  <th>Order</th><th>Customer</th><th>Items</th>
-                  <th style={{ textAlign: 'right' }}>Subtotal</th>
-                  <th style={{ textAlign: 'right' }}>w/ GST</th>
-                  <th>Status</th><th>Time</th><th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(order => {
-                  // FIX: use calcGST helper, not the imprecise * 1.18
-                  const { sub, grand } = calcGST(order.total_amount)
-                  const date      = new Date(order.created_at)
-                  const isToday   = new Date().toDateString() === date.toDateString()
-                  const lang      = order.language || 'english'
-                  const langColor = LANG_COLOR[lang] || '#94a3b8'
-                  const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
-                    (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
+          <>
+            {/* Desktop table */}
+            <div className="orders-table-wrap" style={{ overflowX: 'auto' }}>
+              <table className="vaani-table">
+                <thead>
+                  <tr>
+                    <th>Order</th><th>Customer</th><th>Items</th>
+                    <th style={{ textAlign: 'right' }}>Subtotal</th>
+                    <th style={{ textAlign: 'right' }}>w/ GST</th>
+                    <th>Status</th><th>Time</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(order => {
+                    // FIX: use calcGST helper, not the imprecise * 1.18
+                    const { sub, grand } = calcGST(order.total_amount)
+                    const date      = new Date(order.created_at)
+                    const isToday   = new Date().toDateString() === date.toDateString()
+                    const lang      = order.language || 'english'
+                    const langColor = LANG_COLOR[lang] || '#94a3b8'
+                    const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
+                      (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
 
-                  return (
-                    <tr key={order.id} onClick={() => setSelected(order)} style={{ cursor: 'pointer' }}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)', fontWeight: 500 }}>
-                            #{String(order.id).padStart(4, '0')}
+                    return (
+                      <tr key={order.id} onClick={() => setSelected(order)} style={{ cursor: 'pointer' }}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)', fontWeight: 500 }}>
+                              #{String(order.id).padStart(4, '0')}
+                            </span>
+                            {isOverdue && <span title="Payment overdue" style={{ fontSize: 12 }}>⏰</span>}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{
+                              width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                              background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
+                              border: `1px solid ${langColor}30`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 11, fontWeight: 800, color: langColor,
+                            }}>
+                              {order.customer_phone?.slice(-2)}
+                            </div>
+                            <div>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>{order.customer_phone}</p>
+                              <span style={{
+                                fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 600, textTransform: 'capitalize',
+                                background: `${langColor}15`, color: langColor, border: `1px solid ${langColor}25`,
+                              }}>{lang}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ maxWidth: 200 }}>
+                          <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
+                          </p>
+                        </td>
+                        <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--muted-light)' }}>
+                          ₹{sub.toFixed(2)}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>
+                            ₹{grand.toFixed(2)}
                           </span>
-                          {isOverdue && <span title="Payment overdue" style={{ fontSize: 12 }}>⏰</span>}
+                        </td>
+                        <td><StatusBadge status={order.status} /></td>
+                        <td style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                          {isToday
+                            ? date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+                            : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </td>
+                        <td><span style={{ fontSize: 12, color: 'var(--muted)', opacity: 0.5 }}>›</span></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="orders-card-list">
+              {filtered.map(order => {
+                const { sub, grand } = calcGST(order.total_amount)
+                const date      = new Date(order.created_at)
+                const isToday   = new Date().toDateString() === date.toDateString()
+                const lang      = order.language || 'english'
+                const langColor = LANG_COLOR[lang] || '#94a3b8'
+
+                return (
+                  <div key={order.id} onClick={() => setSelected(order)} style={{
+                    padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.04)',
+                    cursor: 'pointer', transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.025)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                          background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
+                          border: `1px solid ${langColor}30`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 11, fontWeight: 800, color: langColor,
+                        }}>{order.customer_phone?.slice(-2)}</div>
+                        <div>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{order.customer_phone}</p>
+                          <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                            #{String(order.id).padStart(4, '0')} · {isToday
+                              ? date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+                              : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </span>
                         </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{
-                            width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                            background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
-                            border: `1px solid ${langColor}30`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 800, color: langColor,
-                          }}>
-                            {order.customer_phone?.slice(-2)}
-                          </div>
-                          <div>
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>{order.customer_phone}</p>
-                            <span style={{
-                              fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 600, textTransform: 'capitalize',
-                              background: `${langColor}15`, color: langColor, border: `1px solid ${langColor}25`,
-                            }}>{lang}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ maxWidth: 200 }}>
-                        <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
-                        </p>
-                      </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--muted-light)' }}>
-                        ₹{sub.toFixed(2)}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>
-                          ₹{grand.toFixed(2)}
-                        </span>
-                      </td>
-                      <td><StatusBadge status={order.status} /></td>
-                      <td style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
-                        {isToday
-                          ? date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-                          : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                      </td>
-                      <td><span style={{ fontSize: 12, color: 'var(--muted)', opacity: 0.5 }}>›</span></td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                      <StatusBadge status={order.status} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <p style={{ margin: 0, fontSize: 12, color: 'var(--muted-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
+                        {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
+                      </p>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 14, fontWeight: 700, color: 'var(--teal)' }}>
+                        ₹{grand.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
 
@@ -538,9 +841,20 @@ export default function OrdersPage() {
         onClose={() => setSelected(null)}
         onSendInvoice={sendInvoice}
         onSendReminder={sendReminder}
+        onEdit={(order) => { setSelected(null); setEditOrder(order) }}
         sending={sending}
         reminding={reminding}
       />
+
+      {editOrder && (
+        <EditOrderModal
+          order={editOrder}
+          inventory={inventory}
+          onClose={() => setEditOrder(null)}
+          onSave={handleEditSave}
+          saving={saving}
+        />
+      )}
 
       {toast && (
         <div className="toast" style={{
