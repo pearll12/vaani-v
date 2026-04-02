@@ -98,23 +98,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8 }}
             style={{ textAlign: 'center', marginBottom: 80 }}
           >
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '6px 12px',
-              borderRadius: 99,
-              background: 'rgba(99, 102, 241, 0.1)',
-              border: '1px solid rgba(99, 102, 241, 0.2)',
-              color: '#818cf8',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              marginBottom: 24,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              <Sparkles size={14} /> AI-Powered Commerce
-            </div>
+
             <h1 style={{
               fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
               fontWeight: 800,

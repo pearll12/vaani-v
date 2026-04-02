@@ -47,12 +47,19 @@ function AreaChart({ data = [], color = '#00d68f', id = 'a' }) {
       ))}
       <path d={area} fill={`url(#g${id})`} />
       <path d={line} stroke={color} strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      {pts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="4" fill={color} stroke="var(--card)" strokeWidth="2" />
-      ))}
-      {pts.map((p, i) => (
-        <text key={i} x={p.x} y={H - 6} textAnchor="middle" fill="rgba(148,163,184,0.5)" fontSize="9.5">{p.day}</text>
-      ))}
+      {pts.map((p, i) => {
+        const skip = Math.ceil(pts.length / 4)
+        const isSelected = i % skip === 0 || i === pts.length - 1
+        if (!isSelected) return null
+        return (
+          <g key={i}>
+            {pts.length <= 15 && (
+              <circle cx={p.x} cy={p.y} r="2" fill={color} stroke="var(--card)" strokeWidth="1" />
+            )}
+            <text x={p.x} y={H - 6} textAnchor="middle" fill="rgba(148,163,184,0.5)" fontSize="9">{p.day}</text>
+          </g>
+        )
+      })}
     </svg>
   )
 }
@@ -101,16 +108,17 @@ function DonutChart({ breakdown = {} }) {
 export default function DashboardPage() {
   const [data, setData]     = useState(null)
   const [loading, setLoading] = useState(true)
+  const [selectedDays, setSelectedDays] = useState(7)
 
   useEffect(() => {
     fetchData()
     const t = setInterval(fetchData, 30000)
     return () => clearInterval(t)
-  }, [])
+  }, [selectedDays])
 
   async function fetchData() {
     try {
-      const res = await fetch('/api/analytics')
+      const res = await fetch(`/api/analytics?days=${selectedDays}`)
       const d = await res.json()
       setData(d)
     } catch (e) { console.error(e) }
@@ -145,16 +153,25 @@ export default function DashboardPage() {
       {/* Charts row */}
       <div className="charts-row" style={{ display: 'grid', gap: 16 }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 16, flexWrap: 'wrap' }}>
             <div>
-              <p style={{ fontWeight: 700, fontSize: 15, color: '#fff', margin: 0, letterSpacing: '-0.01em' }}>Revenue (7 days)</p>
+              <p style={{ fontWeight: 700, fontSize: 15, color: '#fff', margin: 0, letterSpacing: '-0.01em' }}>
+                Revenue ({selectedDays <= 30 ? `${selectedDays} days` : selectedDays === 90 ? '3 months' : '1 year'})
+              </p>
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '3px 0 0', fontWeight: 500 }}>Paid orders only</p>
             </div>
-            <div style={{
-              fontSize: 12, fontWeight: 700, color: 'var(--emerald)',
-              background: 'var(--emerald-dim)', border: '1px solid var(--emerald-border)',
-              padding: '4px 12px', borderRadius: 6,
-            }}>7D</div>
+            <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
+              {[
+                { l: '7D', v: 7 }, { l: '10D', v: 10 }, { l: '30D', v: 30 }, { l: '3M', v: 90 }, { l: '1Y', v: 365 }
+              ].map(opt => (
+                <button key={opt.v} onClick={() => setSelectedDays(opt.v)} style={{
+                  fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 7, border: 'none',
+                  cursor: 'pointer', transition: 'all 0.2s',
+                  background: selectedDays === opt.v ? 'var(--emerald)' : 'transparent',
+                  color: selectedDays === opt.v ? '#000' : 'var(--muted)',
+                }}>{opt.l}</button>
+              ))}
+            </div>
           </div>
           <AreaChart data={data?.revenueByDay || []} id="rev" />
         </div>
@@ -180,7 +197,7 @@ export default function DashboardPage() {
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: '12px 0', borderBottom: i < data.topBuyers.length - 1 ? '1px solid rgba(255,255,255,0.035)' : 'none',
                 }}>
-                  <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{'🥇🥈🥉🎖️🎖️'[i]}</span>
+                  <span style={{ fontSize: 13, width: 24, textAlign: 'center', fontWeight: 800, color: 'var(--muted)', opacity: 0.8 }}>{i + 1}</span>
                   <div style={{
                     width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
                     background: `linear-gradient(135deg, ${c1}, ${c2})`,
