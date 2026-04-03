@@ -47,6 +47,14 @@ export default function KhataPage() {
   const activeDebtors    = khata.filter(k => (Number(k.balance) || 0) > 0).length
   const highRisk         = khata.filter(k => (Number(k.balance) || 0) > 5000).length
 
+  // Stats data with icons & colours
+  const stats = [
+    { label: 'Total Udhaar',    value: `₹${totalOutstanding.toLocaleString('en-IN')}`, icon: '💰', color: '#fb7185', bg: 'var(--rose-dim)',   border: 'var(--rose-border)' },
+    { label: 'Total Business',  value: `₹${totalRevenue.toLocaleString('en-IN')}`,     icon: '📊', color: '#818cf8', bg: 'var(--indigo-dim)', border: 'var(--indigo-border)' },
+    { label: 'Collected',       value: `₹${totalCollected.toLocaleString('en-IN')}`,    icon: '💸', color: '#00e5c3', bg: 'var(--teal-dim)',   border: 'var(--teal-border)' },
+    { label: 'Debtors',         value: `${activeDebtors} / ${khata.length}`,            icon: '👥', color: '#f59e0b', bg: 'var(--amber-dim)',  border: 'var(--amber-border)' },
+  ]
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-up">
 
@@ -70,20 +78,45 @@ export default function KhataPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="kpi-grid" style={{ gap: 14 }}>
-        {[
-          { label: 'Total Udhaar',    value: `₹${totalOutstanding.toLocaleString('en-IN')}`, color: '#fb7185', bg: 'var(--rose-dim)',   border: 'var(--rose-border)' },
-          { label: 'Total Business',   value: `₹${totalRevenue.toLocaleString('en-IN')}`,     color: '#818cf8', bg: 'var(--indigo-dim)', border: 'var(--indigo-border)' },
-          { label: 'Collected',        value: `₹${totalCollected.toLocaleString('en-IN')}`,    color: '#00e5c3', bg: 'var(--teal-dim)',   border: 'var(--teal-border)' },
-          { label: 'Debtors',          value: `${activeDebtors} / ${khata.length}`,            color: '#f59e0b', bg: 'var(--amber-dim)',  border: 'var(--amber-border)' },
-        ].map(s => (
+      {/* ✨ NEW: Horizontal stats cards (responsive grid) ✨ */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: 14,
+      }}>
+        {stats.map(s => (
           <div key={s.label} style={{
-            background: s.bg, border: `1px solid ${s.border}`,
-            borderRadius: 14, padding: '16px 20px', textAlign: 'center',
+            background: s.bg,
+            border: `1px solid ${s.border}`,
+            borderRadius: 20,
+            padding: '16px 12px',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+            cursor: 'default',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = 'none'
           }}>
-            <p style={{ fontSize: 22, fontWeight: 800, color: s.color, margin: 0, fontFamily: 'JetBrains Mono, monospace' }}>{s.value}</p>
-            <p style={{ fontSize: 10, color: s.color, opacity: 0.8, margin: '4px 0 0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{s.label}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <span style={{ fontSize: 28 }}>{s.icon}</span>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: s.color, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {s.label}
+              </p>
+            </div>
+            <p style={{
+              fontSize: 28,
+              fontWeight: 800,
+              color: s.color,
+              margin: 0,
+              fontFamily: 'JetBrains Mono, monospace',
+              lineHeight: 1.2,
+            }}>
+              {s.value}
+            </p>
           </div>
         ))}
       </div>

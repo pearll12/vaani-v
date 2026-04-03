@@ -9,7 +9,7 @@ const supabase = createClient(
 
 const LANG_COLOR = {
   tamil: '#fb7185', marathi: '#818cf8', telugu: '#38bdf8',
-  hindi: '#a3e635', hinglish: '#f59e0b', english: '#8498b4',
+  hindi: '#a3e635', hinglish: '#f59e0b', english: 'var(--muted-light)',
 }
 
 const STATUS_META = {
@@ -340,9 +340,9 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, onEdit, se
                 {order.language && (
                   <span style={{
                     fontSize: 10.5, padding: '2px 8px', borderRadius: 5, fontWeight: 700, textTransform: 'capitalize',
-                    background: `${LANG_COLOR[order.language] || '#94a3b8'}18`,
-                    color: LANG_COLOR[order.language] || '#94a3b8',
-                    border: `1px solid ${LANG_COLOR[order.language] || '#94a3b8'}28`,
+                    background: `${LANG_COLOR[order.language] || '#c87137'}18`,
+                    color: LANG_COLOR[order.language] || '#c87137',
+                    border: `1px solid ${LANG_COLOR[order.language] || '#c87137'}28`,
                   }}>{order.language}</span>
                 )}
               </div>
@@ -731,7 +731,7 @@ export default function OrdersPage() {
                     const date      = new Date(order.created_at)
                     const isToday   = new Date().toDateString() === date.toDateString()
                     const lang      = order.language || 'english'
-                    const langColor = LANG_COLOR[lang] || '#94a3b8'
+                    const langColor = LANG_COLOR[lang] || '#c87137'
                     const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
                       (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
 

@@ -1,4 +1,5 @@
 import "./globals.css";
+import { ThemeProvider } from "@/lib/theme";
 
 export const metadata = {
   title: "BusinessVaani — Smart Business Management",
@@ -9,7 +10,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="h-full">
-      <body className="h-full antialiased">{children}</body>
+      <body className="h-full antialiased">
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

@@ -93,12 +93,12 @@ function DonutChart({ breakdown = {} }) {
           <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
             <span style={{ color: 'var(--muted-light)', fontSize: 12.5, flex: 1 }}>{s.label}</span>
-            <span style={{ color: '#e8edf5', fontWeight: 700, fontSize: 13, fontFamily: 'DM Mono, monospace' }}>{s.value}</span>
+            <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: 13, fontFamily: 'DM Mono, monospace' }}>{s.value}</span>
           </div>
         ))}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
           <span style={{ color: 'var(--muted)' }}>Total orders</span>
-          <span style={{ color: '#e8edf5', fontWeight: 800, fontFamily: 'DM Mono, monospace' }}>{total}</span>
+          <span style={{ color: 'var(--text)', fontWeight: 800, fontFamily: 'DM Mono, monospace' }}>{total}</span>
         </div>
       </div>
     </div>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
       <div>
-        <h1 style={{ fontSize: 23, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>Analytics</h1>
+        <h1 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Analytics</h1>
         <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, fontWeight: 500 }}>
           Real-time business overview · refreshes every 30s
         </p>
@@ -155,7 +155,7 @@ export default function DashboardPage() {
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 16, flexWrap: 'wrap' }}>
             <div>
-              <p style={{ fontWeight: 700, fontSize: 15, color: '#fff', margin: 0, letterSpacing: '-0.01em' }}>
+              <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>
                 Revenue ({selectedDays <= 30 ? `${selectedDays} days` : selectedDays === 90 ? '3 months' : '1 year'})
               </p>
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '3px 0 0', fontWeight: 500 }}>Paid orders only</p>
@@ -177,14 +177,14 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
-          <p style={{ fontWeight: 700, fontSize: 15, color: '#fff', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Order Status</p>
+          <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Order Status</p>
           <DonutChart breakdown={data?.statusBreakdown} />
         </div>
       </div>
 
       {/* Top Buyers */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
-        <p style={{ fontWeight: 700, fontSize: 15, color: '#fff', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Top Buyers</p>
+        <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Top Buyers</p>
         {!data?.topBuyers?.length ? (
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>No buyer data yet</p>
         ) : (
@@ -207,11 +207,11 @@ export default function DashboardPage() {
                     {b.phone?.slice(-2)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13.5, color: '#d4e0ee', fontWeight: 600 }}>{b.phone}</p>
+                    <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text)', fontWeight: 600 }}>{b.phone}</p>
                     <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>{b.totalOrders} orders · {b.languages?.join(', ')}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--emerald)', letterSpacing: '-0.01em' }}>₹{b.totalSpent.toLocaleString('en-IN')}</p>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--teal)', letterSpacing: '-0.01em' }}>₹{b.totalSpent.toLocaleString('en-IN')}</p>
                     <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>total spent</p>
                   </div>
                 </div>
