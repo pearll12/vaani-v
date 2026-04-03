@@ -182,43 +182,126 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Top Buyers */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
-        <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Top Buyers</p>
-        {!data?.topBuyers?.length ? (
-          <p style={{ color: 'var(--muted)', fontSize: 13 }}>No buyer data yet</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {data.topBuyers.map((b, i) => {
-              const colors = [['#00d68f', '#3b9eff'], ['#7c6df8', '#f4607b'], ['#f5a623', '#22c55e'], ['#3b9eff', '#7c6df8'], ['#f4607b', '#f5a623']]
-              const [c1, c2] = colors[i % colors.length]
-              return (
-                <div key={b.phone} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '12px 0', borderBottom: i < data.topBuyers.length - 1 ? '1px solid rgba(255,255,255,0.035)' : 'none',
-                }}>
-                  <span style={{ fontSize: 13, width: 24, textAlign: 'center', fontWeight: 800, color: 'var(--muted)', opacity: 0.8 }}>{i + 1}</span>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    background: `linear-gradient(135deg, ${c1}, ${c2})`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 800, color: '#fff',
+      {/* Bottom Sections (Mixed Layout: Side-by-Side) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'start' }}>
+        
+        {/* Left Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Low Stock Items Card */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--rose-border)', borderRadius: 16, padding: '22px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+              <span style={{ fontSize: 20 }}>⚠</span>
+              <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--rose)', margin: 0, letterSpacing: '-0.01em' }}>Low Stock Alerts</p>
+            </div>
+            {!data?.lowStockItems?.length ? (
+              <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>Inventory levels are healthy.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {data.lowStockItems.map(item => (
+                  <div key={item.id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)'
                   }}>
-                    {b.phone?.slice(-2)}
+                    <div>
+                      <p style={{ margin: 0, fontSize: 14, color: 'var(--text)', fontWeight: 600 }}>{item.name}</p>
+                      <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>SKU: {item.sku || 'N/A'}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--rose)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {item.quantity} <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>{item.unit}</span>
+                      </p>
+                      <p style={{ margin: 0, fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Left</p>
+                    </div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text)', fontWeight: 600 }}>{b.phone}</p>
-                    <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>{b.totalOrders} orders · {b.languages?.join(', ')}</p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--teal)', letterSpacing: '-0.01em' }}>₹{b.totalSpent.toLocaleString('en-IN')}</p>
-                    <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>total spent</p>
-                  </div>
-                </div>
-              )
-            })}
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Right Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Latest Purchases (Paid) Card */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--teal-border)', borderRadius: 16, padding: '22px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+              <span style={{ fontSize: 20 }}>💰</span>
+              <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--teal)', margin: 0, letterSpacing: '-0.01em' }}>Latest Purchases</p>
+            </div>
+            {!data?.latestPaidOrders?.length ? (
+              <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>No recent purchases.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {data.latestPaidOrders.map(order => (
+                  <div key={order.id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)'
+                  }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 14, color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>
+                        {order.customer_phone}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>
+                        #{String(order.id).padStart(4, '0')} · {new Date(order.created_at).toLocaleDateString('en-IN')}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--teal)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        ₹{Number(order.total_amount * 1.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </p>
+                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'var(--teal-dim)', color: 'var(--teal)', fontWeight: 700 }}>PAID</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Latest Orders (Pending/Invoiced) Card */}
+          <div style={{ border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px',
+            background: 'linear-gradient(180deg, var(--card) 0%, rgba(20,25,35,0.4) 100%)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+              <span style={{ fontSize: 20 }}>📦</span>
+              <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>Latest Orders</p>
+            </div>
+            {!data?.latestOrders?.length ? (
+              <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>No pending orders.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {data.latestOrders.map(order => {
+                  const isInv = order.status === 'invoiced'
+                  return (
+                    <div key={order.id} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)'
+                    }}>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 14, color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>
+                          {order.customer_phone}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>
+                          #{String(order.id).padStart(4, '0')} · {new Date(order.created_at).toLocaleDateString('en-IN')}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace', marginBottom: 4 }}>
+                          ₹{Number(order.total_amount * 1.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        </p>
+                        <span style={{
+                          fontSize: 10, padding: '2px 8px', borderRadius: 4, fontWeight: 700,
+                          background: isInv ? 'var(--indigo-dim)' : 'var(--indigo)',
+                          color: isInv ? 'var(--indigo)' : 'var(--amber)',
+                          border: `1px solid ${isInv ? 'var(--indigo-border)' : 'var(--amber-border)'}`
+                        }}>
+                          {isInv ? 'INVOICED' : 'PENDING'}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

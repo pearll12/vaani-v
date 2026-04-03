@@ -75,25 +75,30 @@ export async function GET(req) {
       gstByWeek.push({ label: `W${4 - i}`, value: +(val * 0.18).toFixed(0) })
     }
 
-    // Top buyers
-    const map = {}
-    orders.forEach(o => {
-      const p = o.customer_phone
-      if (!map[p]) map[p] = { phone: p, totalOrders: 0, totalSpent: 0, languages: new Set(), lastOrder: null }
-      map[p].totalOrders++
-      if (o.status === 'paid') map[p].totalSpent += (o.total_amount || 0)
-      if (o.language) map[p].languages.add(o.language)
-      if (!map[p].lastOrder || o.created_at > map[p].lastOrder) map[p].lastOrder = o.created_at
-    })
-    const topBuyers = Object.values(map)
-      .sort((a, b) => b.totalOrders - a.totalOrders).slice(0, 5)
-      .map(b => ({ ...b, languages: [...b.languages] }))
+    // Low Stock Items (top 5)
+    // We fetch inventory separately because it's a different table
+    const { data: inventory = [] } = await supabase.from('inventory').select('*')
+    const lowStockItems = inventory
+      .filter(i => Number(i.quantity) <= Number(i.lowStockThreshold))
+      .sort((a, b) => Number(a.quantity) - Number(b.quantity))
+      .slice(0, 5)
+
+    // Latest Purchases (paid orders)
+    const latestPaidOrders = paid
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5)
+
+    // Latest Orders (pending or invoiced)
+    const latestOrders = orders
+      .filter(o => o.status === 'pending' || o.status === 'invoiced')
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5)
 
     return NextResponse.json({
       totalRevenue, gstCollected, revenueAtRisk, ordersToday,
       revenueByDay, gstByWeek,
       statusBreakdown: { pending: pending.length, invoiced: invoiced.length, paid: paid.length },
-      topBuyers,
+      lowStockItems, latestPaidOrders, latestOrders
     })
   } catch (err) {
     console.error('Analytics:', err)

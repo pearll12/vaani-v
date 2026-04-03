@@ -22,8 +22,13 @@ function Modal({ item, onClose, onSave }) {
   const isEdit = !!item?.id
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} style={{
+      position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 9999, padding: '20px'
+    }}>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{
+        maxHeight: '90vh', overflowY: 'auto'
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 26 }}>
           <div style={{
             width: 42, height: 42, borderRadius: 12,
@@ -127,8 +132,11 @@ function CSVUploadModal({ onClose, onImport }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" style={{ width: preview ? 640 : 480 }} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} style={{
+      position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 9999, padding: '20px'
+    }}>
+      <div className="modal-box" style={{ width: preview ? 640 : 480, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
           <div style={{
             width: 42, height: 42, borderRadius: 12,

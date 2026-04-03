@@ -294,7 +294,7 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, onEdit, se
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* Status row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
@@ -420,21 +420,21 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, onEdit, se
         </div>
 
         {/* Footer actions */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
+        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
           {order.status === 'pending' && (
             <>
-              <button className="btn-indigo" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+              <button className="btn-indigo" style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
                 onClick={() => onEdit(order)}>
                 ✎ Edit Order
               </button>
-              <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+              <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
                 onClick={() => onSendInvoice(order)} disabled={sending}>
                 {sending ? '⏳ Sending…' : '📲 Send Invoice via WhatsApp'}
               </button>
             </>
           )}
           {order.status === 'invoiced' && (
-            <button className="btn-indigo" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+            <button className="btn-indigo" style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
               onClick={() => onSendReminder(order)} disabled={reminding}>
               {reminding ? '⏳ Sending…' : '⏰ Send Payment Reminder'}
             </button>
