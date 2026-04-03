@@ -15,7 +15,7 @@ export async function POST(req) {
     // Log the dummy mail locally (so developers know it "worked")
     console.log(`[DUMMY MAIL SENT]
 To: admin@businessvaani.com
-From: ${body.name} <${body.email}>
+From: ${body.name} <${body.email}> 
 Message: ${body.message}
 -------------------------`);
 
