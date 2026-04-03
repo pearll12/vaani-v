@@ -76,8 +76,6 @@ export async function POST(req) {
         customer: { contact: contactPhone },
         notify: { sms: false, email: false },
         reminder_enable: false,
-        callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook/razorpay`,
-        callback_method: 'get',
         notes: { order_id: String(orderId) },
       })
       paymentLink = razorpayOrder.short_url

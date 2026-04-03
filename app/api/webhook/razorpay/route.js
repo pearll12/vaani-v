@@ -6,11 +6,11 @@ import crypto from 'crypto'
 
 export async function POST(req) {
   try {
-    const body      = await req.text()
+    const body = await req.text()
     const signature = req.headers.get('x-razorpay-signature')
 
     // Verify webhook signature
-    const secret  = process.env.RAZORPAY_WEBHOOK_SECRET
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET
     if (secret) {
       const expected = crypto.createHmac('sha256', secret).update(body).digest('hex')
       if (expected !== signature) {
@@ -22,10 +22,10 @@ export async function POST(req) {
     console.log('Razorpay webhook:', event.event)
 
     if (event.event === 'payment_link.paid' || event.event === 'payment.captured') {
-      const payload    = event.payload?.payment_link?.entity || event.payload?.payment?.entity
-      const orderId    = payload?.notes?.order_id
-      const amount     = payload?.amount ? (payload.amount / 100).toFixed(2) : null
-      const paymentId  = payload?.id
+      const payload = event.payload?.payment_link?.entity || event.payload?.payment?.entity
+      const orderId = payload?.notes?.order_id
+      const amount = payload?.amount ? (payload.amount / 100).toFixed(2) : null
+      const paymentId = payload?.id
 
       if (orderId) {
         // Update order status
