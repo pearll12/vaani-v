@@ -47,6 +47,48 @@
   --radius: 14px;
 }
 
+[data-theme="light"] {
+  --bg: #faf8f3;
+  --surface: #f5f1e8;
+  --card: #fffaf4;
+  --card-hover: #f9f4eb;
+  --border: rgba(139, 97, 60, 0.12);
+  --border-mid: rgba(139, 97, 60, 0.18);
+  --border-strong: rgba(139, 97, 60, 0.25);
+  --text: #2d2415;
+  --text-soft: #6b5d4f;
+  --muted: #927860;
+  --muted-light: #a88968;
+
+  --teal: #c87137;
+  --teal-mid: #b8642f;
+  --teal-dim: rgba(200, 113, 55, 0.08);
+  --teal-border: rgba(200, 113, 55, 0.2);
+  --indigo: #d98d5e;
+  --indigo-dim: rgba(217, 141, 94, 0.09);
+  --indigo-border: rgba(217, 141, 94, 0.22);
+  --amber: #d4a574;
+  --amber-dim: rgba(212, 165, 116, 0.09);
+  --amber-border: rgba(212, 165, 116, 0.22);
+  --rose: #c08060;
+  --rose-dim: rgba(192, 128, 96, 0.09);
+  --rose-border: rgba(192, 128, 96, 0.22);
+  --sky: #b88a5e;
+  --sky-dim: rgba(184, 138, 94, 0.09);
+  --sky-border: rgba(184, 138, 94, 0.22);
+  --lime: #a89060;
+  --lime-dim: rgba(168, 144, 96, 0.09);
+
+  /* legacy compat */
+  --emerald: #c87137;
+  --emerald-dim: rgba(200, 113, 55, 0.08);
+  --emerald-border: rgba(200, 113, 55, 0.2);
+  --violet: #d98d5e;
+  --violet-dim: rgba(217, 141, 94, 0.09);
+  --blue: #b88a5e;
+  --blue-dim: rgba(184, 138, 94, 0.09);
+}
+
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {

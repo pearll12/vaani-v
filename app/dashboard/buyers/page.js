@@ -9,7 +9,7 @@ const supabase = createClient(
 
 const LANG_COLOR = {
   tamil: '#f97316', marathi: '#a855f7', telugu: '#3b9eff',
-  hindi: '#22c55e', hinglish: '#eab308', english: '#94a3b8',
+  hindi: '#22c55e', hinglish: '#eab308', english: 'var(--muted-light)',
 }
 
 const AVATAR_COLORS = [
@@ -34,7 +34,7 @@ function Avatar({ phone, idx, size = 42 }) {
 }
 
 function LangTag({ lang }) {
-  const color = LANG_COLOR[lang] || '#94a3b8'
+  const color = LANG_COLOR[lang] || 'var(--muted-light)'
   return (
     <span style={{
       fontSize: 10, padding: '2px 8px', borderRadius: 5,
@@ -72,7 +72,7 @@ function PodiumCard({ buyer, rank, podiumIdx }) {
       <p style={{ margin: '10px 0 3px', fontWeight: 700, fontSize: 12.5, color: '#d4e0ee' }}>
         {buyer.phone}
       </p>
-      <p style={{ margin: 0, fontSize: isTop ? 18 : 15, fontWeight: 800, color: isTop ? 'var(--emerald)' : '#94a3b8', letterSpacing: '-0.01em' }}>
+      <p style={{ margin: 0, fontSize: isTop ? 18 : 15, fontWeight: 800, color: isTop ? 'var(--teal)' : 'var(--muted)', letterSpacing: '-0.01em' }}>
         ₹{buyer.totalSpent.toLocaleString('en-IN')}
       </p>
       <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--muted)' }}>{buyer.totalOrders} orders</p>
@@ -122,7 +122,7 @@ export default function BuyersPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: 23, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>Buyers</h1>
+          <h1 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Buyers</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0', fontWeight: 500 }}>
             {buyers.length} customers · ₹{totalRevenue.toLocaleString('en-IN')} revenue · {totalOrders} orders total
           </p>
@@ -190,7 +190,7 @@ export default function BuyersPage() {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <Avatar phone={b.phone} idx={i} size={36} />
-                          <span style={{ fontWeight: 600, fontSize: 13.5, color: '#d4e0ee' }}>{b.phone}</span>
+                          <span style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--text)' }}>{b.phone}</span>
                         </div>
                       </td>
                       <td>
@@ -198,7 +198,7 @@ export default function BuyersPage() {
                           {b.languages.map(l => <LangTag key={l} lang={l} />)}
                         </div>
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontWeight: 700, color: '#e8edf5' }}>{b.totalOrders}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontWeight: 700, color: 'var(--muted)' }}>{b.totalOrders}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontWeight: 700, color: 'var(--emerald)' }}>₹{b.totalSpent.toLocaleString('en-IN')}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13 }}>₹{b.avgOrder.toLocaleString('en-IN')}</td>
                       <td style={{ fontSize: 12.5, color: 'var(--muted-light)' }}>

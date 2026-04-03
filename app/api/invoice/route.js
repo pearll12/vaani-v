@@ -232,38 +232,67 @@ export async function POST(req) {
     const fileBuffer = fs.readFileSync(filePath)
     const storagePath = `invoice-${orderId}.pdf`
 
-    console.log('Uploading to Supabase:', storagePath)
+    console.log('📤 Uploading to Supabase:', storagePath, 'Size:', fileBuffer.length, 'bytes')
     const { error: uploadError } = await supabase.storage
       .from('invoices')
       .upload(storagePath, fileBuffer, { upsert: true, contentType: 'application/pdf' })
 
     if (uploadError) {
-      console.error('Supabase upload error:', uploadError)
+      console.error('❌ Supabase upload error:', uploadError)
+      return NextResponse.json({ 
+        error: 'Failed to upload invoice: ' + uploadError.message,
+        details: uploadError
+      }, { status: 500 })
     }
 
-    let pdfPublicUrl = null
-    if (!uploadError) {
-      const { data } = supabase.storage
-        .from('invoices')
-        .getPublicUrl(storagePath)
-      pdfPublicUrl = data.publicUrl
-      console.log('Public PDF URL:', pdfPublicUrl)
+    // Get signed URL valid for 7 days (more reliable than public URL)
+    const { data: signedUrlData, error: signedError } = await supabase.storage
+      .from('invoices')
+      .createSignedUrl(storagePath, 7 * 24 * 60 * 60) // 7 days expiry
+
+    if (signedError) {
+      console.error('❌ Failed to create signed URL:', signedError)
+      // Fallback to public URL
+      const { data } = supabase.storage.from('invoices').getPublicUrl(storagePath)
+      return NextResponse.json({ 
+        error: 'Could not generate download URL',
+        pdfUrl: data.publicUrl
+      }, { status: 500 })
     }
 
-    // WhatsApp Dispatch
-    console.log('Sending WhatsApp via Twilio...')
+    const pdfUrl = signedUrlData.signedUrl
+    console.log('✅ Signed PDF URL generated (7-day expiry):', pdfUrl.split('?')[0] + '?...')
+
+    // WhatsApp Dispatch - Send PDF directly
+    console.log('📞 Sending WhatsApp with PDF attachment via Twilio...')
     try {
-      const twilioRes = await sendWhatsApp(
-        contactPhone,
-        `🧾 Invoice ready\nOrder #${orderId}\n${paymentLink || ''}`,
-        pdfPublicUrl
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Twilio timeout')), 15000)
       )
-      console.log('Twilio successful send:', twilioRes.sid)
+      
+      const twilioRes = await Promise.race([
+        sendWhatsApp(
+          contactPhone,
+          `🧾 *Invoice Ready* 📄\n\nOrder: #${orderId}\nAmount: ₹${grandTotal}\n\n${paymentLink ? `💳 Pay now: ${paymentLink}` : 'Contact us for payment details'}`,
+          pdfUrl  // Send PDF directly as attachment
+        ),
+        timeoutPromise
+      ])
+      
+      console.log('✅ Twilio WhatsApp sent successfully:', twilioRes.sid)
+      console.log('📎 PDF attached to message')
+      
     } catch (twError) {
-      console.error('Twilio Error Dispatch:', twError)
+      console.error('❌ Twilio WhatsApp Error:', twError.message, twError)
+      // Don't fail the whole request if WhatsApp fails - invoice is still saved
+      return NextResponse.json({ 
+        success: true, 
+        pdfUrl: pdfUrl,
+        warning: 'Invoice created but WhatsApp send failed: ' + twError.message 
+      })
     }
 
-    return NextResponse.json({ success: true, pdfUrl: pdfPublicUrl })
+    return NextResponse.json({ success: true, pdfUrl: pdfUrl, delivered: true })
 
   } catch (err) {
     console.error('CRITICAL API ERROR DISPATCH:', err)

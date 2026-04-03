@@ -9,11 +9,11 @@ const supabase = createClient(
 
 const LANG_COLOR = {
   tamil: '#f97316', marathi: '#a855f7', telugu: '#3b82f6',
-  hindi: '#22c55e', hinglish: '#eab308', english: '#94a3b8',
+  hindi: '#22c55e', hinglish: '#eab308', english: 'var(--muted-light)',
 }
 
 function LangBadge({ lang }) {
-  const color = LANG_COLOR[lang] || '#94a3b8'
+  const color = LANG_COLOR[lang] || 'var(--muted-light)'
   return (
     <span style={{
       fontSize: 10, padding: '2px 8px', borderRadius: 5, fontWeight: 700,
@@ -156,7 +156,7 @@ export default function InvoicesPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header */}
       <div>
-        <h1 style={{ fontSize: 23, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>Invoices</h1>
+        <h1 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Invoices</h1>
         <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0', fontWeight: 500 }}>
           18% GST (CGST 9% + SGST 9%) · Invoice + Razorpay link sent automatically via WhatsApp
         </p>
@@ -239,7 +239,7 @@ export default function InvoicesPage() {
                       </td>
                       <td>
                         <div>
-                          <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#d4e0ee', fontSize: 13 }}>
+                          <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>
                             {order.customer_phone}
                           </p>
                           <LangBadge lang={lang} />
@@ -250,17 +250,17 @@ export default function InvoicesPage() {
                           {(order.items || []).map((i, idx) => (
                             <span key={idx}>
                               {idx > 0 && <span style={{ color: 'var(--muted)', margin: '0 4px' }}>·</span>}
-                              <span style={{ color: '#b8c5d4', fontWeight: 500 }}>{i.name}</span>
+                              <span style={{ color: 'var(--muted-light)', fontWeight: 500 }}>{i.name}</span>
                               <span style={{ color: 'var(--muted)', fontSize: 11 }}> (₹{i.price}) ×{i.quantity}</span>
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#b8c5d4' }}>₹{sub.toFixed(2)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#a095fb' }}>₹{cgst.toFixed(2)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#a095fb' }}>₹{sgst.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--text)' }}>₹{sub.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{cgst.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{sgst.toFixed(2)}</td>
                       <td style={{ textAlign: 'right' }}>
-                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 14, fontWeight: 700, color: '#e8edf5' }}>₹{grand.toFixed(2)}</span>
+                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>₹{grand.toFixed(2)}</span>
                       </td>
                       <td><span className={`badge badge-${order.status}`}>{order.status}</span></td>
                       <td>
@@ -279,7 +279,7 @@ export default function InvoicesPage() {
                           </button>
                         ) : order.status === 'invoiced' ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <span style={{ fontSize: 12, color: '#a095fb', fontWeight: 600 }}>📤 Sent</span>
+                            <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>📤 Sent</span>
                             <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>WhatsApp + Razorpay</span>
                           </div>
                         ) : (

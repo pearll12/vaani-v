@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { useTheme } from '@/lib/theme'
+import Chatbot from './chatbot'
 
 import { supabase } from '@/lib/supabase'
 
@@ -25,6 +27,7 @@ export default function DashboardLayout({ children }) {
   const [profile, setProfile] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const pathname = usePathname()
+  const { theme, toggleTheme } = useTheme()
 
   // Detect mobile
   useEffect(() => {
@@ -98,7 +101,7 @@ export default function DashboardLayout({ children }) {
         style={{
           width: sidebarWidth,
           minWidth: sidebarWidth,
-          background: 'var(--surface)',
+          background: theme === 'dark' ? 'var(--surface)' : 'var(--card)',
           borderRight: '1px solid var(--border)',
           display: 'flex', flexDirection: 'column',
           transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1), min-width 0.25s cubic-bezier(0.4,0,0.2,1), transform 0.3s cubic-bezier(0.4,0,0.2,1)',
@@ -129,7 +132,7 @@ export default function DashboardLayout({ children }) {
           }} />
           {(!collapsed || isMobile) && (
             <div style={{ overflow: 'hidden' }}>
-              <p style={{ fontWeight: 800, fontSize: 14.5, color: '#fff', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
+              <p style={{ fontWeight: 800, fontSize: 14.5, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
                 {profile?.business_name || 'BusinessVaani'}
               </p>
               <p style={{ fontSize: 9, color: 'var(--muted)', margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>Management Hub</p>
@@ -265,7 +268,8 @@ export default function DashboardLayout({ children }) {
         <header className="dashboard-topbar" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 28px', height: 62, flexShrink: 0,
-          background: 'rgba(15,22,35,0.88)', backdropFilter: 'blur(14px)',
+          background: theme === 'dark' ? 'rgba(15,22,35,0.88)' : 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(14px)',
           borderBottom: '1px solid var(--border)',
           position: 'sticky', top: 0, zIndex: 20,
         }}>
@@ -298,6 +302,20 @@ export default function DashboardLayout({ children }) {
                 {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
               </span>
             </div>
+            <button
+              onClick={toggleTheme}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 36, height: 36, borderRadius: 8,
+                border: '1px solid var(--border-mid)',
+                background: 'rgba(255,255,255,0.04)',
+                color: 'var(--muted-light)', cursor: 'pointer',
+                fontSize: 16, transition: 'all 0.15s',
+              }}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
               <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600, display: isMobile ? 'none' : 'block' }}>{user?.email}</span>
               {profile?.logo_url ? (
@@ -321,6 +339,9 @@ export default function DashboardLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Chatbot Widget */}
+      <Chatbot />
     </div>
   )
 }

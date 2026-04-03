@@ -2,9 +2,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '@/lib/theme'
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { theme } = useTheme()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -19,7 +21,7 @@ export default function SettingsPage() {
   })
 
   useEffect(() => {
-    async function loadProfile() {
+    async function initLoadProfile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data } = await supabase
@@ -34,7 +36,7 @@ export default function SettingsPage() {
       }
       setLoading(false)
     }
-    loadProfile()
+    initLoadProfile()
   }, [])
 
   async function handleLogoUpload(e) {
@@ -82,11 +84,33 @@ export default function SettingsPage() {
     } else {
       setSavedAlert(true) // show success message
       window.dispatchEvent(new Event('profileUpdated'))
+      
+      // Reload data after save with proper async handling
+      const refreshData = async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const { data } = await supabase
+              .from('business_profiles')
+              .select('*')
+              .eq('id', user.id)
+              .single()
 
-      // Hide success message after 2 seconds and stay on settings
+            if (data) {
+              setProfile(data)
+              console.log('✅ Profile refreshed with latest data:', data)
+            }
+          }
+        } catch (e) {
+          console.error('❌ Error refreshing profile:', e)
+        }
+      }
+      
+      // Call refresh after 1.5s, then close alert after 4s
+      setTimeout(refreshData, 1500)
       setTimeout(() => {
         setSavedAlert(false)
-      }, 2000)
+      }, 4000)
     }
   }
 
@@ -96,7 +120,7 @@ export default function SettingsPage() {
       <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(0,229,195,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5c3' }}>
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="32" height="32"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
       </div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: '#fff' }}>Saved Successfully</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--text)' }}>Saved Successfully</h2>
       <p style={{ color: 'var(--muted)', margin: 0 }}>Updating your workspace...</p>
     </div>
   )
@@ -105,12 +129,12 @@ export default function SettingsPage() {
     <div style={{ padding: '32px 40px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', margin: '0 0 8px' }}>Business Settings</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', margin: '0 0 8px', color: 'var(--text)' }}>Business Settings</h1>
         <p style={{ color: 'var(--muted)', fontSize: 14.5, margin: 0 }}>Update your storefront details below.</p>
       </div>
 
       <form onSubmit={handleSave} style={{ background: 'var(--surface)', padding: 32, borderRadius: 16, border: '1px solid var(--border)' }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 24px', color: '#fff' }}>Invoice & Branding</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 24px', color: 'var(--text)' }}>Invoice & Branding</h2>
 
         {errorMsg && (
           <div style={{ marginBottom: 24, padding: '12px 16px', background: 'rgba(255,50,50,0.1)', border: '1px solid rgba(255,50,50,0.4)', borderRadius: 8, color: '#ff6b6b', fontSize: 14 }}>
@@ -121,20 +145,20 @@ export default function SettingsPage() {
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--muted-light)', marginBottom: 8 }}>Business Name</label>
           <input type="text" value={profile.business_name || ''} onChange={e => setProfile({ ...profile, business_name: e.target.value })}
-            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff' }} placeholder="e.g. BusinessVaani Fresh Mart" />
+            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)' }} placeholder="e.g. BusinessVaani Fresh Mart" />
         </div>
 
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--muted-light)', marginBottom: 8 }}>Business Logo</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {profile.logo_url ? (
-              <img src={profile.logo_url} alt="Logo Preview" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'contain', background: '#fff' }} />
+              <img src={profile.logo_url} alt="Logo Preview" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'contain', background: 'var(--surface)' }} />
             ) : (
               <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--muted)' }}>Logo</div>
             )}
             <div style={{ flex: 1 }}>
               <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploading}
-                style={{ width: '100%', padding: '10px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', fontSize: 13 }} />
+                style={{ width: '100%', padding: '10px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 13 }} />
               {uploading && <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--teal)' }}>Uploading image...</p>}
             </div>
           </div>
@@ -143,26 +167,26 @@ export default function SettingsPage() {
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--muted-light)', marginBottom: 8 }}>WhatsApp Number</label>
           <input type="text" value={profile.whatsapp_number || ''} onChange={e => setProfile({ ...profile, whatsapp_number: e.target.value })}
-            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff' }} placeholder="+91 98765 43210" />
+            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)' }} placeholder="+91 98765 43210" />
         </div>
 
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--muted-light)', marginBottom: 8 }}>UPI ID (For Payments)</label>
           <input type="text" value={profile.upi_id || ''} onChange={e => setProfile({ ...profile, upi_id: e.target.value })}
-            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff' }} placeholder="yourname@bank" />
+            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)' }} placeholder="yourname@bank" />
         </div>
 
         <div style={{ marginBottom: 32 }}>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--muted-light)', marginBottom: 8 }}>Invoice Footer Text</label>
           <textarea value={profile.invoice_footer || ''} onChange={e => setProfile({ ...profile, invoice_footer: e.target.value })}
-            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', minHeight: 80 }} placeholder="Thank you for your business!" />
+            style={{ width: '100%', padding: '12px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', minHeight: 80 }} placeholder="Thank you for your business!" />
         </div>
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
           <button type="submit" disabled={saving || uploading}
             style={{
-              background: 'linear-gradient(135deg, #00e5c3, #818cf8)',
-              color: '#000', fontWeight: 800, padding: '12px 24px',
+              background: theme === 'dark' ? 'linear-gradient(135deg, #00e5c3, #818cf8)' : 'linear-gradient(135deg, #c87137, #d98d5e)',
+              color: theme === 'dark' ? '#000' : '#fff', fontWeight: 800, padding: '12px 24px',
               borderRadius: 8, border: 'none', cursor: (saving || uploading) ? 'wait' : 'pointer',
               opacity: (saving || uploading) ? 0.7 : 1
             }}>

@@ -11,7 +11,7 @@ const CAT_META = {
   'Clothing':        { color: '#818cf8', bg: 'rgba(129,140,248,0.12)' },
   'Stationery':      { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
   'Home & Kitchen':  { color: '#fb7185', bg: 'rgba(251,113,133,0.12)' },
-  'Other':           { color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' },
+  'Other':           { color: '#c87137', bg: 'rgba(200,113,55,0.12)' },
 }
 
 function Modal({ item, onClose, onSave }) {
