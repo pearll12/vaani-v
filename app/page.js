@@ -666,10 +666,10 @@ function FeatureCard({ icon: Icon, title, desc, color, bg, delay, accent }) {
       onHoverStart={() => setHov(true)} onHoverEnd={() => setHov(false)}
       style={{
         padding: "32px 28px", borderRadius: 22, background: P.card,
-        border: `1px solid ${hov ? color + "44" : P.border}`,
-        borderLeftWidth: 4,
-        borderLeftStyle: "solid",
-        borderLeftColor: color,
+        borderTop: `1px solid ${hov ? color + "44" : P.border}`,
+        borderRight: `1px solid ${hov ? color + "44" : P.border}`,
+        borderBottom: `1px solid ${hov ? color + "44" : P.border}`,
+        borderLeft: `4px solid ${color}`,
         boxShadow: hov ? `${P.shadowM}, 0 0 0 4px ${color}11` : P.shadow,
         transition: "all 0.3s ease", cursor: "default", position: "relative", overflow: "hidden"
       }}>
@@ -804,7 +804,7 @@ function ContactUs() {
 /* ═══════════════ WHATSAPP TWILIO FAB ═══════════════ */
 function WhatsAppTwilio() {
   const TWILIO_PHONE = "+14155238886";
-  const TWILIO_JOIN_CODE = "join tip-book";
+  const TWILIO_JOIN_CODE = "join slightly-dust";
   const [showLabel, setShowLabel] = useState(false);
   return (
     <>
