@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import inventory from '@/data/inventory.json'
 
 function StatCard({ label, value, sub, icon, color, borderColor, bg }) {
   return (
@@ -126,10 +127,10 @@ export default function DashboardPage() {
   }
 
   const kpis = data ? [
-    { label: 'Total Revenue',    value: `₹${(data.totalRevenue || 0).toLocaleString('en-IN')}`,             sub: 'from paid orders',    icon: '◈',  color: '#00d68f', bg: 'var(--emerald-dim)', borderColor: 'rgba(0,214,143,0.2)' },
-    { label: 'GST Collected',    value: `₹${Math.round(data.gstCollected || 0).toLocaleString('en-IN')}`,  sub: '18% of revenue',      icon: '⬕',  color: '#a095fb', bg: 'var(--violet-dim)',  borderColor: 'rgba(124,109,248,0.2)' },
-    { label: 'Revenue at Risk',  value: `₹${(data.revenueAtRisk || 0).toLocaleString('en-IN')}`,           sub: 'awaiting payment',    icon: '⚠',  color: '#f5a623', bg: 'var(--amber-dim)',   borderColor: 'rgba(245,166,35,0.2)' },
-    { label: 'Orders Today',     value: data.ordersToday || 0,                                              sub: 'new orders',          icon: '▦',  color: '#3b9eff', bg: 'var(--blue-dim)',    borderColor: 'rgba(59,158,255,0.2)' },
+    { label: 'Total Revenue',    value: `₹${(data.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`,             sub: 'from paid orders',    icon: '◈',  color: '#00d68f', bg: 'var(--emerald-dim)', borderColor: 'rgba(0,214,143,0.2)' },
+    { label: 'GST Collected',    value: `₹${Math.round(data.gstCollected || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`,  sub: '18% of revenue',      icon: '⬕',  color: '#a095fb', bg: 'var(--violet-dim)',  borderColor: 'rgba(124,109,248,0.2)' },
+    { label: 'Revenue at Risk',  value: `₹${(data.revenueAtRisk || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`,           sub: 'awaiting payment',    icon: '⚠',  color: '#f5a623', bg: 'var(--amber-dim)',   borderColor: 'rgba(245,166,35,0.2)' },
+    { label: 'Orders Today',     value: String(data.ordersToday || 0),                                              sub: 'new orders',          icon: '▦',  color: '#3b9eff', bg: 'var(--blue-dim)',    borderColor: 'rgba(59,158,255,0.2)' },
   ] : []
 
   const Skeleton = () => (
@@ -150,37 +151,73 @@ export default function DashboardPage() {
         {loading ? Array(4).fill(0).map((_, i) => <Skeleton key={i} />) : kpis.map(k => <StatCard key={k.label} {...k} />)}
       </div>
 
-      {/* Charts row */}
-      <div className="charts-row" style={{ display: 'grid', gap: 16 }}>
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 16, flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>
-                Revenue ({selectedDays <= 30 ? `${selectedDays} days` : selectedDays === 90 ? '3 months' : '1 year'})
-              </p>
-              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '3px 0 0', fontWeight: 500 }}>Paid orders only</p>
-            </div>
-            <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
-              {[
-                { l: '7D', v: 7 }, { l: '10D', v: 10 }, { l: '30D', v: 30 }, { l: '3M', v: 90 }, { l: '1Y', v: 365 }
-              ].map(opt => (
-                <button key={opt.v} onClick={() => setSelectedDays(opt.v)} style={{
-                  fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 7, border: 'none',
-                  cursor: 'pointer', transition: 'all 0.2s',
-                  background: selectedDays === opt.v ? 'var(--emerald)' : 'transparent',
-                  color: selectedDays === opt.v ? '#000' : 'var(--muted)',
-                }}>{opt.l}</button>
-              ))}
-            </div>
+      {/* Low Stock + Order Status Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        
+        {/* Low Stock Alerts (LEFT) */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <p style={{ fontWeight: 700, fontSize: 15, color: '#f5a623', margin: 0, letterSpacing: '-0.01em' }}>Low Stock</p>
+            {(() => {
+              const lowStockCount = inventory.filter(item => item.quantity <= item.lowStockThreshold).length
+              return lowStockCount > 0 ? <span style={{ background: '#f5a623', color: '#000', fontSize: 9, fontWeight: 700, padding: '3px 6px', borderRadius: 4, marginLeft: 'auto' }}>{lowStockCount}</span> : null
+            })()}
           </div>
-          <AreaChart data={data?.revenueByDay || []} id="rev" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflow: 'auto' }}>
+            {(() => {
+              const lowStockItems = inventory.filter(item => item.quantity <= item.lowStockThreshold)
+              if (lowStockItems.length === 0) {
+                return <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>All items stocked ✓</p>
+              }
+              return lowStockItems.map(item => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', background: 'rgba(245, 166, 35, 0.08)', borderRadius: 8, border: '1px solid rgba(245, 166, 35, 0.15)' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{item.name}</p>
+                    <p style={{ fontSize: 10, color: '#f5a623', margin: '2px 0 0', fontWeight: 600 }}>{item.quantity}{item.unit} left · Min: {item.lowStockThreshold}{item.unit}</p>
+                  </div>
+                  <a href="/dashboard/inventory" style={{ fontSize: 9, fontWeight: 700, color: '#f5a623', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 6px', background: 'rgba(245, 166, 35, 0.15)', borderRadius: 4, border: '1px solid rgba(245, 166, 35, 0.25)', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.target.style.background = 'rgba(245, 166, 35, 0.25)' }} onMouseLeave={e => { e.target.style.background = 'rgba(245, 166, 35, 0.15)' }}>Restock</a>
+                </div>
+              ))
+            })()}
+          </div>
         </div>
 
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
+        {/* Order Status (RIGHT) */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column' }}>
           <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Order Status</p>
-          <DonutChart breakdown={data?.statusBreakdown} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <DonutChart breakdown={data?.statusBreakdown} />
+          </div>
         </div>
       </div>
+
+      {/* Revenue Chart (FULL WIDTH) */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>
+              Revenue ({selectedDays <= 30 ? `${selectedDays} days` : selectedDays === 90 ? '3 months' : '1 year'})
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: '3px 0 0', fontWeight: 500 }}>Paid orders only</p>
+          </div>
+          <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
+            {[
+              { l: '7D', v: 7 }, { l: '10D', v: 10 }, { l: '30D', v: 30 }, { l: '3M', v: 90 }, { l: '1Y', v: 365 }
+            ].map(opt => (
+              <button key={opt.v} onClick={() => setSelectedDays(opt.v)} style={{
+                fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 7, border: 'none',
+                cursor: 'pointer', transition: 'all 0.2s',
+                background: selectedDays === opt.v ? 'var(--emerald)' : 'transparent',
+                color: selectedDays === opt.v ? '#000' : 'var(--muted)',
+              }}>{opt.l}</button>
+            ))}
+          </div>
+        </div>
+        <AreaChart data={data?.revenueByDay || []} id="rev" />
+      </div>
+
+      {/* Charts row (removed - was Revenue + Order Status) */}
 
       {/* Top Buyers */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
