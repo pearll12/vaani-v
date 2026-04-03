@@ -1,79 +1,131 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { sendWhatsApp } from '@/lib/twilio'
-import Razorpay from 'razorpay'
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-})
+/**
+ * Vercel Cron Job — Automatic Payment Reminders
+ * 
+ * Runs daily at 10:00 AM IST (04:30 UTC).
+ * Queries orders where status = 'pending' or 'invoiced' and created_at > 3 days ago.
+ * Groups totals by customer phone number and sends a single consolidated reminder.
+ * 
+ * To protect this endpoint from unauthorized access, we check for 
+ * the CRON_SECRET header that Vercel injects automatically.
+ */
+
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60 // allow up to 60s for processing
 
 export async function GET(req) {
   try {
-    // Authenticate cron request (optional depending on Vercel setup, but good practice)
-    const authHeader = req.headers.get('authorization');
+    // ── Auth: Verify Vercel Cron secret (skip in dev) ──
+    const authHeader = req.headers.get('authorization')
     if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      // In development, we can allow bypassing this if CRON_SECRET is missing
-      if (process.env.NODE_ENV === 'production') {
-        return new NextResponse('Unauthorized', { status: 401 });
-      }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 1. Calculate time bounds (between 3 days and 4 days ago)
+    // ── Find overdue orders (pending/invoiced, older than 3 days, max 3 reminders) ──
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-    const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-    // 2. Fetch peding orders created between 3 and 4 days ago
-    const { data: orders, error } = await supabase
+    const { data: orders = [], error } = await supabase
       .from('orders')
       .select('*')
-      .eq('status', 'pending')
-      .lte('created_at', threeDaysAgo)
-      .gte('created_at', fourDaysAgo)
+      .in('status', ['pending', 'invoiced'])
+      .lt('created_at', threeDaysAgo)
+      .or(`last_reminder_at.is.null,last_reminder_at.lt.${oneDayAgo}`)
+      .lt('reminder_count', 3)
+      .order('customer_phone')
 
-    if (error) throw error
+    if (error) {
+      console.error('Cron: DB query failed:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
-    console.log(`Found ${orders.length} pending orders matching the 3-day reminder criteria.`)
+    if (orders.length === 0) {
+      console.log('Cron: No overdue orders found.')
+      return NextResponse.json({ success: true, sent: 0, message: 'No reminders needed' })
+    }
 
-    let sentCount = 0;
-
+    // ── Group orders by customer phone ──
+    const grouped = {}
     for (const order of orders) {
+      const phone = order.customer_phone
+      if (!phone) continue
+      if (!grouped[phone]) grouped[phone] = []
+      grouped[phone].push(order)
+    }
+
+    let sentCount = 0
+    let failCount = 0
+
+    // ── Send one consolidated reminder per customer ──
+    for (const [phone, customerOrders] of Object.entries(grouped)) {
       try {
-        const rawPhone = order.customer_phone || ''
-        if (!rawPhone) continue;
-        const contactPhone = rawPhone.startsWith('+') ? rawPhone : `+91${rawPhone}`
+        const totalDue = customerOrders.reduce((sum, o) => {
+          return sum + +(Number(o.total_amount || 0) * 1.18).toFixed(2)
+        }, 0)
 
-        let subtotal = Number(order.total_amount) || 0;
-        const cgst = +(subtotal * 0.09).toFixed(2);
-        const sgst = +(subtotal * 0.09).toFixed(2);
-        const grandTotal = +(subtotal + cgst + sgst).toFixed(2);
+        const reminderNum = Math.max(...customerOrders.map(o => (o.reminder_count || 0) + 1))
+        const urgency = reminderNum === 1 ? '⏰' : reminderNum === 2 ? '🔔' : '❗'
 
-        // Optional: generate a fresh razorpay link if none exists (or recreate it to be safe)
-        const razorpayOrder = await razorpay.paymentLink.create({
-          amount: Math.round(grandTotal * 100),
-          currency: 'INR',
-          accept_partial: false,
-          description: `Reminder INV-${String(order.id).padStart(4, '0')}`,
-          customer: { contact: contactPhone },
-          notify: { sms: false, email: false },
-          reminder_enable: false,
-          notes: { order_id: String(order.id) },
-        })
-        const paymentLink = razorpayOrder.short_url
+        // Build order list
+        const orderLines = customerOrders.map(o => {
+          const grand = +(Number(o.total_amount || 0) * 1.18).toFixed(2)
+          return `  • INV-${String(o.id).padStart(4, '0')} — ₹${grand.toFixed(2)}`
+        }).join('\n')
 
-        const message = `⏳ *Payment Reminder* \n\nNamaste! Aapka Vaani se Order #${order.id} ka payment (₹${grandTotal}) abhi pending hai.\n\nKripya is link dwara payment jald se jald puri karein:\n${paymentLink}\n\nDhanyawad!`
+        // Find the most recent payment link
+        const paymentLink = customerOrders.find(o => o.payment_link)?.payment_link
 
-        await sendWhatsApp(contactPhone, message)
-        sentCount++;
-        console.log(`Sent reminder for order #${order.id} to ${contactPhone}`)
-      } catch (err) {
-        console.error(`Failed to send reminder for order #${order.id}:`, err)
+        const msg = [
+          `${urgency} *Payment Reminder${reminderNum > 1 ? ` #${reminderNum}` : ''}*`,
+          ``,
+          `Namaste! You have *${customerOrders.length}* pending invoice${customerOrders.length > 1 ? 's' : ''}:`,
+          ``,
+          orderLines,
+          ``,
+          `💰 *Total Due: ₹${totalDue.toFixed(2)}*`,
+          ``,
+          paymentLink
+            ? `💳 *Pay now:*\n${paymentLink}`
+            : `Please make your payment at your earliest convenience.`,
+          ``,
+          reminderNum >= 3
+            ? `This is our final reminder. Thank you! — BusinessVaani`
+            : `Thank you! 🙏 — BusinessVaani`,
+        ].join('\n')
+
+        await sendWhatsApp(phone, msg)
+
+        // Update all orders for this customer
+        for (const order of customerOrders) {
+          await supabase.from('orders').update({
+            last_reminder_at: new Date().toISOString(),
+            reminder_count: (order.reminder_count || 0) + 1,
+          }).eq('id', order.id)
+        }
+
+        sentCount++
+        console.log(`Cron: Sent reminder to ${phone} for ${customerOrders.length} order(s)`)
+      } catch (e) {
+        failCount++
+        console.error(`Cron: Failed reminder for ${phone}:`, e.message)
       }
     }
 
-    return NextResponse.json({ success: true, sentCount, totalFound: orders.length })
+    const summary = `Cron complete: ${sentCount} sent, ${failCount} failed, ${orders.length} orders processed`
+    console.log(summary)
+
+    return NextResponse.json({
+      success: true,
+      sent: sentCount,
+      failed: failCount,
+      totalOrders: orders.length,
+      totalCustomers: Object.keys(grouped).length,
+    })
   } catch (err) {
-    console.error('CRON Error:', err)
+    console.error('Cron: Unexpected error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

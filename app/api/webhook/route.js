@@ -17,19 +17,19 @@ async function saveInventory(items) {
   // Update Supabase
   const { error } = await supabase.from('inventory').upsert(items, { onConflict: 'id' })
   if (error) console.error('Save inventory error:', error)
-  
+
   // Also update inventory.json for dashboard
   try {
     const fs = await import('fs').then(m => m.promises)
     const path = await import('path').then(m => m.default)
     const invPath = path.join(process.cwd(), 'data', 'inventory.json')
-    
+
     const current = JSON.parse(await fs.readFile(invPath, 'utf8'))
     const updated = current.map(inv => {
       const updatedItem = items.find(item => item.id === inv.id)
       return updatedItem || inv
     })
-    
+
     await fs.writeFile(invPath, JSON.stringify(updated, null, 2))
   } catch (e) {
     console.warn('Could not update inventory.json:', e.message)
@@ -41,14 +41,14 @@ async function lookupInventoryPrices(items) {
   return items.map(item => {
     const itemNameLower = (item.name || '').toLowerCase().trim()
     let match = inventory.find(inv => (inv.name || '').toLowerCase().trim() === itemNameLower)
-    
+
     if (!match) {
       match = inventory.find(inv => {
         const invName = (inv.name || '').toLowerCase().trim()
         return invName.includes(itemNameLower) || itemNameLower.includes(invName)
       })
     }
-    
+
     if (!match) {
       const words = itemNameLower.split(/\s+/)
       match = inventory.find(inv => {
@@ -56,7 +56,7 @@ async function lookupInventoryPrices(items) {
         return words.some(w => w.length > 2 && invName.includes(w))
       })
     }
-    
+
     if (match) {
       return {
         ...item,
@@ -188,14 +188,14 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
 export async function POST(req) {
   try {
     const formData = await req.formData()
-    
-    const from      = formData.get('From')?.replace('whatsapp:', '')
-    const body      = formData.get('Body') || ''
+
+    const from = formData.get('From')?.replace('whatsapp:', '')
+    const body = formData.get('Body') || ''
     const mediaType = formData.get('MediaContentType0')
-    const mediaUrl  = formData.get('MediaUrl0')
-    
+    const mediaUrl = formData.get('MediaUrl0')
+
     console.log(`📩 Message from ${from}: ${body}, Media: ${mediaType}`)
-    
+
     // ═══════════════════════════════
     // VOICE NOTE → Transcribe with Groq Whisper
     // ═══════════════════════════════
@@ -206,11 +206,11 @@ export async function POST(req) {
         const transcribedText = await transcribeVoiceNote(mediaUrl)
         messageText = transcribedText
         console.log(`✅ Voice transcribed: "${messageText}"`)
-        
+
         // Acknowledge voice note to user
         await sendWhatsApp(from, `🎙️ _Voice note samjha:_ "${messageText}"\n\n⏳ Processing...`)
       } catch (err) {
-        console.error('❌ Voice transcription failed:', err.message)
+        console.error('❌ Voice transcription failed:', err.message, err.stack)
         await sendWhatsApp(from,
           `❌ Voice note samajh nahi aaya. Please text mein bhejein.\n\n` +
           `📝 Type karein: "5 Rice Bag aur 2 Wheat Flour"\n` +
@@ -319,7 +319,7 @@ export async function POST(req) {
 
     // NLU extraction
     const extracted = await extractOrder(messageText)
-    
+
     // ═══════════════════════════════
     // GREETING — Auto-show catalog!
     // ═══════════════════════════════
@@ -343,7 +343,7 @@ export async function POST(req) {
             catalog_map: catalog.catalogMap,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'phone' })
-        } catch(e) {
+        } catch (e) {
           console.log('Session store skipped (table may not exist):', e.message)
         }
 
@@ -526,7 +526,7 @@ export async function POST(req) {
         if (Array.isArray(pendingOrder.items)) {
           const inventory = await loadInventory()
           const itemsToUpdate = []
-          
+
           pendingOrder.items.forEach(item => {
             if (!item.inventoryId) return
             const idx = inventory.findIndex(inv => inv.id === item.inventoryId)
@@ -536,7 +536,7 @@ export async function POST(req) {
               itemsToUpdate.push(inventory[idx])
             }
           })
-          
+
           if (itemsToUpdate.length > 0) {
             await saveInventory(itemsToUpdate)
           }
@@ -569,7 +569,7 @@ export async function POST(req) {
           catalog_map: catalog.catalogMap,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'phone' })
-      } catch(e) {
+      } catch (e) {
         console.log('Session store skipped:', e.message)
       }
 
@@ -590,7 +590,7 @@ export async function POST(req) {
           .eq('phone', from)
           .single()
         catalogMap = session?.catalog_map
-      } catch(e) {
+      } catch (e) {
         console.log('Session lookup skipped:', e.message)
       }
 
@@ -603,7 +603,7 @@ export async function POST(req) {
             catalog_map: catalog.catalogMap,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'phone' })
-        } catch {}
+        } catch { }
         await sendWhatsApp(from,
           `❌ Pehle catalog dekhein, phir number se select karein:\n\n` + catalog.message
         )
@@ -647,7 +647,7 @@ export async function POST(req) {
       await sendWhatsApp(from, confirmMsg)
 
       // Clear session
-      try { await supabase.from('sessions').delete().eq('phone', from) } catch {}
+      try { await supabase.from('sessions').delete().eq('phone', from) } catch { }
 
       return new NextResponse('OK', { status: 200 })
     }
@@ -708,7 +708,7 @@ export async function POST(req) {
           await supabase.from('sessions').upsert({
             phone: from, catalog_map: catalog.catalogMap, updated_at: new Date().toISOString(),
           }, { onConflict: 'phone' })
-        } catch {}
+        } catch { }
         await sendWhatsApp(from,
           `⚠️ Ye items hamari inventory mein nahi mile.\n\nYe hai hamare available products:\n\n` + catalog.message
         )
@@ -782,7 +782,7 @@ export async function POST(req) {
       await supabase.from('sessions').upsert({
         phone: from, catalog_map: catalog.catalogMap, updated_at: new Date().toISOString(),
       }, { onConflict: 'phone' })
-    } catch {}
+    } catch { }
 
     await sendWhatsApp(from,
       `👋 BusinessVaani mein aapka swagat hai!\n\n` +
@@ -805,7 +805,7 @@ export async function POST(req) {
 
 async function handleStockAlerts(items) {
   const lowStockAlerts = await deductAndCheckStock(items)
-  
+
   // Notify OWNER of low stock 🔔
   if (lowStockAlerts.length > 0 && OWNER_PHONE) {
     const alertMsg = `🚨 *Low Stock Alert!*\n\n` +
@@ -815,7 +815,7 @@ async function handleStockAlerts(items) {
       `\n\n_Restock karein! 📦_`
     sendWhatsApp(OWNER_PHONE, alertMsg).catch(e => console.error('Stock alert failed:', e))
   }
-  
+
   return lowStockAlerts // Return for customer notification
 }
 
@@ -837,7 +837,7 @@ function buildConfirmation(items, orderId, totalAmount, language, stockAlerts = 
   const sub = Number(totalAmount) || 0
   const gst = +(sub * 0.18).toFixed(2)
   const grand = +(sub + gst).toFixed(2)
-  
+
   // Build low stock alert section
   let stockAlertSection = ''
   if (stockAlerts && stockAlerts.length > 0) {
