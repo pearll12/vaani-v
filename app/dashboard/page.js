@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import inventory from '@/data/inventory.json'
 
 function StatCard({ label, value, sub, icon, color, borderColor, bg }) {
   return (
@@ -106,6 +105,28 @@ function DonutChart({ breakdown = {} }) {
   )
 }
 
+function timeAgo(dateStr) {
+  if (!dateStr) return ''
+  let dStr = dateStr
+  if (typeof dStr === 'string' && !dStr.endsWith('Z') && !dStr.includes('+')) {
+    dStr += 'Z'
+  }
+  const diff = Date.now() - new Date(dStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
+
+const STATUS_STYLE = {
+  pending:  { bg: 'rgba(245,166,35,0.12)', color: '#f5a623', border: 'rgba(245,166,35,0.25)' },
+  invoiced: { bg: 'rgba(124,109,248,0.12)', color: '#7c6df8', border: 'rgba(124,109,248,0.25)' },
+  paid:     { bg: 'rgba(0,214,143,0.12)',   color: '#00d68f', border: 'rgba(0,214,143,0.25)' },
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -137,6 +158,8 @@ export default function DashboardPage() {
     <div className="skeleton" style={{ height: 110, borderRadius: 16 }} />
   )
 
+  const lowStockItems = data?.lowStockItems || []
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
       <div>
@@ -154,32 +177,33 @@ export default function DashboardPage() {
       {/* Low Stock + Order Status Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
-        {/* Low Stock Alerts (LEFT) */}
+        {/* Low Stock Alerts (LEFT) — Real-time from Supabase inventory */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <span style={{ fontSize: 18 }}>⚠️</span>
             <p style={{ fontWeight: 700, fontSize: 15, color: '#f5a623', margin: 0, letterSpacing: '-0.01em' }}>Low Stock</p>
-            {(() => {
-              const lowStockCount = inventory.filter(item => item.quantity <= item.lowStockThreshold).length
-              return lowStockCount > 0 ? <span style={{ background: '#f5a623', color: '#000', fontSize: 9, fontWeight: 700, padding: '3px 6px', borderRadius: 4, marginLeft: 'auto' }}>{lowStockCount}</span> : null
-            })()}
+            {lowStockItems.length > 0 && (
+              <span style={{ background: '#f5a623', color: '#000', fontSize: 9, fontWeight: 700, padding: '3px 6px', borderRadius: 4, marginLeft: 'auto' }}>{lowStockItems.length}</span>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflow: 'auto' }}>
-            {(() => {
-              const lowStockItems = inventory.filter(item => item.quantity <= item.lowStockThreshold)
-              if (lowStockItems.length === 0) {
-                return <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>All items stocked ✓</p>
-              }
-              return lowStockItems.map(item => (
+            {loading ? (
+              <div className="skeleton" style={{ height: 48 }} />
+            ) : lowStockItems.length === 0 ? (
+              <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>All items stocked ✓</p>
+            ) : (
+              lowStockItems.map(item => (
                 <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', background: 'rgba(245, 166, 35, 0.08)', borderRadius: 8, border: '1px solid rgba(245, 166, 35, 0.15)' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{item.name}</p>
-                    <p style={{ fontSize: 10, color: '#f5a623', margin: '2px 0 0', fontWeight: 600 }}>{item.quantity}{item.unit} left · Min: {item.lowStockThreshold}{item.unit}</p>
+                    <p style={{ fontSize: 10, color: '#f5a623', margin: '2px 0 0', fontWeight: 600 }}>
+                      {Number(item.quantity)}{item.unit} left · Min: {Number(item.lowStockThreshold)}{item.unit}
+                    </p>
                   </div>
                   <a href="/dashboard/inventory" style={{ fontSize: 9, fontWeight: 700, color: '#f5a623', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 6px', background: 'rgba(245, 166, 35, 0.15)', borderRadius: 4, border: '1px solid rgba(245, 166, 35, 0.25)', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.target.style.background = 'rgba(245, 166, 35, 0.25)' }} onMouseLeave={e => { e.target.style.background = 'rgba(245, 166, 35, 0.15)' }}>Restock</a>
                 </div>
               ))
-            })()}
+            )}
           </div>
         </div>
 
@@ -217,45 +241,113 @@ export default function DashboardPage() {
         <AreaChart data={data?.revenueByDay || []} id="rev" />
       </div>
 
-      {/* Charts row (removed - was Revenue + Order Status) */}
+      {/* Latest Orders (left) + Latest Purchases (right) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
-      {/* Top Buyers */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
-        <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Top Buyers</p>
-        {!data?.topBuyers?.length ? (
-          <p style={{ color: 'var(--muted)', fontSize: 13 }}>No buyer data yet</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {data.topBuyers.map((b, i) => {
-              const colors = [['#00d68f', '#3b9eff'], ['#7c6df8', '#f4607b'], ['#f5a623', '#22c55e'], ['#3b9eff', '#7c6df8'], ['#f4607b', '#f5a623']]
-              const [c1, c2] = colors[i % colors.length]
-              return (
-                <div key={b.phone} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '12px 0', borderBottom: i < data.topBuyers.length - 1 ? '1px solid rgba(255,255,255,0.035)' : 'none',
-                }}>
-                  <span style={{ fontSize: 13, width: 24, textAlign: 'center', fontWeight: 800, color: 'var(--muted)', opacity: 0.8 }}>{i + 1}</span>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    background: `linear-gradient(135deg, ${c1}, ${c2})`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 800, color: '#fff',
-                  }}>
-                    {b.phone?.slice(-2)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text)', fontWeight: 600 }}>{b.phone}</p>
-                    <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>{b.totalOrders} orders · {b.languages?.join(', ')}</p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--teal)', letterSpacing: '-0.01em' }}>₹{b.totalSpent.toLocaleString('en-IN')}</p>
-                    <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>total spent</p>
-                  </div>
-                </div>
-              )
-            })}
+        {/* Latest Orders — pending/invoiced */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 16 }}>📦</span>
+            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>Latest Orders</p>
+            <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 'auto', fontWeight: 500 }}>Pending / Invoiced</span>
           </div>
-        )}
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 40 }} />)}
+            </div>
+          ) : !data?.latestOrders?.length ? (
+            <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>No pending orders</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {data.latestOrders.map((o, i) => {
+                const st = STATUS_STYLE[o.status] || STATUS_STYLE.pending
+                const items = Array.isArray(o.items) ? o.items : []
+                const itemNames = items.map(it => it.name || it.item).filter(Boolean).join(', ')
+                return (
+                  <div key={o.id || i} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 10px', borderRadius: 10,
+                    background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {o.customer_phone || 'Unknown'}
+                        </p>
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                          background: st.bg, color: st.color, border: `1px solid ${st.border}`,
+                          textTransform: 'capitalize', flexShrink: 0,
+                        }}>{o.status}</span>
+                      </div>
+                      <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {itemNames || `${items.length || 0} items`}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ margin: 0, fontSize: 12.5, fontWeight: 800, color: '#f5a623', fontFamily: 'DM Mono, monospace' }}>
+                        ₹{(o.total_amount || 0).toLocaleString('en-IN')}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 9.5, color: 'var(--muted)' }}>{timeAgo(o.created_at)}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Latest Purchases — paid */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 16 }}>✅</span>
+            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>Latest Purchases</p>
+            <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 'auto', fontWeight: 500 }}>Paid</span>
+          </div>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 40 }} />)}
+            </div>
+          ) : !data?.latestPaidOrders?.length ? (
+            <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>No purchases yet</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {data.latestPaidOrders.map((o, i) => {
+                const items = Array.isArray(o.items) ? o.items : []
+                const itemNames = items.map(it => it.name || it.item).filter(Boolean).join(', ')
+                return (
+                  <div key={o.id || i} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 10px', borderRadius: 10,
+                    background: 'rgba(0,214,143,0.04)', border: '1px solid rgba(0,214,143,0.12)',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {o.customer_phone || 'Unknown'}
+                        </p>
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                          background: 'rgba(0,214,143,0.12)', color: '#00d68f', border: '1px solid rgba(0,214,143,0.25)',
+                          flexShrink: 0,
+                        }}>Paid ✓</span>
+                      </div>
+                      <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {itemNames || `${items.length || 0} items`}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ margin: 0, fontSize: 12.5, fontWeight: 800, color: '#00d68f', fontFamily: 'DM Mono, monospace' }}>
+                        ₹{(o.total_amount || 0).toLocaleString('en-IN')}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 9.5, color: 'var(--muted)' }}>{timeAgo(o.created_at)}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

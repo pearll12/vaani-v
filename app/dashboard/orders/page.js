@@ -7,6 +7,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const parseUtc = (ds) => !ds ? null : new Date(typeof ds === 'string' && !ds.endsWith('Z') && !ds.includes('+') ? ds + 'Z' : ds)
+
+
 const LANG_COLOR = {
   tamil: '#fb7185', marathi: '#818cf8', telugu: '#38bdf8',
   hindi: '#a3e635', hinglish: '#f59e0b', english: 'var(--muted-light)',
@@ -241,7 +244,7 @@ function EditOrderModal({ order, inventory, onClose, onSave, saving }) {
 function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, onEdit, sending, reminding }) {
   if (!order) return null
   const { sub, cgst, sgst, grand } = calcGST(order.total_amount)
-  const date = new Date(order.created_at)
+  const date = parseUtc(order.created_at)
 
   const invoiceAge = order.invoice_sent_at
     ? Math.floor((Date.now() - new Date(order.invoice_sent_at)) / (1000 * 60 * 60))
@@ -300,9 +303,9 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, onEdit, se
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <StatusBadge status={order.status} />
             <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-              {date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' })}
               {' · '}
-              {date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+              {date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
 
@@ -728,7 +731,7 @@ export default function OrdersPage() {
                   {filtered.map(order => {
                     // FIX: use calcGST helper, not the imprecise * 1.18
                     const { sub, grand } = calcGST(order.total_amount)
-                    const date      = new Date(order.created_at)
+                    const date      = parseUtc(order.created_at)
                     const isToday   = new Date().toDateString() === date.toDateString()
                     const lang      = order.language || 'english'
                     const langColor = LANG_COLOR[lang] || '#c87137'
@@ -781,8 +784,8 @@ export default function OrdersPage() {
                         <td style={{ width: 110 }}><StatusBadge status={order.status} /></td>
                         <td style={{ width: 100, fontSize: 11.5, color: 'var(--muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
                           {isToday
-                            ? date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-                            : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
+                            : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
                         </td>
                       </tr>
                     )
@@ -796,7 +799,7 @@ export default function OrdersPage() {
           <div className="orders-card-list">
               {filtered.map(order => {
                 const { sub, grand } = calcGST(order.total_amount)
-                const date      = new Date(order.created_at)
+                const date      = parseUtc(order.created_at)
                 const isToday   = new Date().toDateString() === date.toDateString()
                 const lang      = order.language || 'english'
                 const langColor = LANG_COLOR[lang] || '#94a3b8'
@@ -822,8 +825,8 @@ export default function OrdersPage() {
                           <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{order.customer_phone}</p>
                           <span style={{ fontSize: 10, color: 'var(--muted)' }}>
                             #{String(order.id).padStart(4, '0')} · {isToday
-                              ? date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-                              : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                              ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
+                              : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
                           </span>
                         </div>
                       </div>

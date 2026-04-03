@@ -15,7 +15,7 @@ export async function GET(req) {
         totalRevenue: 0, gstCollected: 0, revenueAtRisk: 0, ordersToday: 0,
         revenueByDay: [], gstByWeek: [],
         statusBreakdown: { pending: 0, invoiced: 0, paid: 0 },
-        topBuyers: [],
+        latestOrders: [], latestPaidOrders: [],
       })
     }
 

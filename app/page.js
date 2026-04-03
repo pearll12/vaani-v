@@ -416,9 +416,9 @@ function Hero() {
                 boxShadow: `0 6px 22px ${P.wa}44`,
               }}
             >Login / Sign Up</motion.a>
-            <motion.button whileHover={{ background: P.surface, borderColor: P.borderM }}
-              style={{ padding: "15px 24px", borderRadius: 14, fontSize: 15, fontWeight: 600, background: "transparent", border: `1px solid ${P.border}`, color: P.text, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s" }}
-            ><span style={{ fontSize: 18 }}>▷</span> Watch Demo</motion.button>
+            <motion.a href="#interactive-demo" whileHover={{ background: P.surface, borderColor: P.borderM }}
+              style={{ padding: "15px 24px", borderRadius: 14, fontSize: 15, fontWeight: 600, background: "transparent", border: `1px solid ${P.border}`, color: P.text, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s", textDecoration: "none" }}
+            ><span style={{ fontSize: 18 }}>▷</span> Start Demo</motion.a>
           </motion.div>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
@@ -620,6 +620,388 @@ function Features() {
 
 
 
+/* ─── Interactive Demo Walkthrough ──────────────────────────────────────── */
+const DEMO_STEPS = [
+  {
+    title: "Customer Sends WhatsApp Order",
+    description: "Your customer sends an order on WhatsApp — in Hindi, Hinglish, Tamil, or even as a voice note. No app download needed.",
+    narration: "Imagine Ramesh, your regular customer. He simply types on WhatsApp: bhaiya 5 kg rice aur 2 kg dal bhejdo. That's it — order placed!",
+    color: "#25D366",
+    colorL: "#D1FAE5",
+    icon: "💬",
+    mockup: "whatsapp",
+  },
+  {
+    title: "AI Understands Everything",
+    description: "BusinessVaani's AI instantly parses the message — extracts items, quantities, language, delivery date. Even voice notes in 10+ languages.",
+    narration: "Our AI reads Ramesh's message and instantly extracts: Rice 5 kg, Dal 2 kg. It works with Hindi, Tamil, Telugu, Gujarati, and even mixed language messages.",
+    color: "#7C3AED",
+    colorL: "#EDE9FE",
+    icon: "🤖",
+    mockup: "ai",
+  },
+  {
+    title: "Order Appears in Dashboard",
+    description: "The parsed order appears in your live dashboard instantly — with items, quantity, pricing, GST, and customer details all filled in.",
+    narration: "Open your dashboard and boom — Order number 1042 from Ramesh is right there. Items, quantities, prices, GST — all filled in automatically. No typing needed.",
+    color: "#0891B2",
+    colorL: "#CFFAFE",
+    icon: "📊",
+    mockup: "dashboard",
+  },
+  {
+    title: "Invoice Generated & Sent",
+    description: "Click one button — a professional PDF invoice is generated with GST and sent to the customer via WhatsApp. Done in 3 seconds.",
+    narration: "One click on Generate Invoice — a professional PDF with your business name, GST breakdown, and total is created. Sent to Ramesh on WhatsApp in 3 seconds flat.",
+    color: "#16A34A",
+    colorL: "#DCFCE7",
+    icon: "🧾",
+    mockup: "invoice",
+  },
+  {
+    title: "Payment Collected Automatically",
+    description: "Razorpay payment link sent automatically. Customer pays via UPI, cards, or net banking. Money in your account — no chasing needed.",
+    narration: "A Razorpay payment link is automatically sent to Ramesh on WhatsApp. He pays via UPI in seconds. Money hits your bank account. No more kal dunga promises.",
+    color: "#D97706",
+    colorL: "#FEF3C7",
+    icon: "💳",
+    mockup: "payment",
+  },
+];
+
+function DemoMockup({ step }) {
+  const mockups = {
+    whatsapp: (
+      <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: P.shadowL, border: `1px solid ${P.border}`, width: '100%', maxWidth: 320 }}>
+        <div style={{ background: '#075E54', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: P.wa, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🏪</div>
+          <div><div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>Sharma Ji Ka Store</div><div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)' }}>online</div></div>
+        </div>
+        <div style={{ background: '#ECE5DD', padding: 12, minHeight: 180, display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'flex-end' }}>
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
+            style={{ maxWidth: '80%', padding: '8px 12px', borderRadius: '4px 14px 14px 14px', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: P.purple, marginBottom: 2 }}>Ramesh</div>
+            <div style={{ fontSize: 12, color: '#333' }}>bhaiya 5kg rice aur 2kg dal bhejdo kal tak 🙏</div>
+            <div style={{ fontSize: 9, color: '#999', textAlign: 'right', marginTop: 2 }}>9:12 AM</div>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, type: 'spring' }}
+            style={{ maxWidth: '75%', padding: '8px 12px', borderRadius: '14px 14px 4px 14px', background: '#DCF8C6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', alignSelf: 'flex-end' }}>
+            <div style={{ fontSize: 12, color: '#333' }}>Order received! Processing...</div>
+            <div style={{ fontSize: 9, color: '#999', textAlign: 'right', marginTop: 2 }}>9:12 AM ✓✓</div>
+          </motion.div>
+        </div>
+      </div>
+    ),
+    ai: (
+      <div style={{ background: '#fff', borderRadius: 16, padding: 20, boxShadow: P.shadowL, border: `1px solid ${P.border}`, width: '100%', maxWidth: 340 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: P.purpleL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🤖</div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: P.text }}>AI Processing</span>
+          <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }}
+            style={{ marginLeft: 'auto', width: 8, height: 8, borderRadius: '50%', background: P.purple }} />
+        </div>
+        <div style={{ background: P.waL, borderRadius: 10, padding: 10, marginBottom: 14, border: `1px solid ${P.wa}22` }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: P.green, marginBottom: 3 }}>INPUT</div>
+          <div style={{ fontSize: 11, color: '#555', fontStyle: 'italic' }}>"bhaiya 5kg rice aur 2kg dal bhejdo kal tak"</div>
+        </div>
+        {[{ l: 'Customer', v: 'Ramesh', c: P.purple }, { l: 'Item 1', v: 'Rice — 5 kg', c: P.green }, { l: 'Item 2', v: 'Dal — 2 kg', c: P.teal }, { l: 'Delivery', v: 'Tomorrow', c: P.amber }].map((r, i) => (
+          <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.15 }}
+            style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 3 ? `1px solid ${P.border}` : 'none' }}>
+            <span style={{ fontSize: 11, color: '#888' }}>{r.l}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: r.c }}>{r.v}</span>
+          </motion.div>
+        ))}
+      </div>
+    ),
+    dashboard: (
+      <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: P.shadowL, border: `1px solid ${P.border}`, width: '100%', maxWidth: 360 }}>
+        <div style={{ background: '#1a1a2e', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 26, height: 26, borderRadius: 8, background: 'linear-gradient(135deg, #c87137, #e8974a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: 12 }}>V</div>
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>Dashboard</span>
+          <span style={{ marginLeft: 'auto', fontSize: 9, color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: 8 }}>Live</span>
+        </div>
+        <div style={{ padding: 12 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            {[{ l: 'Orders', v: '47', c: P.teal }, { l: 'Revenue', v: '₹2.4L', c: P.green }, { l: 'Pending', v: '₹18K', c: P.amber }].map((s, i) => (
+              <motion.div key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + i * 0.1, type: 'spring' }}
+                style={{ flex: 1, background: P.surface, borderRadius: 8, padding: 8, textAlign: 'center', border: `1px solid ${P.border}` }}>
+                <div style={{ fontSize: 9, color: '#888' }}>{s.l}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: s.c }}>{s.v}</div>
+              </motion.div>
+            ))}
+          </div>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+            style={{ background: P.tealL, borderRadius: 10, padding: 10, border: `1px solid ${P.teal}22` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#333' }}>Order #1042 — Ramesh</div>
+                <div style={{ fontSize: 10, color: '#666', marginTop: 2 }}>Rice 5kg, Dal 2kg • ₹840</div>
+              </div>
+              <div style={{ background: '#fff3e0', color: '#e65100', padding: '3px 8px', borderRadius: 8, fontSize: 9, fontWeight: 600 }}>Pending</div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    ),
+    invoice: (
+      <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: P.shadowL, border: `1px solid ${P.border}`, width: '100%', maxWidth: 300 }}>
+        <div style={{ textAlign: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: '#c87137' }}>INVOICE</div>
+          <div style={{ fontSize: 10, color: '#888' }}>Sharma Ji Ka Store</div>
+          <div style={{ width: '100%', height: 1, background: P.border, margin: '8px 0' }} />
+        </div>
+        <div style={{ fontSize: 11 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><span style={{ color: '#666' }}>To:</span><span style={{ fontWeight: 600 }}>Ramesh Kumar</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><span style={{ color: '#666' }}>Date:</span><span>03 Apr 2026</span></div>
+          <div style={{ width: '100%', height: 1, background: P.border, margin: '8px 0' }} />
+          {[['Rice 5kg', '₹350'], ['Dal 2kg', '₹490']].map(([item, amt], i) => (
+            <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 + i * 0.2 }}
+              style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#333' }}>
+              <span>{item}</span><span style={{ fontWeight: 600 }}>{amt}</span>
+            </motion.div>
+          ))}
+          <div style={{ width: '100%', height: 1, background: P.border, margin: '8px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 10 }}><span>Subtotal</span><span>₹840</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 10 }}><span>GST 18%</span><span>₹151</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 14, color: '#c87137', marginTop: 6 }}><span>Total</span><span>₹991</span></div>
+        </div>
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.8, type: 'spring' }}
+          style={{ marginTop: 12, background: P.greenL, borderRadius: 8, padding: 8, textAlign: 'center', fontSize: 10, fontWeight: 600, color: P.green, border: `1px solid ${P.green}33` }}>
+          ✅ Sent via WhatsApp
+        </motion.div>
+      </div>
+    ),
+    payment: (
+      <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: P.shadowL, border: `1px solid ${P.border}`, width: '100%', maxWidth: 300 }}>
+        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+          <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}
+            style={{ width: 48, height: 48, borderRadius: '50%', background: P.amberL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, margin: '0 auto 8px' }}>💳</motion.div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: P.text }}>Payment Link Sent!</div>
+          <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>Razorpay • UPI / Cards / Net Banking</div>
+        </div>
+        <div style={{ background: P.amberL, borderRadius: 10, padding: 12, textAlign: 'center', border: `1px solid ${P.amber}33`, marginBottom: 10 }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: P.amber }}>₹991</div>
+          <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>Order #1042 • Ramesh Kumar</div>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['UPI', 'Card', 'Net Banking'].map(m => (
+            <div key={m} style={{ flex: 1, background: P.surface, borderRadius: 8, padding: 6, textAlign: 'center', fontSize: 10, fontWeight: 600, color: '#555', border: `1px solid ${P.border}` }}>{m}</div>
+          ))}
+        </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
+          style={{ marginTop: 10, background: P.greenL, borderRadius: 8, padding: 8, textAlign: 'center', fontSize: 11, fontWeight: 600, color: P.green, border: `1px solid ${P.green}33` }}>
+          ✅ Payment Received — ₹991
+        </motion.div>
+      </div>
+    ),
+  };
+  return mockups[step] || null;
+}
+
+function InteractiveDemo() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const timerRef = useRef(null);
+
+  const step = DEMO_STEPS[currentStep];
+
+  // Auto-play with narration
+  useEffect(() => {
+    if (!isPlaying) return;
+    // Speak narration
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(step.narration);
+      utterance.lang = 'en-IN';
+      utterance.rate = 0.95;
+      utterance.pitch = 1.05;
+      utterance.onend = () => {
+        // Auto-advance after narration ends
+        timerRef.current = setTimeout(() => {
+          if (currentStep < DEMO_STEPS.length - 1) {
+            setCurrentStep(s => s + 1);
+          } else {
+            setIsPlaying(false);
+          }
+        }, 800);
+      };
+      window.speechSynthesis.speak(utterance);
+    } else {
+      // Fallback: auto-advance after 5 seconds
+      timerRef.current = setTimeout(() => {
+        if (currentStep < DEMO_STEPS.length - 1) {
+          setCurrentStep(s => s + 1);
+        } else {
+          setIsPlaying(false);
+        }
+      }, 5000);
+    }
+    return () => { clearTimeout(timerRef.current); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); };
+  }, [currentStep, isPlaying, step.narration]);
+
+  const startDemo = () => {
+    setHasStarted(true);
+    setCurrentStep(0);
+    setIsPlaying(true);
+  };
+
+  const goToStep = (idx) => {
+    setIsPlaying(false);
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    clearTimeout(timerRef.current);
+    setCurrentStep(idx);
+    setHasStarted(true);
+  };
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      clearTimeout(timerRef.current);
+    } else {
+      setIsPlaying(true);
+    }
+  };
+
+  return (
+    <section id="interactive-demo" style={{ padding: "100px 40px", background: P.bg }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <Reveal style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: P.purple, marginBottom: 14 }}>INTERACTIVE DEMO</div>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 900, letterSpacing: "-0.03em", color: P.text, margin: "0 0 12px", lineHeight: 1.12 }}>
+            See it in action.
+            <span style={{ color: P.purple }}> Click through.</span>
+          </h2>
+          <p style={{ fontSize: 16, color: P.soft, lineHeight: 1.8, maxWidth: 500, margin: "0 auto" }}>
+            Experience the full BusinessVaani flow — from WhatsApp order to payment collected.
+          </p>
+        </Reveal>
+
+        {/* Start Demo / Demo Player */}
+        {!hasStarted ? (
+          <Reveal delay={0.2}>
+            <div style={{ textAlign: 'center' }}>
+              <motion.button
+                onClick={startDemo}
+                whileHover={{ scale: 1.06, boxShadow: `0 12px 40px ${P.purple}44` }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  padding: '18px 48px', borderRadius: 16, fontSize: 18, fontWeight: 800,
+                  background: `linear-gradient(135deg, ${P.purple}, #9333EA)`,
+                  color: '#fff', border: 'none', cursor: 'pointer',
+                  boxShadow: `0 8px 28px ${P.purple}44`,
+                  display: 'inline-flex', alignItems: 'center', gap: 12,
+                }}
+              >
+                <span style={{ fontSize: 24 }}>▶</span> Start Demo
+              </motion.button>
+              <div style={{ marginTop: 12, fontSize: 13, color: P.muted }}>
+                🔊 With voice narration • 5 steps • ~2 minutes
+              </div>
+            </div>
+          </Reveal>
+        ) : (
+          <div>
+            {/* Step indicators */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 40 }}>
+              {DEMO_STEPS.map((s, i) => (
+                <motion.button
+                  key={i}
+                  onClick={() => goToStep(i)}
+                  whileHover={{ y: -2 }}
+                  style={{
+                    width: 44, height: 44, borderRadius: 14, border: 'none', cursor: 'pointer',
+                    background: i === currentStep ? s.color : i < currentStep ? s.colorL : P.surface,
+                    color: i === currentStep ? '#fff' : i < currentStep ? s.color : P.muted,
+                    fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: i === currentStep ? `0 4px 16px ${s.color}44` : 'none',
+                    transition: 'all 0.3s',
+                    border: `2px solid ${i === currentStep ? s.color : 'transparent'}`,
+                  }}
+                >{s.icon}</motion.button>
+              ))}
+            </div>
+
+            {/* Main demo area */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+              {/* Left: Info */}
+              <div>
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: step.colorL, border: `1px solid ${step.color}33`, fontSize: 11, fontWeight: 700, color: step.color, marginBottom: 16 }}>
+                    Step {currentStep + 1} of {DEMO_STEPS.length}
+                  </div>
+                  <h3 style={{ fontSize: 28, fontWeight: 800, color: P.text, marginBottom: 12, lineHeight: 1.2 }}>
+                    {step.title}
+                  </h3>
+                  <p style={{ fontSize: 15, color: P.soft, lineHeight: 1.8, marginBottom: 20 }}>
+                    {step.description}
+                  </p>
+                  <div style={{ background: step.colorL, borderRadius: 12, padding: '14px 18px', border: `1px solid ${step.color}22`, marginBottom: 24 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: step.color, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      🔊 NARRATION
+                    </div>
+                    <div style={{ fontSize: 13, color: '#555', lineHeight: 1.7, fontStyle: 'italic' }}>
+                      "{step.narration}"
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Controls */}
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                    onClick={() => goToStep(Math.max(0, currentStep - 1))}
+                    disabled={currentStep === 0}
+                    style={{ padding: '10px 20px', borderRadius: 10, border: `1px solid ${P.border}`, background: P.card, color: currentStep === 0 ? P.muted : P.text, cursor: currentStep === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}
+                  >← Prev</motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                    onClick={togglePlay}
+                    style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: isPlaying ? '#ef5350' : step.color, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, boxShadow: `0 4px 12px ${isPlaying ? '#ef535044' : step.color + '44'}` }}
+                  >{isPlaying ? '⏸ Pause' : '▶ Play'}</motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                    onClick={() => goToStep(Math.min(DEMO_STEPS.length - 1, currentStep + 1))}
+                    disabled={currentStep === DEMO_STEPS.length - 1}
+                    style={{ padding: '10px 20px', borderRadius: 10, border: `1px solid ${P.border}`, background: P.card, color: currentStep === DEMO_STEPS.length - 1 ? P.muted : P.text, cursor: currentStep === DEMO_STEPS.length - 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}
+                  >Next →</motion.button>
+                </div>
+              </div>
+
+              {/* Right: Mockup */}
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 350 }}>
+                <motion.div
+                  key={`mockup-${currentStep}`}
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.5, type: 'spring' }}
+                >
+                  <DemoMockup step={step.mockup} />
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div style={{ marginTop: 40, background: P.surface, borderRadius: 8, height: 6, overflow: 'hidden' }}>
+              <motion.div
+                animate={{ width: `${((currentStep + 1) / DEMO_STEPS.length) * 100}%` }}
+                transition={{ duration: 0.5 }}
+                style={{ height: '100%', background: `linear-gradient(90deg, ${step.color}, ${step.color}88)`, borderRadius: 8 }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /* ─── WhatsApp Twilio FAB ─────────────────────────────────────────── */
 function WhatsAppTwilio() {
   const TWILIO_PHONE = "+14155238886";
@@ -707,6 +1089,7 @@ export default function Page() {
       <Problem />
       <div id="how-it-works"><HowItWorks /></div>
       <div id="features"><Features /></div>
+      <InteractiveDemo />
       <Footer />
     </>
   );

@@ -7,6 +7,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const parseUtc = (ds) => !ds ? null : new Date(typeof ds === 'string' && !ds.endsWith('Z') && !ds.includes('+') ? ds + 'Z' : ds)
+
+
 const LANG_COLOR = {
   tamil: '#f97316', marathi: '#a855f7', telugu: '#3b9eff',
   hindi: '#22c55e', hinglish: '#eab308', english: 'var(--muted-light)',
@@ -202,7 +205,7 @@ export default function BuyersPage() {
                       <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontWeight: 700, color: 'var(--emerald)' }}>₹{b.totalSpent.toLocaleString('en-IN')}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13 }}>₹{b.avgOrder.toLocaleString('en-IN')}</td>
                       <td style={{ fontSize: 12.5, color: 'var(--muted-light)' }}>
-                        {b.lastOrder ? new Date(b.lastOrder).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        {b.lastOrder ? parseUtc(b.lastOrder).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                       </td>
                       <td>
                         <a

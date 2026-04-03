@@ -8,6 +8,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const parseUtc = (ds) => !ds ? null : new Date(typeof ds === 'string' && !ds.endsWith('Z') && !ds.includes('+') ? ds + 'Z' : ds)
+
+
 const STATUS = {
   pending:  { label: 'Pending',  color: '#f59e0b', bg: 'var(--amber-dim)',  border: 'var(--amber-border)' },
   invoiced: { label: 'Invoiced', color: '#818cf8', bg: 'var(--indigo-dim)', border: 'var(--indigo-border)' },
@@ -229,7 +232,7 @@ export default function PaymentsPage() {
           </div>
         ) : filtered.map(order => {
           const grand  = +(Number(order.total_amount) * 1.18).toFixed(2)
-          const time   = new Date(order.created_at)
+          const time   = parseUtc(order.created_at)
           const isToday = new Date().toDateString() === time.toDateString()
           const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
             (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
@@ -288,8 +291,8 @@ export default function PaymentsPage() {
                 </p>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                   {isToday
-                    ? time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-                    : time.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    ? time.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
+                    : time.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
                 </p>
               </div>
 
