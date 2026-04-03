@@ -97,10 +97,20 @@ function CustomTooltip({
   closeProps,
   primaryProps,
   tooltipProps,
-  lang,
-  setLang,
   theme
 }) {
+  const [lang, setLang] = useState(() => {
+    if (typeof window !== 'undefined') return window.__vaaniLang || 'en'
+    return 'en'
+  })
+
+  const handleSetLang = (e, l) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setLang(l)
+    if (typeof window !== 'undefined') window.__vaaniLang = l
+  }
+
   const dataIndex = parseInt(step.title, 10)
   const data = TOUR_DATA[dataIndex]
   const content = data[lang]
@@ -128,7 +138,8 @@ function CustomTooltip({
         {/* Language Toggles */}
         <div style={{ display: 'flex', gap: 6, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', padding: 4, borderRadius: 12 }}>
           <button
-            onClick={(e) => { e.stopPropagation(); setLang('en'); }}
+            type="button"
+            onClick={(e) => handleSetLang(e, 'en')}
             style={{
               padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s',
               background: lang === 'en' ? '#c87137' : 'transparent',
@@ -138,7 +149,8 @@ function CustomTooltip({
             EN
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setLang('hi'); }}
+            type="button"
+            onClick={(e) => handleSetLang(e, 'hi')}
             style={{
               padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s',
               background: lang === 'hi' ? '#c87137' : 'transparent',
@@ -171,17 +183,17 @@ function CustomTooltip({
 
         <div style={{ display: 'flex', gap: 10 }}>
           {index > 0 && (
-            <button {...backProps} style={{ background: 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', color: isDark ? '#fff' : '#111', padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>
+            <button type="button" {...backProps} style={{ background: 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', color: isDark ? '#fff' : '#111', padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>
               {lang === 'hi' ? 'पीछे' : 'Back'}
             </button>
           )}
-          <button {...primaryProps} style={{ background: 'linear-gradient(135deg, #c87137, #e8974a)', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(200,113,55,0.3)', transition: 'all 0.2s' }}>
+          <button type="button" {...primaryProps} style={{ background: 'linear-gradient(135deg, #c87137, #e8974a)', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(200,113,55,0.3)', transition: 'all 0.2s' }}>
             {isLastStep ? (lang === 'hi' ? 'खत्म करें' : 'Finish Tour') : (lang === 'hi' ? 'आगे बढ़ें' : 'Next')}
           </button>
         </div>
       </div>
 
-      <button {...closeProps} style={{ position: 'absolute', top: 12, right: 12, background: 'transparent', border: 'none', color: '#666', fontSize: 16, cursor: 'pointer' }}>
+      <button type="button" {...closeProps} style={{ position: 'absolute', top: 12, right: 12, background: 'transparent', border: 'none', color: '#666', fontSize: 16, cursor: 'pointer' }}>
         ✕
       </button>
 
@@ -191,7 +203,6 @@ function CustomTooltip({
 
 export default function Tour() {
   const [run, setRun] = useState(false)
-  const [lang, setLang] = useState('en')
   const { theme } = useTheme()
 
   useEffect(() => {
@@ -222,9 +233,7 @@ export default function Tour() {
       callback={handleJoyrideCallback}
       tooltipComponent={(props) => (
         <CustomTooltip 
-          {...props} 
-          lang={lang} 
-          setLang={setLang}
+          {...props}
           theme={theme}
         />
       )}
@@ -232,9 +241,6 @@ export default function Tour() {
         options: {
           zIndex: 10000,
           overlayColor: 'rgba(0, 0, 0, 0.4)',
-        },
-        spotlight: {
-          borderRadius: 12,
         }
       }}
     />
