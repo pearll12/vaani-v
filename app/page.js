@@ -300,26 +300,26 @@ function HorizontalSection() {
   const progressW = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
   return (
-    <div ref={ref} style={{ height: "200vh" }}>
-      <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden" }}>
-        <motion.div style={{ display: "flex", width: "200vw", height: "100vh", x }}>
+    <div ref={ref} className="horizontal-wrapper" style={{ height: "200vh" }}>
+      <div className="horizontal-sticky" style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden" }}>
+        <motion.div className="horizontal-container" style={{ display: "flex", width: "200vw", height: "100vh", x }}>
           {/* Panel 1: Hero */}
-          <div style={{ width: "100vw", height: "100vh", flexShrink: 0, overflow: "hidden" }}>
+          <div className="horizontal-panel" style={{ width: "100vw", height: "100vh", flexShrink: 0, overflow: "hidden" }}>
             <HeroContent />
           </div>
           {/* Panel 2: Problem */}
-          <div style={{ width: "100vw", height: "100vh", flexShrink: 0, overflow: "hidden" }}>
+          <div className="horizontal-panel" style={{ width: "100vw", height: "100vh", flexShrink: 0, overflow: "hidden" }}>
             <ProblemContent />
           </div>
         </motion.div>
         {/* Scroll dots */}
-        <div style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)",
+        <div className="scroll-indicators" style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)",
           display: "flex", gap: 8, zIndex: 10 }}>
           <motion.div style={{ width: 8, height: 8, borderRadius: "50%", background: P.primary, opacity: dot1 }} />
           <motion.div style={{ width: 8, height: 8, borderRadius: "50%", background: P.primary, opacity: dot2 }} />
         </div>
         {/* Progress bar */}
-        <motion.div style={{ position: "absolute", bottom: 0, left: 0, height: 3,
+        <motion.div className="scroll-indicators" style={{ position: "absolute", bottom: 0, left: 0, height: 3,
           background: `linear-gradient(90deg, ${P.primary}, ${P.amber})`,
           width: progressW, borderRadius: 2, zIndex: 10 }} />
       </div>
@@ -340,7 +340,7 @@ function HeroContent() {
           style={{ position: "absolute", left: b.x, top: b.y, width: b.s, height: b.s,
             borderRadius: "50%", background: b.c, filter: "blur(80px)", opacity: 0.7, pointerEvents: "none" }} />
       ))}
-      <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid",
+      <div className="hero-grid" style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid",
         gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center", position: "relative", zIndex: 2 }}>
         <div>
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -406,7 +406,7 @@ function ProblemContent() {
   return (
     <section style={{ height: "100%", background: P.surface, display: "flex", alignItems: "center",
       padding: "80px 40px 40px" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid",
+      <div className="problem-grid" style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid",
         gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
         <div><ChaosIllustration /></div>
         <div>
@@ -485,7 +485,7 @@ function HowItWorks() {
   ];
   return (
     <section id="how-it-works" style={{ padding: "100px 40px", background: P.bg }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid",
+      <div className="how-it-works-grid" style={{ maxWidth: 1100, margin: "0 auto", display: "grid",
         gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
         <div>
           <Reveal>
@@ -575,9 +575,10 @@ function FeatureCard({ icon: Icon, title, desc, color, bg, delay, accent }) {
       viewport={{ once: true }} transition={{ delay, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       onHoverStart={() => setHov(true)} onHoverEnd={() => setHov(false)}
       style={{ padding: "32px 28px", borderRadius: 22, background: P.card,
-        borderLeft: `4px solid ${color}`,
         border: `1px solid ${hov ? color + "44" : P.border}`,
-        borderLeftWidth: 4, borderLeftColor: color,
+        borderLeftWidth: 4, 
+        borderLeftStyle: "solid",
+        borderLeftColor: color,
         boxShadow: hov ? `${P.shadowM}, 0 0 0 4px ${color}11` : P.shadow,
         transition: "all 0.3s ease", cursor: "default", position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80,
@@ -652,7 +653,7 @@ function ContactUs() {
         <Reveal delay={0.1}>
           <form onSubmit={handleSubmit} style={{ background: P.card, borderRadius: 24, padding: "40px 36px",
             boxShadow: P.shadowM, border: `1px solid ${P.border}` }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+            <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 700, color: P.soft, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>YOUR NAME</label>
                 <input style={inputStyle} placeholder="Sharma Ji" value={form.name}
@@ -739,7 +740,7 @@ function Footer() {
   return (
     <footer style={{ background: "#2C1E16", color: "#fff", padding: "64px 40px 28px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 48 }}>
+        <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 48 }}>
           <div>
             <img src="/logo.png" alt="BusinessVaani" style={{ height: 38, width: "auto", marginBottom: 14, filter: "brightness(1.2)" }} />
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: 280 }}>
@@ -807,6 +808,27 @@ export default function Page() {
         ::-webkit-scrollbar-thumb{background:${P.amber};border-radius:999px}
         @media(max-width:768px){
           .nav-links{display:none!important}
+          .footer-grid{grid-template-columns:1fr!important;gap:30px!important}
+          .contact-grid{grid-template-columns:1fr!important}
+          .hero-grid, .problem-grid, .how-it-works-grid { grid-template-columns: 1fr!important; gap: 40px!important; }
+          
+          /* Disable horizontal scroll on mobile */
+          .horizontal-wrapper { height: auto!important; }
+          .horizontal-sticky { position: relative!important; height: auto!important; overflow: visible!important; }
+          .horizontal-container { flex-direction: column!important; width: 100%!important; height: auto!important; transform: none!important; }
+          .horizontal-panel { width: 100%!important; height: auto!important; padding: 60px 0!important; overflow: visible!important; }
+          .scroll-indicators { display: none!important; }
+
+          /* Adjust paddings for mobile */
+          section { padding: 60px 20px!important; }
+          footer { padding: 40px 20px 20px!important; }
+          
+          /* Hero mobile tweaks */
+          .hero-grid { text-align: center; }
+          .hero-grid .phone-illustration { margin: 0 auto; order: -1; }
+          .hero-grid h1 { font-size: 32px!important; margin-top: 20px!important; }
+          .hero-grid p { margin: 0 auto 30px!important; }
+          .hero-grid > div > div { justify-content: center; }
         }
       `}</style>
       <Navbar />
