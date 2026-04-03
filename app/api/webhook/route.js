@@ -354,7 +354,7 @@ export async function POST(req) {
           `✅ *Order #${String(pendingOrder.id).padStart(4, '0')} Confirmed!*\n\n` +
           `📦 ${itemNames}\n` +
           `💰 Total: ₹${grand}\n\n` +
-          `📄 "invoice" bhejein bill ke liye 🙏`
+          `⏳ Generating your PDF invoice and payment link...`
         )
 
         // Notify owner
@@ -371,12 +371,12 @@ export async function POST(req) {
         // Auto-generate invoice
         try {
           const invoiceUrl = new URL('/api/invoice', req.url)
-          // We intentionally do not await this so the webhook can respond quickly
-          fetch(invoiceUrl.toString(), {
+          // We MUST await this so Vercel serverless function doesn't terminate early
+          await fetch(invoiceUrl.toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ orderId: pendingOrder.id, phone: from }),
-          }).catch(err => console.error('Auto-invoice background error:', err))
+          })
         } catch (err) {
           console.error('Auto-invoice error:', err)
         }
@@ -639,11 +639,11 @@ export async function POST(req) {
       if (lastOrder) {
         try {
           const invoiceUrl = new URL('/api/invoice', req.url)
-          fetch(invoiceUrl.toString(), {
+          await fetch(invoiceUrl.toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ orderId: lastOrder.id, phone: from }),
-          }).catch(err => console.error('Manual invoice background error:', err))
+          })
         } catch (err) {
           console.error('Auto-invoice error:', err)
           await sendWhatsApp(from, `✅ Invoice generate ho raha hai. Thoda wait karein! 🙏`)
