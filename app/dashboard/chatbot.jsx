@@ -9,10 +9,10 @@ const LANGS = [
 ]
 
 const WELCOME = {
-  en: "👋 Hi! I'm Priya, your BusinessVaani guide. You can send orders via text, photo, or voice! 🎤📸 What would you like to do?",
-  hi: "👋 नमस्ते! आप टेक्स्ट, फ़ोटो या वॉइस से ऑर्डर भेज सकते हैं। क्या करना है? 🎤📸",
-  ta: "👋 வணக்கம்! உரை, புகைப்படம் அல்லது குரல் மூலம் ஆர்டர் அனுப்பலாம். 🎤📸",
-  gu: "👋 નમસ્તે! ટેક્સ્ટ, ફોટો વા વોઇસથી ઓર્ડર મોકલી શકો છો। 🎤📸",
+  en: "👋 Hi! I'm Priya, your BusinessVaani guide. I can demo Khata, Payments, Orders, Reminders — step by step. What would you like to see?",
+  hi: "👋 नमस्ते! मैं प्रिया हूँ। खाता, पेमेंट, ऑर्डर का लाइव डेमो दे सकती हूँ। क्या देखना है?",
+  ta: "👋 வணக்கம்! நான் பிரியா. கட்டா, பேமென்ட், ஆர்டர் demo காட்ட முடியும். என்ன பார்க்க விரும்புகிறீர்கள்?",
+  gu: "👋 નમસ્તે! હું પ્રિયા છું. ખાતું, પેમેંટ, ઓર્ડરનો ડેમો આપી શકું. શું જોવા છે?",
 }
 
 const QAS = {
@@ -270,13 +270,7 @@ export default function ChatbotWidget() {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(false)
   const [input, setInput] = useState('')
-  const [isRecording, setIsRecording] = useState(false)
-  const [recordingTime, setRecordingTime] = useState(0)
   const bottomRef = useRef(null)
-  const fileInputRef = useRef(null)
-  const mediaRecorderRef = useRef(null)
-  const audioChunksRef = useRef([])
-  const recordingIntervalRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -334,96 +328,6 @@ export default function ChatbotWidget() {
   const handleQA = (key) => {
     const screen = SCREEN_MAP[key] || null
     send(PROMPTS[key] || key, screen)
-  }
-
-  // 📸 Photo Upload Handler
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setLoading(true)
-    const reader = new FileReader()
-    reader.onload = async (event) => {
-      try {
-        const base64 = event.target?.result
-        const userMsg = { role: 'user', text: '📸 Order from photo...' }
-        setMessages(prev => [...prev, userMsg])
-
-        // Call image extraction API
-        const extractRes = await fetch('/api/orders/extract-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: base64,
-            phone: '+91-customer', // Will be replaced with actual phone
-            customerName: 'Customer'
-          })
-        })
-
-        const extractData = await extractRes.json()
-
-        if (extractData.success) {
-          const orderConfirmMsg = `✅ ${extractData.message}\n\n📦 Items: ${extractData.order.items.length}\n💰 Total: ₹${extractData.order.total}\n\nSend "confirm" to place this order!`
-          setMessages(prev => [...prev, { role: 'bot', text: orderConfirmMsg, screen: null }])
-          setInput('confirm')
-        } else {
-          setMessages(prev => [...prev, { role: 'bot', text: `❌ ${extractData.error}\n\nPlease describe your order in text instead.`, screen: null }])
-        }
-      } catch (err) {
-        console.error('Photo upload error:', err)
-        setMessages(prev => [...prev, { role: 'bot', text: '❌ Failed to process photo. Please describe your order in text.', screen: null }])
-      }
-    }
-    reader.readAsDataURL(file)
-    setLoading(false)
-  }
-
-  // 🎤 Voice Recording Handler
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      audioChunksRef.current = []
-
-      mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data)
-      mediaRecorder.onstart = () => {
-        setIsRecording(true)
-        setRecordingTime(0)
-        recordingIntervalRef.current = setInterval(() => {
-          setRecordingTime(t => t + 1)
-        }, 1000)
-      }
-
-      mediaRecorder.onstop = async () => {
-        clearInterval(recordingIntervalRef.current)
-        setIsRecording(false)
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-        const base64Audio = await new Promise(resolve => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result)
-          reader.readAsDataURL(audioBlob)
-        })
-
-        // Process voice order
-        const userMsg = { role: 'user', text: `🎤 Voice message (${recordingTime}s)` }
-        setMessages(prev => [...prev, userMsg])
-        setMessages(prev => [...prev, { role: 'bot', text: '🎧 Processing voice message...', screen: null }])
-
-        // Auto-confirm voice order
-        setMessages(prev => [...prev, { role: 'bot', text: '✅ Voice order received and confirmed! Invoice will be sent shortly.', screen: null }])
-      }
-
-      mediaRecorder.start()
-    } catch (err) {
-      console.error('Microphone access error:', err)
-      alert('Please allow microphone access to record voice')
-    }
-  }
-
-  const stopRecording = () => {
-    mediaRecorderRef.current?.stop()
-    mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop())
   }
 
   const qas = QAS[lang] || QAS.en
@@ -521,36 +425,13 @@ export default function ChatbotWidget() {
           {/* Input */}
           <div style={styles.inputRow}>
             <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              style={{ display: 'none' }}
-            />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              style={{ ...styles.mediaBtn, color: '#FF6B35' }}
-              title="Send order photo"
-              disabled={loading || isRecording}
-            >
-              📸
-            </button>
-            <button
-              onClick={isRecording ? stopRecording : startRecording}
-              style={{ ...styles.mediaBtn, color: isRecording ? '#d32f2f' : '#4CAF50', background: isRecording ? 'rgba(211,47,47,0.1)' : undefined }}
-              title={isRecording ? 'Stop recording' : 'Record voice order'}
-              disabled={loading}
-            >
-              {isRecording ? `🎤 ${recordingTime}s` : '🎤'}
-            </button>
-            <input
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && send(input)}
               placeholder={inputPlaceholder}
               style={styles.input}
             />
-            <button onClick={() => send(input)} style={styles.sendBtn} disabled={loading || isRecording}>➤</button>
+            <button onClick={() => send(input)} style={styles.sendBtn} disabled={loading}>➤</button>
           </div>
         </div>
       )}
@@ -591,7 +472,6 @@ const styles = {
   qaBtn: { padding: '4px 10px', borderRadius: 20, border: '1px solid #c87137', background: 'rgba(200,113,55,0.08)', color: '#c87137', cursor: 'pointer', fontSize: 11, fontWeight: 500 },
   inputRow: { padding: '9px 11px', borderTop: '1px solid var(--border, #e5e7eb)', display: 'flex', gap: 7, alignItems: 'center', flexShrink: 0 },
   input: { flex: 1, padding: '7px 13px', borderRadius: 22, border: '1px solid var(--border, #e5e7eb)', background: 'var(--surface, #f9fafb)', color: 'var(--text, #111)', fontSize: 13, outline: 'none' },
-  mediaBtn: { width: 33, height: 33, minWidth: 33, borderRadius: '50%', background: 'transparent', border: '1.5px solid', borderColor: 'currentColor', color: '#c87137', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' },
   sendBtn: { width: 33, height: 33, minWidth: 33, borderRadius: '50%', background: '#c87137', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   dots: { display: 'flex', gap: 4, padding: '4px 2px' },
   dot: { width: 7, height: 7, borderRadius: '50%', background: '#c87137', display: 'inline-block', animation: 'bounce 1.2s infinite' },
