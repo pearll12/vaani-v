@@ -56,6 +56,47 @@ const PROMPTS = {
 
 const SCREEN_MAP = { khata: 'khata', payments: 'payments', orders: 'orders', reminders: 'reminders' }
 
+// ─── TTS Helper — strips emojis, asterisks, markdown ─────────────────────────
+
+function cleanTextForSpeech(text) {
+  return text
+    // Remove emojis
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '')
+    // Remove asterisks (bold markdown)
+    .replace(/\*+/g, '')
+    // Remove underscores (italic markdown)
+    .replace(/_+/g, '')
+    // Remove hash symbols
+    .replace(/#/g, '')
+    // Remove bullet chars
+    .replace(/[•●▶▷→←↑↓↻✕✓✗✔✘➤]/g, ' ')
+    // Clean multiple spaces/newlines
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function speakText(text, lang = 'en') {
+  if (!('speechSynthesis' in window)) return
+  // Stop any current speech
+  window.speechSynthesis.cancel()
+  const cleaned = cleanTextForSpeech(text)
+  if (!cleaned) return
+  const utterance = new SpeechSynthesisUtterance(cleaned)
+  // Map language codes to speech synthesis lang codes
+  const langMap = { en: 'en-IN', hi: 'hi-IN', ta: 'ta-IN', gu: 'gu-IN' }
+  utterance.lang = langMap[lang] || 'en-IN'
+  utterance.rate = 0.95
+  utterance.pitch = 1.05
+  window.speechSynthesis.speak(utterance)
+  return utterance
+}
+
+function stopSpeaking() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel()
+  }
+}
+
 // ─── Screen Mockup Components ────────────────────────────────────────────────
 
 function KhataScreen() {
@@ -261,6 +302,63 @@ async function callGrok(history, lang) {
   return data.reply
 }
 
+// ─── Speaker Button Component ─────────────────────────────────────────────────
+
+function SpeakerButton({ text, lang }) {
+  const [speaking, setSpeaking] = useState(false)
+
+  useEffect(() => {
+    // Listen for speech end event
+    const handleEnd = () => setSpeaking(false)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener?.('voiceschanged', () => {})
+    }
+    return () => {
+      stopSpeaking()
+    }
+  }, [])
+
+  const handleClick = () => {
+    if (speaking) {
+      stopSpeaking()
+      setSpeaking(false)
+      return
+    }
+    setSpeaking(true)
+    const utterance = speakText(text, lang)
+    if (utterance) {
+      utterance.onend = () => setSpeaking(false)
+      utterance.onerror = () => setSpeaking(false)
+    } else {
+      setSpeaking(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      title={speaking ? 'Stop speaking' : 'Listen to this message'}
+      style={{
+        background: speaking ? 'rgba(200,113,55,0.2)' : 'transparent',
+        border: `1px solid ${speaking ? '#c87137' : 'rgba(200,113,55,0.3)'}`,
+        borderRadius: 8,
+        padding: '3px 8px',
+        cursor: 'pointer',
+        fontSize: 13,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        color: speaking ? '#c87137' : '#999',
+        transition: 'all 0.2s',
+        marginTop: 5,
+      }}
+    >
+      {speaking ? '⏹' : '🔊'}
+      <span style={{ fontSize: 10, fontWeight: 600 }}>{speaking ? 'Stop' : 'Listen'}</span>
+    </button>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ChatbotWidget() {
@@ -270,11 +368,21 @@ export default function ChatbotWidget() {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(false)
   const [input, setInput] = useState('')
+  const [autoSpeak, setAutoSpeak] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  // Auto-speak new bot messages if toggle is on
+  useEffect(() => {
+    if (!autoSpeak || messages.length === 0) return
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg.role === 'bot' && lastMsg.text) {
+      speakText(lastMsg.text, lang)
+    }
+  }, [messages, autoSpeak, lang])
 
   const handleOpen = () => {
     setOpen(true)
@@ -284,12 +392,14 @@ export default function ChatbotWidget() {
   }
 
   const reset = () => {
+    stopSpeaking()
     setMessages([{ role: 'bot', text: WELCOME[lang], screen: null }])
     setHistory([])
     setLoading(false)
   }
 
   const switchLang = (code) => {
+    stopSpeaking()
     setLang(code)
     setMessages([{ role: 'bot', text: WELCOME[code], screen: null }])
     setHistory([])
@@ -307,6 +417,7 @@ export default function ChatbotWidget() {
 
   const send = async (text, forceScreen = null) => {
     if (!text.trim() || loading) return
+    stopSpeaking()
     const userMsg = { role: 'user', text }
     const newHistory = [...history, { role: 'user', content: text }]
     setMessages(prev => [...prev, userMsg])
@@ -337,7 +448,7 @@ export default function ChatbotWidget() {
     <>
       {/* Floating Button */}
       {!open && (
-        <button onClick={handleOpen} style={styles.fab} title="Talk to Priya">
+        <button id="tour-chatbot" onClick={handleOpen} style={styles.fab} title="Talk to Priya">
           💬
         </button>
       )}
@@ -351,9 +462,21 @@ export default function ChatbotWidget() {
               <div style={styles.headerTitle}>Priya — BusinessVaani Guide</div>
               <div style={styles.headerSub}>● Online • Feature Guide</div>
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {/* Auto-speak toggle */}
+              <button
+                onClick={() => { setAutoSpeak(a => !a); if (autoSpeak) stopSpeaking() }}
+                style={{
+                  ...styles.iconBtn,
+                  background: autoSpeak ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.18)',
+                  border: autoSpeak ? '1px solid rgba(255,255,255,0.5)' : 'none',
+                }}
+                title={autoSpeak ? 'Auto-speak ON — click to turn off' : 'Auto-speak OFF — click to turn on'}
+              >
+                {autoSpeak ? '🔊' : '🔇'}
+              </button>
               <button onClick={reset} style={styles.iconBtn} title="Restart">↻</button>
-              <button onClick={() => setOpen(false)} style={styles.iconBtn}>✕</button>
+              <button onClick={() => { stopSpeaking(); setOpen(false) }} style={styles.iconBtn}>✕</button>
             </div>
           </div>
 
@@ -373,7 +496,7 @@ export default function ChatbotWidget() {
                 {l.label}
               </button>
             ))}
-            <span style={styles.poweredBy}>Powered by Grok</span>
+            <span style={styles.poweredBy}>Powered by Groq</span>
           </div>
 
           {/* Messages */}
@@ -392,6 +515,8 @@ export default function ChatbotWidget() {
                   <div style={styles.botAvatar}>👩</div>
                   <div>
                     <div style={styles.botBubble}>{m.text}</div>
+                    {/* Speaker button for each bot message */}
+                    <SpeakerButton text={m.text} lang={lang} />
                     {ScreenComp && <ScreenComp />}
                   </div>
                 </div>

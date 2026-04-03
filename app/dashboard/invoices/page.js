@@ -7,6 +7,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const parseUtc = (ds) => !ds ? null : new Date(typeof ds === 'string' && !ds.endsWith('Z') && !ds.includes('+') ? ds + 'Z' : ds)
+
+
 const LANG_COLOR = {
   tamil: '#f97316', marathi: '#a855f7', telugu: '#3b82f6',
   hindi: '#22c55e', hinglish: '#eab308', english: 'var(--muted-light)',
@@ -224,7 +227,7 @@ export default function InvoicesPage() {
                   const sgst  = +(sub * 0.09).toFixed(2)
                   const grand = +(sub + cgst + sgst).toFixed(2)
                   const lang  = order.language || 'english'
-                  const date  = new Date(order.created_at)
+                  const date  = parseUtc(order.created_at)
 
                   return (
                     <tr key={order.id}>
@@ -234,7 +237,7 @@ export default function InvoicesPage() {
                             #{String(order.id).padStart(4, '0')}
                           </p>
                           <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                            {date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            {date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
                           </p>
                         </div>
                       </td>

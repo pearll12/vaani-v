@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useTheme } from '@/lib/theme'
 import Chatbot from './chatbot'
+import Tour from './Tour'
 
 import { supabase } from '@/lib/supabase'
 
@@ -160,7 +161,7 @@ export default function DashboardLayout({ children }) {
           {NAV.map(({ href, icon, label, color }) => {
             const active = pathname === href
             return (
-              <Link key={href} href={href} style={{
+              <Link id={`tour-nav-${label.toLowerCase()}`} key={href} href={href} style={{
                 display: 'flex', alignItems: 'center',
                 gap: 10, padding: (collapsed && !isMobile) ? '10px 15px' : '9px 12px',
                 borderRadius: 11, textDecoration: 'none',
@@ -299,7 +300,7 @@ export default function DashboardLayout({ children }) {
             }}>
               <span style={{ fontSize: 11, color: 'var(--muted)' }}>📅</span>
               <span style={{ fontSize: 12, color: 'var(--muted-light)', fontWeight: 500 }}>
-                {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short' })}
               </span>
             </div>
             <button
@@ -342,6 +343,9 @@ export default function DashboardLayout({ children }) {
 
       {/* Chatbot Widget */}
       <Chatbot />
+      
+      {/* Onboarding Tour */}
+      <Tour />
     </div>
   )
 }

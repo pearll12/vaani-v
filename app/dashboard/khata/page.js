@@ -1,6 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 
+const parseUtc = (ds) => !ds ? null : new Date(typeof ds === 'string' && !ds.endsWith('Z') && !ds.includes('+') ? ds + 'Z' : ds)
+
+
 export default function KhataPage() {
   const [khata, setKhata]       = useState([])
   const [loading, setLoading]   = useState(true)
@@ -323,7 +326,7 @@ export default function KhataPage() {
                             ₹{Number(order.grand_total || 0).toLocaleString('en-IN')}
                           </span>
                           <p style={{ margin: 0, fontSize: 10, color: 'var(--muted)' }}>
-                            {order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}
+                            {order.created_at ? parseUtc(order.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' }) : ''}
                           </p>
                         </div>
                       </div>
