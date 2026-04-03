@@ -194,7 +194,7 @@ function RemindersScreen() {
           </div>
           <div style={{ background: '#f3e5f5', borderRadius: 6, padding: '6px 8px', fontSize: 11, color: '#6a1b9a', marginBottom: 6 }}>
             📱 WhatsApp Preview:<br />
-            <span style={{ color: '#333', fontStyle: 'italic' }}>"Namaskar Sunil ji! ₹6,200 pending hai. Pay karo: pay.businessvaani.in/sk42"</span>
+            <span style={{ color: '#333', fontStyle: 'italic' }}>"Namaskar Sunil ji! ₹6,200 pending hai. Pay karo: pay.businessVaani.in/sk42"</span>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <button style={{ flex: 1, background: '#25d366', color: '#fff', border: 'none', borderRadius: 8, padding: 5, fontSize: 11, cursor: 'pointer' }}>📤 Send Now</button>

@@ -6,17 +6,31 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url)
     const daysParam = parseInt(searchParams.get('days')) || 7
 
-    const { data: orders = [] } = await supabase
+    const { data: orders = [], error: dbError } = await supabase
       .from('orders').select('*').order('created_at', { ascending: true })
+    
+    if (dbError) {
+      console.warn('Database warning:', dbError)
+      return NextResponse.json({
+        totalRevenue: 0, gstCollected: 0, revenueAtRisk: 0, ordersToday: 0,
+        revenueByDay: [], gstByWeek: [],
+        statusBreakdown: { pending: 0, invoiced: 0, paid: 0 },
+        topBuyers: [],
+      })
+    }
 
+    // ═══ Order Status Breakdown ═══
     const paid     = orders.filter(o => o.status === 'paid')
     const pending  = orders.filter(o => o.status === 'pending')
     const invoiced = orders.filter(o => o.status === 'invoiced')
 
-    const totalRevenue  = paid.reduce((s, o) => s + (o.total_amount || 0), 0)
+    // ═══ Revenue Calculations ═══
+    const totalRevenue  = paid.reduce((s, o) => s + (parseFloat(o.total_amount) || 0), 0)
     const gstCollected  = totalRevenue * 0.18
-    const revenueAtRisk = invoiced.reduce((s, o) => s + (o.total_amount || 0), 0)
+    const revenueAtRisk = (invoiced.reduce((s, o) => s + (parseFloat(o.total_amount) || 0), 0)) + 
+                          (pending.reduce((s, o) => s + (parseFloat(o.total_amount) || 0), 0))
 
+    // ═══ Today's Orders ═══
     const today = new Date().toISOString().split('T')[0]
     const ordersToday = orders.filter(o => o.created_at?.startsWith(today)).length
 

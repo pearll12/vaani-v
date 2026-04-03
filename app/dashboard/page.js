@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import inventory from '@/data/inventory.json'
 
 function StatCard({ label, value, sub, icon, color, borderColor, bg }) {
   return (
@@ -68,9 +69,9 @@ function DonutChart({ breakdown = {} }) {
   const { pending = 0, invoiced = 0, paid = 0 } = breakdown
   const total = pending + invoiced + paid
   const segs = [
-    { label: 'Paid',     value: paid,     color: '#00d68f' },
-    { label: 'Invoiced', value: invoiced,  color: '#7c6df8' },
-    { label: 'Pending',  value: pending,   color: '#f5a623' },
+    { label: 'Paid', value: paid, color: '#00d68f' },
+    { label: 'Invoiced', value: invoiced, color: '#7c6df8' },
+    { label: 'Pending', value: pending, color: '#f5a623' },
   ]
   const R = 52, CX = 72, CY = 72, C = 2 * Math.PI * R
   let off = 0
@@ -106,7 +107,7 @@ function DonutChart({ breakdown = {} }) {
 }
 
 export default function DashboardPage() {
-  const [data, setData]     = useState(null)
+  const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedDays, setSelectedDays] = useState(7)
 
@@ -126,10 +127,10 @@ export default function DashboardPage() {
   }
 
   const kpis = data ? [
-    { label: 'Total Revenue',    value: `₹${(data.totalRevenue || 0).toLocaleString('en-IN')}`,             sub: 'from paid orders',    icon: '◈',  color: '#00d68f', bg: 'var(--emerald-dim)', borderColor: 'rgba(0,214,143,0.2)' },
-    { label: 'GST Collected',    value: `₹${Math.round(data.gstCollected || 0).toLocaleString('en-IN')}`,  sub: '18% of revenue',      icon: '⬕',  color: '#a095fb', bg: 'var(--violet-dim)',  borderColor: 'rgba(124,109,248,0.2)' },
-    { label: 'Revenue at Risk',  value: `₹${(data.revenueAtRisk || 0).toLocaleString('en-IN')}`,           sub: 'awaiting payment',    icon: '⚠',  color: '#f5a623', bg: 'var(--amber-dim)',   borderColor: 'rgba(245,166,35,0.2)' },
-    { label: 'Orders Today',     value: data.ordersToday || 0,                                              sub: 'new orders',          icon: '▦',  color: '#3b9eff', bg: 'var(--blue-dim)',    borderColor: 'rgba(59,158,255,0.2)' },
+    { label: 'Total Revenue', value: `₹${(data.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`, sub: 'from paid orders', icon: '◈', color: '#00d68f', bg: 'var(--emerald-dim)', borderColor: 'rgba(0,214,143,0.2)' },
+    { label: 'GST Collected', value: `₹${Math.round(data.gstCollected || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`, sub: '18% of revenue', icon: '⬕', color: '#a095fb', bg: 'var(--violet-dim)', borderColor: 'rgba(124,109,248,0.2)' },
+    { label: 'Revenue at Risk', value: `₹${(data.revenueAtRisk || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`, sub: 'awaiting payment', icon: '⚠', color: '#f5a623', bg: 'var(--amber-dim)', borderColor: 'rgba(245,166,35,0.2)' },
+    { label: 'Orders Today', value: String(data.ordersToday || 0), sub: 'new orders', icon: '▦', color: '#3b9eff', bg: 'var(--blue-dim)', borderColor: 'rgba(59,158,255,0.2)' },
   ] : []
 
   const Skeleton = () => (
@@ -150,158 +151,111 @@ export default function DashboardPage() {
         {loading ? Array(4).fill(0).map((_, i) => <Skeleton key={i} />) : kpis.map(k => <StatCard key={k.label} {...k} />)}
       </div>
 
-      {/* Charts row */}
-      <div className="charts-row" style={{ display: 'grid', gap: 16 }}>
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 16, flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>
-                Revenue ({selectedDays <= 30 ? `${selectedDays} days` : selectedDays === 90 ? '3 months' : '1 year'})
-              </p>
-              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '3px 0 0', fontWeight: 500 }}>Paid orders only</p>
-            </div>
-            <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
-              {[
-                { l: '7D', v: 7 }, { l: '10D', v: 10 }, { l: '30D', v: 30 }, { l: '3M', v: 90 }, { l: '1Y', v: 365 }
-              ].map(opt => (
-                <button key={opt.v} onClick={() => setSelectedDays(opt.v)} style={{
-                  fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 7, border: 'none',
-                  cursor: 'pointer', transition: 'all 0.2s',
-                  background: selectedDays === opt.v ? 'var(--emerald)' : 'transparent',
-                  color: selectedDays === opt.v ? '#000' : 'var(--muted)',
-                }}>{opt.l}</button>
-              ))}
-            </div>
+      {/* Low Stock + Order Status Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+        {/* Low Stock Alerts (LEFT) */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <p style={{ fontWeight: 700, fontSize: 15, color: '#f5a623', margin: 0, letterSpacing: '-0.01em' }}>Low Stock</p>
+            {(() => {
+              const lowStockCount = inventory.filter(item => item.quantity <= item.lowStockThreshold).length
+              return lowStockCount > 0 ? <span style={{ background: '#f5a623', color: '#000', fontSize: 9, fontWeight: 700, padding: '3px 6px', borderRadius: 4, marginLeft: 'auto' }}>{lowStockCount}</span> : null
+            })()}
           </div>
-          <AreaChart data={data?.revenueByDay || []} id="rev" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflow: 'auto' }}>
+            {(() => {
+              const lowStockItems = inventory.filter(item => item.quantity <= item.lowStockThreshold)
+              if (lowStockItems.length === 0) {
+                return <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>All items stocked ✓</p>
+              }
+              return lowStockItems.map(item => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', background: 'rgba(245, 166, 35, 0.08)', borderRadius: 8, border: '1px solid rgba(245, 166, 35, 0.15)' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{item.name}</p>
+                    <p style={{ fontSize: 10, color: '#f5a623', margin: '2px 0 0', fontWeight: 600 }}>{item.quantity}{item.unit} left · Min: {item.lowStockThreshold}{item.unit}</p>
+                  </div>
+                  <a href="/dashboard/inventory" style={{ fontSize: 9, fontWeight: 700, color: '#f5a623', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 6px', background: 'rgba(245, 166, 35, 0.15)', borderRadius: 4, border: '1px solid rgba(245, 166, 35, 0.25)', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.target.style.background = 'rgba(245, 166, 35, 0.25)' }} onMouseLeave={e => { e.target.style.background = 'rgba(245, 166, 35, 0.15)' }}>Restock</a>
+                </div>
+              ))
+            })()}
+          </div>
         </div>
 
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
+        {/* Order Status (RIGHT) */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column' }}>
           <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Order Status</p>
-          <DonutChart breakdown={data?.statusBreakdown} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <DonutChart breakdown={data?.statusBreakdown} />
+          </div>
         </div>
       </div>
 
-      {/* Bottom Sections (Mixed Layout: Side-by-Side) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'start' }}>
-        
-        {/* Left Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Low Stock Items Card */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--rose-border)', borderRadius: 16, padding: '22px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-              <span style={{ fontSize: 20 }}>⚠</span>
-              <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--rose)', margin: 0, letterSpacing: '-0.01em' }}>Low Stock Alerts</p>
-            </div>
-            {!data?.lowStockItems?.length ? (
-              <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>Inventory levels are healthy.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {data.lowStockItems.map(item => (
-                  <div key={item.id} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)'
-                  }}>
-                    <div>
-                      <p style={{ margin: 0, fontSize: 14, color: 'var(--text)', fontWeight: 600 }}>{item.name}</p>
-                      <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>SKU: {item.sku || 'N/A'}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--rose)', fontFamily: 'JetBrains Mono, monospace' }}>
-                        {item.quantity} <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>{item.unit}</span>
-                      </p>
-                      <p style={{ margin: 0, fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Left</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+      {/* Revenue Chart (FULL WIDTH) */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>
+              Revenue ({selectedDays <= 30 ? `${selectedDays} days` : selectedDays === 90 ? '3 months' : '1 year'})
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: '3px 0 0', fontWeight: 500 }}>Paid orders only</p>
+          </div>
+          <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
+            {[
+              { l: '7D', v: 7 }, { l: '10D', v: 10 }, { l: '30D', v: 30 }, { l: '3M', v: 90 }, { l: '1Y', v: 365 }
+            ].map(opt => (
+              <button key={opt.v} onClick={() => setSelectedDays(opt.v)} style={{
+                fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 7, border: 'none',
+                cursor: 'pointer', transition: 'all 0.2s',
+                background: selectedDays === opt.v ? 'var(--emerald)' : 'transparent',
+                color: selectedDays === opt.v ? '#000' : 'var(--muted)',
+              }}>{opt.l}</button>
+            ))}
           </div>
         </div>
+        <AreaChart data={data?.revenueByDay || []} id="rev" />
+      </div>
 
-        {/* Right Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Latest Purchases (Paid) Card */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--teal-border)', borderRadius: 16, padding: '22px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-              <span style={{ fontSize: 20 }}>💰</span>
-              <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--teal)', margin: 0, letterSpacing: '-0.01em' }}>Latest Purchases</p>
-            </div>
-            {!data?.latestPaidOrders?.length ? (
-              <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>No recent purchases.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {data.latestPaidOrders.map(order => (
-                  <div key={order.id} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)'
+      {/* Charts row (removed - was Revenue + Order Status) */}
+
+      {/* Top Buyers */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
+        <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: '0 0 18px', letterSpacing: '-0.01em' }}>Top Buyers</p>
+        {!data?.topBuyers?.length ? (
+          <p style={{ color: 'var(--muted)', fontSize: 13 }}>No buyer data yet</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {data.topBuyers.map((b, i) => {
+              const colors = [['#00d68f', '#3b9eff'], ['#7c6df8', '#f4607b'], ['#f5a623', '#22c55e'], ['#3b9eff', '#7c6df8'], ['#f4607b', '#f5a623']]
+              const [c1, c2] = colors[i % colors.length]
+              return (
+                <div key={b.phone} style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '12px 0', borderBottom: i < data.topBuyers.length - 1 ? '1px solid rgba(255,255,255,0.035)' : 'none',
+                }}>
+                  <span style={{ fontSize: 13, width: 24, textAlign: 'center', fontWeight: 800, color: 'var(--muted)', opacity: 0.8 }}>{i + 1}</span>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                    background: `linear-gradient(135deg, ${c1}, ${c2})`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 800, color: '#fff',
                   }}>
-                    <div>
-                      <p style={{ margin: 0, fontSize: 14, color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>
-                        {order.customer_phone}
-                      </p>
-                      <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>
-                        #{String(order.id).padStart(4, '0')} · {new Date(order.created_at).toLocaleDateString('en-IN')}
-                      </p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--teal)', fontFamily: 'JetBrains Mono, monospace' }}>
-                        ₹{Number(order.total_amount * 1.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                      </p>
-                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'var(--teal-dim)', color: 'var(--teal)', fontWeight: 700 }}>PAID</span>
-                    </div>
+                    {b.phone?.slice(-2)}
                   </div>
-                ))}
-              </div>
-            )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text)', fontWeight: 600 }}>{b.phone}</p>
+                    <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>{b.totalOrders} orders · {b.languages?.join(', ')}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--teal)', letterSpacing: '-0.01em' }}>₹{b.totalSpent.toLocaleString('en-IN')}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>total spent</p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
-
-          {/* Latest Orders (Pending/Invoiced) Card */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px',
-            background: 'linear-gradient(180deg, var(--card) 0%, rgba(20,25,35,0.4) 100%)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-              <span style={{ fontSize: 20 }}>📦</span>
-              <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>Latest Orders</p>
-            </div>
-            {!data?.latestOrders?.length ? (
-              <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>No pending orders.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {data.latestOrders.map(order => {
-                  const isInv = order.status === 'invoiced'
-                  return (
-                    <div key={order.id} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)'
-                    }}>
-                      <div>
-                        <p style={{ margin: 0, fontSize: 14, color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>
-                          {order.customer_phone}
-                        </p>
-                        <p style={{ margin: 0, fontSize: 11.5, color: 'var(--muted)' }}>
-                          #{String(order.id).padStart(4, '0')} · {new Date(order.created_at).toLocaleDateString('en-IN')}
-                        </p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace', marginBottom: 4 }}>
-                          ₹{Number(order.total_amount * 1.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                        </p>
-                        <span style={{
-                          fontSize: 10, padding: '2px 8px', borderRadius: 4, fontWeight: 700,
-                          background: isInv ? 'var(--indigo-dim)' : 'var(--indigo)',
-                          color: isInv ? 'var(--indigo)' : 'var(--amber)',
-                          border: `1px solid ${isInv ? 'var(--indigo-border)' : 'var(--amber-border)'}`
-                        }}>
-                          {isInv ? 'INVOICED' : 'PENDING'}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )

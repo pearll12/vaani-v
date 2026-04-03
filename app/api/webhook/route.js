@@ -14,8 +14,26 @@ async function loadInventory() {
 }
 
 async function saveInventory(items) {
+  // Update Supabase
   const { error } = await supabase.from('inventory').upsert(items, { onConflict: 'id' })
   if (error) console.error('Save inventory error:', error)
+  
+  // Also update inventory.json for dashboard
+  try {
+    const fs = await import('fs').then(m => m.promises)
+    const path = await import('path').then(m => m.default)
+    const invPath = path.join(process.cwd(), 'data', 'inventory.json')
+    
+    const current = JSON.parse(await fs.readFile(invPath, 'utf8'))
+    const updated = current.map(inv => {
+      const updatedItem = items.find(item => item.id === inv.id)
+      return updatedItem || inv
+    })
+    
+    await fs.writeFile(invPath, JSON.stringify(updated, null, 2))
+  } catch (e) {
+    console.warn('Could not update inventory.json:', e.message)
+  }
 }
 
 async function lookupInventoryPrices(items) {
@@ -75,6 +93,7 @@ async function deductAndCheckStock(items) {
       lowStockAlerts.push({
         name: inventory[idx].name,
         remaining: inventory[idx].quantity,
+        unit: inventory[idx].unit || 'pcs',
         threshold,
       })
     }
@@ -175,7 +194,7 @@ export async function POST(req) {
     const mediaType = formData.get('MediaContentType0')
     const mediaUrl  = formData.get('MediaUrl0')
     
-    console.log(`📩 Message from ${from}: ${body}`)
+    console.log(`📩 Message from ${from}: ${body}, Media: ${mediaType}`)
     
     // ═══════════════════════════════
     // VOICE NOTE → Transcribe with Groq Whisper
@@ -191,7 +210,7 @@ export async function POST(req) {
         // Acknowledge voice note to user
         await sendWhatsApp(from, `🎙️ _Voice note samjha:_ "${messageText}"\n\n⏳ Processing...`)
       } catch (err) {
-        console.error('❌ Voice transcription failed:', err)
+        console.error('❌ Voice transcription failed:', err.message)
         await sendWhatsApp(from,
           `❌ Voice note samajh nahi aaya. Please text mein bhejein.\n\n` +
           `📝 Type karein: "5 Rice Bag aur 2 Wheat Flour"\n` +
@@ -199,6 +218,20 @@ export async function POST(req) {
         )
         return new NextResponse('OK', { status: 200 })
       }
+    }
+    // ═══════════════════════════════
+    // PHOTO/IMAGE → Ask for description
+    // ═══════════════════════════════
+    else if (mediaType?.includes('image') && mediaUrl) {
+      console.log(`📸 Photo detected! Type: ${mediaType}`)
+      await sendWhatsApp(from,
+        `📸 *Photo samajh aaya ho gaya!*\n\n` +
+        `Lekin photo se exact quantity/items nahi pata chalte 😅\n\n` +
+        `Please text mein likhein kya chahiye:\n` +
+        `_"5 Rice Bag aur 2 Wheat Flour"_\n\n` +
+        `Ya "hi" bhejein catalog dekhne ke liye! 📦`
+      )
+      return new NextResponse('OK', { status: 200 })
     }
 
     // NLU extraction
@@ -519,11 +552,11 @@ export async function POST(req) {
 
       console.log(`✅ Selection order: #${order.id} — ₹${totalAmount}`)
 
-      // Deduct stock + alert owner
-      await handleStockAlerts(selectedItems)
+      // Deduct stock + get low stock alerts
+      const stockAlerts = await handleStockAlerts(selectedItems)
 
-      // Send confirmation with price breakdown
-      const confirmMsg = buildConfirmation(selectedItems, order.id, totalAmount, extracted.language)
+      // Send confirmation with price breakdown + stock alerts
+      const confirmMsg = buildConfirmation(selectedItems, order.id, totalAmount, extracted.language, stockAlerts)
       await sendWhatsApp(from, confirmMsg)
 
       // Clear session
@@ -612,11 +645,11 @@ export async function POST(req) {
       console.log(`✅ Direct order: #${order.id} — ₹${order.total_amount}`)
 
       // Deduct stock + alert owner
-      await handleStockAlerts(itemsWithPrices)
+      const stockAlerts = await handleStockAlerts(itemsWithPrices)
 
       // Confirmation with price breakdown
       const confirmMsg = buildConfirmation(
-        itemsWithPrices, order.id, order.total_amount, extracted.language
+        itemsWithPrices, order.id, order.total_amount, extracted.language, stockAlerts
       )
       await sendWhatsApp(from, confirmMsg)
 
@@ -685,19 +718,23 @@ export async function POST(req) {
 
 async function handleStockAlerts(items) {
   const lowStockAlerts = await deductAndCheckStock(items)
+  
+  // Notify OWNER of low stock 🔔
   if (lowStockAlerts.length > 0 && OWNER_PHONE) {
     const alertMsg = `🚨 *Low Stock Alert!*\n\n` +
       lowStockAlerts.map(a =>
-        `⚠️ *${a.name}* — Only ${a.remaining} left (threshold: ${a.threshold})`
+        `⚠️ *${a.name}* — Only ${a.remaining} ${a.unit || 'units'} left (threshold: ${a.threshold})`
       ).join('\n') +
-      `\n\n_Restock karein!_`
+      `\n\n_Restock karein! 📦_`
     sendWhatsApp(OWNER_PHONE, alertMsg).catch(e => console.error('Stock alert failed:', e))
   }
+  
+  return lowStockAlerts // Return for customer notification
 }
 
-// ───── Confirmation with Prices ─────
+// ───── Confirmation with Prices + Low Stock Alerts ─────
 
-function buildConfirmation(items, orderId, totalAmount, language) {
+function buildConfirmation(items, orderId, totalAmount, language, stockAlerts = []) {
   const itemList = items
     .map(i => {
       const qty = Number(i.quantity) || 1
@@ -713,14 +750,24 @@ function buildConfirmation(items, orderId, totalAmount, language) {
   const sub = Number(totalAmount) || 0
   const gst = +(sub * 0.18).toFixed(2)
   const grand = +(sub + gst).toFixed(2)
+  
+  // Build low stock alert section
+  let stockAlertSection = ''
+  if (stockAlerts && stockAlerts.length > 0) {
+    stockAlertSection = `\n⚠️ *Current Stock:*\n` +
+      stockAlerts.map(a =>
+        `${a.name} → ${a.remaining} ${a.unit || 'units'} left`
+      ).join('\n') +
+      `\n_Restock recommended!_\n`
+  }
 
   const templates = {
-    tamil: `✅ *Order பதிவு! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Order confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" — Bill mangein 🙏`,
-    marathi: `✅ *ऑर्डर नोंदवला! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Order confirm करा\n❌ "cancel" — Cancel करा\n📄 "invoice" लिहा bill साठी 🙏`,
-    telugu: `✅ *ఆర్డర్ నమోదు! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Confirm చేయండి\n❌ "cancel" — Cancel చేయండి\n📄 "invoice" పంపండి bill కోసం 🙏`,
-    english: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ Reply "confirm" to confirm\n❌ Reply "cancel" to cancel\n📄 Reply "invoice" for bill 🙏`,
-    hindi: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" bhejein bill ke liye 🙏`,
-    hinglish: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*\n\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" bhejein bill ke liye 🙏`,
+    tamil: `✅ *Order பதிவு! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Order confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" — Bill mangein 🙏`,
+    marathi: `✅ *ऑर्डर नोंदवला! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Order confirm करा\n❌ "cancel" — Cancel करा\n📄 "invoice" लिहा bill साठी 🙏`,
+    telugu: `✅ *ఆర్డర్ నమోదు! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm చేయండి\n❌ "cancel" — Cancel చేయండి\n📄 "invoice" పంపండి bill కోసం 🙏`,
+    english: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ Reply "confirm" to confirm\n❌ Reply "cancel" to cancel\n📄 Reply "invoice" for bill 🙏`,
+    hindi: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" bhejein bill ke liye 🙏`,
+    hinglish: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" bhejein bill ke liye 🙏`,
   }
 
   return templates[language] || templates.hinglish
