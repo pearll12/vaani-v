@@ -129,7 +129,7 @@ export default function PaymentsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-up">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Payments</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
@@ -240,7 +240,7 @@ export default function PaymentsPage() {
           const isJustPaid = String(order.id) === String(justPaid)
 
           return (
-            <div key={order.id} style={{
+            <div key={order.id} className="payment-card-layout" style={{
               background: isJustPaid ? 'rgba(0,229,195,0.08)' : 'var(--card)',
               border: `1px solid ${isJustPaid ? 'var(--teal)' : isOverdue ? 'var(--amber-border)' : 'var(--border)'}`,
               borderRadius: 16, padding: '16px 22px',
@@ -284,25 +284,28 @@ export default function PaymentsPage() {
                 </p>
               </div>
 
-              {/* Amount */}
-              <div style={{ textAlign: 'right', minWidth: 100 }}>
-                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: order.status === 'paid' ? 'var(--teal)' : 'var(--text)', letterSpacing: '-0.01em', fontFamily: 'JetBrains Mono, monospace' }}>
-                  ₹{grand.toLocaleString('en-IN')}
-                </p>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                  {isToday
-                    ? time.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
-                    : time.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
-                </p>
+              {/* Amount + Timeline Row for Mobile */}
+              <div className="amount-row">
+                {/* Amount */}
+                <div style={{ textAlign: 'right', minWidth: 100 }}>
+                  <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: order.status === 'paid' ? 'var(--teal)' : 'var(--text)', letterSpacing: '-0.01em', fontFamily: 'JetBrains Mono, monospace' }}>
+                    ₹{grand.toLocaleString('en-IN')}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                    {isToday
+                      ? time.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
+                      : time.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
+                  </p>
+                </div>
+
+                {/* Timeline */}
+                <div className="timeline-row" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <PaymentTimeline status={order.status} />
+                </div>
               </div>
 
-              {/* Timeline */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <PaymentTimeline status={order.status} />
-              </div>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: 8, minWidth: 130, justifyContent: 'flex-end' }}>
+              {/* Actions Row for Mobile */}
+              <div className="actions-row" style={{ display: 'flex', gap: 8, minWidth: 130, justifyContent: 'flex-end' }}>
                 {order.status === 'invoiced' && (
                   <>
                     <button

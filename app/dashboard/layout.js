@@ -212,9 +212,9 @@ export default function DashboardLayout({ children }) {
           </div>
         )}
 
-        {/* Collapse & Logout — desktop only */}
-        {!isMobile && (
-          <div style={{ display: 'flex', flexDirection: collapsed ? 'column' : 'row', borderTop: '1px solid var(--border)' }}>
+        {/* Sidebar Footer — Collapse (desktop) & Logout (all) */}
+        <div style={{ display: 'flex', flexDirection: (collapsed && !isMobile) ? 'column' : 'row', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          {!isMobile && (
             <button
               onClick={() => setCollapsed(c => !c)}
               style={{
@@ -237,30 +237,31 @@ export default function DashboardLayout({ children }) {
               }}>‹</span>
               {!collapsed && <span style={{ fontWeight: 500 }}>Collapse</span>}
             </button>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut()
-                window.location.href = '/'
-              }}
-              style={{
-                flex: collapsed ? 'none' : 1,
-                display: 'flex', padding: collapsed ? '14px 20px' : '14px 18px',
-                alignItems: 'center', justifyContent: 'center',
-                border: 'none', cursor: 'pointer',
-                borderLeft: collapsed ? 'none' : '1px solid var(--border)',
-                borderTop: collapsed ? '1px solid var(--border)' : 'none',
-                background: 'transparent', color: '#ef4444',
-                fontSize: 12, fontWeight: 600, transition: 'background 0.15s',
-                fontFamily: 'Plus Jakarta Sans, sans-serif',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-              title="Logout"
-            >
-              {collapsed ? '⎋' : 'Logout'}
-            </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut()
+              window.location.href = '/'
+            }}
+            style={{
+              flex: (collapsed && !isMobile) ? 'none' : 1,
+              display: 'flex', padding: (collapsed && !isMobile) ? '14px 20px' : '14px 18px',
+              alignItems: 'center', justifyContent: 'center',
+              border: 'none', cursor: 'pointer',
+              borderLeft: (collapsed || isMobile) ? 'none' : '1px solid var(--border)',
+              borderTop: (collapsed && !isMobile) ? '1px solid var(--border)' : 'none',
+              background: 'transparent', color: '#ef4444',
+              fontSize: 12, fontWeight: 600, transition: 'background 0.15s',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
+              width: isMobile ? '100%' : 'auto',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            title="Logout"
+          >
+            {(collapsed && !isMobile) ? '⎋' : 'Logout'}
+          </button>
+        </div>
       </aside>
 
       {/* Main */}

@@ -224,14 +224,14 @@ export async function POST(req) {
     // ═══════════════════════════════
     else if (mediaType?.includes('image') && mediaUrl) {
       console.log(`📸 Photo detected! Type: ${mediaType}, URL: ${mediaUrl}`)
-      
+
       try {
         // Acknowledge the photo
         await sendWhatsApp(from, `📸 _Photo mil gaya! Order samajh raha hoon..._\n\n⏳ Processing...`)
-        
+
         // Pass image to NLU via extractOrder
         const extracted = await extractOrder(messageText, mediaUrl, mediaType)
-        
+
         if (!extracted.items || extracted.items.length === 0) {
           // No items found in image — ask user to type
           await sendWhatsApp(from,
@@ -242,20 +242,20 @@ export async function POST(req) {
           )
           return new NextResponse('OK', { status: 200 })
         }
-        
+
         // Items found! Process as a regular order
         console.log(`📸 Extracted ${extracted.items.length} items from photo`)
-        
+
         // Look up prices from inventory
         const itemsWithPrices = await lookupInventoryPrices(extracted.items)
-        
+
         // Calculate total
         const totalAmount = itemsWithPrices.reduce((sum, item) => {
           const qty = Number(item.quantity) || 1
           const price = Number(item.price) || 0
           return sum + (qty * price)
         }, 0)
-        
+
         // If NO prices found at all → tell customer what's available
         if (totalAmount === 0 && itemsWithPrices.every(i => !i.price)) {
           const catalog = await buildCatalog(extracted.language || 'hinglish')
@@ -263,7 +263,7 @@ export async function POST(req) {
             await supabase.from('sessions').upsert({
               phone: from, catalog_map: catalog.catalogMap, updated_at: new Date().toISOString(),
             }, { onConflict: 'phone' })
-          } catch {}
+          } catch { }
           await sendWhatsApp(from,
             `📸 Photo se ye items mile:\n` +
             extracted.items.map(i => `  • ${i.quantity || 1}× ${i.name}`).join('\n') +
@@ -271,10 +271,10 @@ export async function POST(req) {
           )
           return new NextResponse('OK', { status: 200 })
         }
-        
+
         // Save order
         await supabase.from('customers').upsert({ phone: from }, { onConflict: 'phone' })
-        
+
         const { data: order } = await supabase
           .from('orders')
           .insert({
@@ -286,24 +286,24 @@ export async function POST(req) {
             total_amount: totalAmount,
           })
           .select().single()
-        
+
         console.log(`✅ Photo order: #${order.id} — ₹${totalAmount}`)
-        
+
         // Deduct stock + alert owner
         const stockAlerts = await handleStockAlerts(itemsWithPrices)
-        
+
         // Confirmation with price breakdown
         const confirmMsg = buildConfirmation(
           itemsWithPrices, order.id, order.total_amount, extracted.language || 'hinglish', stockAlerts
         )
-        
+
         // Prepend photo acknowledgment
         await sendWhatsApp(from,
           `📸 *Photo se order samajh aa gaya!*\n\n` + confirmMsg
         )
-        
+
         return new NextResponse('OK', { status: 200 })
-        
+
       } catch (err) {
         console.error('❌ Photo processing failed:', err.message)
         // Fallback — ask user to type
@@ -326,7 +326,7 @@ export async function POST(req) {
     if (extracted.intent === 'GREETING') {
       const lang = extracted.language || 'hinglish'
       const catalog = await buildCatalog(lang)
-      
+
       const { data: profiles } = await supabase.from('business_profiles').select('*').limit(1)
       const bName = (profiles && profiles.length > 0 && profiles[0].business_name) ? profiles[0].business_name : 'Aapke Store'
 
@@ -363,30 +363,30 @@ export async function POST(req) {
       const bName = (profiles && profiles.length > 0 && profiles[0].business_name) ? profiles[0].business_name : 'Aapka Store'
 
       const helpMsg = lang === 'english'
-        ? `📖 *${bName} Help Guide*\n\n` +
-          `Here's what you can do:\n\n` +
-          `📦 *"hi"* or *"catalog"* — View product list\n` +
-          `🛒 *"5 Rice Bag"* — Place an order directly\n` +
-          `🔢 *"1, 3, 5"* — Select items from catalog\n` +
-          `📋 *"track"* — Track your latest order\n` +
-          `✅ *"confirm"* — Confirm pending order\n` +
-          `❌ *"cancel"* — Cancel pending order\n` +
-          `💰 *"hisab"* — Check payment status\n` +
-          `🎙️ *Voice Note* — Send voice order!\n` +
-          `❓ *"help"* — Show this guide\n\n` +
-          `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
-        : `📖 *${bName} Help Guide*\n\n` +
-          `Aap ye sab kar sakte hain:\n\n` +
-          `📦 *"hi"* ya *"catalog"* — Product list dekhein\n` +
-          `🛒 *"5 Rice Bag"* — Direct order karein\n` +
-          `🔢 *"1, 3, 5"* — Catalog se select karein\n` +
-          `📋 *"track"* — Order ka status dekhein\n` +
-          `✅ *"confirm"* — Pending order confirm karein\n` +
-          `❌ *"cancel"* — Order cancel karein\n` +
-          `💰 *"hisab"* — Payment status check karein\n` +
-          `🎙️ *Voice Note* — Voice se order bhejein!\n` +
-          `❓ *"help"* — Ye guide dikhao\n\n` +
-          `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
+        ? `📖 *BusinessVaani Help Guide*\n\n` +
+        `Here's what you can do:\n\n` +
+        `📦 *"hi"* or *"catalog"* — View product list\n` +
+        `🛒 *"5 Rice Bag"* — Place an order directly\n` +
+        `🔢 *"1, 3, 5"* — Select items from catalog\n` +
+        `📋 *"track"* — Track your latest order\n` +
+        `✅ *"confirm"* — Confirm pending order\n` +
+        `❌ *"cancel"* — Cancel pending order\n` +
+        `💰 *"hisab"* — Check payment status\n` +
+        `🎙️ *Voice Note* — Send voice order!\n` +
+        `❓ *"help"* — Show this guide\n\n` +
+        `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
+        : `📖 *BusinessVaani Help Guide*\n\n` +
+        `Aap ye sab kar sakte hain:\n\n` +
+        `📦 *"hi"* ya *"catalog"* — Product list dekhein\n` +
+        `🛒 *"5 Rice Bag"* — Direct order karein\n` +
+        `🔢 *"1, 3, 5"* — Catalog se select karein\n` +
+        `📋 *"track"* — Order ka status dekhein\n` +
+        `✅ *"confirm"* — Pending order confirm karein\n` +
+        `❌ *"cancel"* — Order cancel karein\n` +
+        `💰 *"hisab"* — Payment status check karein\n` +
+        `🎙️ *Voice Note* — Voice se order bhejein!\n` +
+        `❓ *"help"* — Ye guide dikhao\n\n` +
+        `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
 
       await sendWhatsApp(from, helpMsg)
       return new NextResponse('OK', { status: 200 })
@@ -773,6 +773,7 @@ export async function POST(req) {
       }
       return new NextResponse('OK', { status: 200 })
     }
+
 
     // ═══════════════════════════════
     // OTHER / Unknown — Show help + catalog

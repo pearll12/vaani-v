@@ -615,7 +615,7 @@ function ContactUs() {
             </div>
             <div style={{ marginBottom: 24 }}><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 120 }} placeholder="Message..." value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} required disabled={status === "loading"} /></div>
             <motion.button type="submit" disabled={status === "loading"} whileHover={status === "idle" ? { scale: 1.02, boxShadow: `0 8px 24px ${P.primary}44` } : {}} whileTap={status === "idle" ? { scale: 0.98 } : {}} style={{ width: "100%", padding: "16px 32px", borderRadius: 14, border: "none", background: status === "sent" ? P.sage : status === "error" ? P.rose : P.primary, color: "#fff", fontSize: 15, fontWeight: 700, cursor: status === "loading" ? "not-allowed" : "pointer", transition: "background 0.3s" }}>
-              {status === "loading" ? "Sending..." : status === "sent" ? "Sent!" : status === "error" ? "Error Sending" : "Send Message"}
+              {status === "loading" ? "Sending..." : status === "sent" ? "Message sent successfully 💗" : status === "error" ? "Error Sending" : "Send Message"}
             </motion.button>
           </form>
         </Reveal>

@@ -22,63 +22,65 @@ function Modal({ item, onClose, onSave }) {
   const isEdit = !!item?.id
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{
-      position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 9999, padding: '20px'
-    }}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{
-        maxHeight: '90vh', overflowY: 'auto'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 26 }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 12,
-            background: isEdit ? 'var(--indigo-dim)' : 'var(--teal-dim)',
-            border: `1px solid ${isEdit ? 'var(--indigo-border)' : 'var(--teal-border)'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-          }}>
-            {isEdit ? '✎' : '+'}
-          </div>
-          <div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
-              {isEdit ? 'Edit Item' : 'Add Item'}
-            </h2>
-            <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
-              {isEdit ? `Editing ${item.name}` : 'Add a new inventory item'}
-            </p>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Item Name *</label>
-            <input className="bv-input" type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Basmati Rice Premium" />
-          </div>
-          {[
-            { label: 'SKU', key: 'sku', type: 'text', placeholder: 'e.g. SKU-001' },
-            { label: 'Price (₹)', key: 'price', type: 'number', placeholder: '0.00' },
-            { label: 'Quantity', key: 'quantity', type: 'number', placeholder: '0' },
-            { label: 'Low Stock Alert', key: 'lowStockThreshold', type: 'number', placeholder: '10' },
-          ].map(f => (
-            <div key={f.key}>
-              <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>{f.label}</label>
-              <input className="bv-input" type={f.type} value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder} />
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: 12,
+              background: isEdit ? 'var(--indigo-dim)' : 'var(--teal-dim)',
+              border: `1px solid ${isEdit ? 'var(--indigo-border)' : 'var(--teal-border)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+            }}>
+              {isEdit ? '✎' : '+'}
             </div>
-          ))}
-          <div>
-            <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Unit</label>
-            <select className="bv-input" value={form.unit} onChange={e => set('unit', e.target.value)}>
-              {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Category</label>
-            <select className="bv-input" value={form.category} onChange={e => set('category', e.target.value)}>
-              {CATS.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <div>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+                {isEdit ? 'Edit Item' : 'Add Item'}
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
+                {isEdit ? `Editing ${item.name}` : 'Add a new inventory item'}
+              </p>
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 26, justifyContent: 'flex-end' }}>
+        {/* Body */}
+        <div className="modal-body">
+          <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Item Name *</label>
+              <input className="bv-input" type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Basmati Rice Premium" />
+            </div>
+            {[
+              { label: 'SKU', key: 'sku', type: 'text', placeholder: 'e.g. SKU-001' },
+              { label: 'Price (₹)', key: 'price', type: 'number', placeholder: '0.00' },
+              { label: 'Quantity', key: 'quantity', type: 'number', placeholder: '0' },
+              { label: 'Low Stock Alert', key: 'lowStockThreshold', type: 'number', placeholder: '10' },
+            ].map(f => (
+              <div key={f.key}>
+                <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>{f.label}</label>
+                <input className="bv-input" type={f.type} value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder} />
+              </div>
+            ))}
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Unit</label>
+              <select className="bv-input" value={form.unit} onChange={e => set('unit', e.target.value)}>
+                {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--muted-light)', display: 'block', marginBottom: 6, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Category</label>
+              <select className="bv-input" value={form.category} onChange={e => set('category', e.target.value)}>
+                {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer">
           <button className="btn-ghost" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={() => onSave(form)}>
             {isEdit ? 'Save Changes' : '+ Add Item'}
@@ -132,102 +134,106 @@ function CSVUploadModal({ onClose, onImport }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{
-      position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 9999, padding: '20px'
-    }}>
-      <div className="modal-box" style={{ width: preview ? 640 : 480, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 12,
-            background: 'var(--lime-dim)', border: '1px solid var(--lime-border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-          }}>📊</div>
-          <div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>Import via CSV</h2>
-            <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>Upload a spreadsheet to bulk-add inventory</p>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" style={{ maxWidth: preview ? 640 : 480 }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: 12,
+              background: 'var(--lime-dim)', border: '1px solid var(--lime-border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+            }}>📊</div>
+            <div>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>Import via CSV</h2>
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>Upload a spreadsheet to bulk-add inventory</p>
+            </div>
           </div>
         </div>
 
-        {!preview ? (
-          <>
-            {/* Drop zone */}
-            <div
-              className={`drop-zone ${dragging ? 'drag-over' : ''}`}
-              onDragOver={e => { e.preventDefault(); setDragging(true) }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={handleDrop}
-              onClick={() => fileRef.current.click()}
-            >
-              <div style={{ fontSize: 36, marginBottom: 12 }}>📁</div>
-              <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--teal)', margin: '0 0 6px' }}>
-                Drop CSV here or click to browse
-              </p>
-              <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
-                Supports columns: name, sku, category, quantity, unit, price, lowStockThreshold
-              </p>
-              <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }}
-                onChange={e => handleFile(e.target.files[0])} />
-            </div>
+        {/* Body */}
+        <div className="modal-body">
+          {!preview ? (
+            <>
+              <div
+                className={`drop-zone ${dragging ? 'drag-over' : ''}`}
+                onDragOver={e => { e.preventDefault(); setDragging(true) }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => fileRef.current.click()}
+              >
+                <div style={{ fontSize: 36, marginBottom: 12 }}>📁</div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--teal)', margin: '0 0 6px' }}>
+                  Drop CSV here or click to browse
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
+                  Supports columns: name, sku, category, quantity, unit, price, lowStockThreshold
+                </p>
+                <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }}
+                  onChange={e => handleFile(e.target.files[0])} />
+              </div>
 
-            {/* Template hint */}
-            <div style={{
-              marginTop: 16, padding: '12px 14px', borderRadius: 10,
-              background: 'var(--indigo-dim)', border: '1px solid var(--indigo-border)',
-              fontSize: 12, color: 'var(--indigo)', fontFamily: 'JetBrains Mono, monospace',
-            }}>
-              name,sku,category,quantity,unit,price,lowStockThreshold
-            </div>
-            {error && (
-              <p style={{ color: 'var(--rose)', fontSize: 12.5, marginTop: 12, fontWeight: 600 }}>⚠ {error}</p>
-            )}
-          </>
-        ) : (
-          <>
-            <div style={{
-              background: 'var(--teal-dim)', border: '1px solid var(--teal-border)',
-              borderRadius: 10, padding: '10px 14px', marginBottom: 16,
-              display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
-            }}>
-              <span style={{ fontSize: 16 }}>✓</span>
-              <span style={{ color: 'var(--teal)', fontWeight: 600 }}>
-                Found {rows.length} items ready to import
-              </span>
-            </div>
+              <div style={{
+                marginTop: 16, padding: '12px 14px', borderRadius: 10,
+                background: 'var(--indigo-dim)', border: '1px solid var(--indigo-border)',
+                fontSize: 12, color: 'var(--indigo)', fontFamily: 'JetBrains Mono, monospace',
+              }}>
+                name,sku,category,quantity,unit,price,lowStockThreshold
+              </div>
+              {error && (
+                <p style={{ color: 'var(--rose)', fontSize: 12.5, marginTop: 12, fontWeight: 600 }}>⚠ {error}</p>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{
+                background: 'var(--teal-dim)', border: '1px solid var(--teal-border)',
+                borderRadius: 10, padding: '10px 14px', marginBottom: 16,
+                display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
+              }}>
+                <span style={{ fontSize: 16 }}>✓</span>
+                <span style={{ color: 'var(--teal)', fontWeight: 600 }}>
+                  Found {rows.length} items ready to import
+                </span>
+              </div>
 
-            <div style={{ maxHeight: 280, overflowY: 'auto', borderRadius: 10, border: '1px solid var(--border)', marginBottom: 16 }}>
-              <table className="bv-table">
-                <thead>
-                  <tr>
-                    <th>Name</th><th>SKU</th><th>Category</th>
-                    <th style={{ textAlign: 'right' }}>Qty</th>
-                    <th style={{ textAlign: 'right' }}>Price (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => {
-                    const cm = CAT_META[r.category] || CAT_META.General
-                    return (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 600, color: 'var(--text)' }}>{r.name}</td>
-                        <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)' }}>{r.sku || '—'}</td>
-                        <td>
-                          <span style={{ padding: '2px 8px', borderRadius: 5, fontSize: 11, fontWeight: 700, background: cm.bg, color: cm.color }}>
-                            {r.category}
-                          </span>
-                        </td>
-                        <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>{r.quantity}</td>
-                        <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace' }}>₹{r.price}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+              <div className="bv-table-wrap" style={{ borderRadius: 10, border: '1px solid var(--border)', marginBottom: 16 }}>
+                <table className="bv-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '12px 14px' }}>Name</th>
+                      <th style={{ textAlign: 'left', padding: '12px 14px' }}>SKU</th>
+                      <th style={{ textAlign: 'left', padding: '12px 14px' }}>Category</th>
+                      <th style={{ textAlign: 'right', padding: '12px 14px' }}>Qty</th>
+                      <th style={{ textAlign: 'right', padding: '12px 14px' }}>Price (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => {
+                      const cm = CAT_META[r.category] || CAT_META.General
+                      return (
+                        <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+                          <td style={{ fontWeight: 600, color: 'var(--text)', padding: '12px 14px' }}>{r.name}</td>
+                          <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)', padding: '12px 14px' }}>{r.sku || '—'}</td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <span style={{ padding: '2px 8px', borderRadius: 5, fontSize: 11, fontWeight: 700, background: cm.bg, color: cm.color }}>
+                              {r.category}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, padding: '12px 14px' }}>{r.quantity}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', padding: '12px 14px' }}>₹{r.price}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
 
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        {/* Footer */}
+        <div className="modal-footer">
           <button className="btn-ghost" onClick={onClose}>Cancel</button>
           {preview && (
             <>
@@ -315,7 +321,7 @@ export default function InventoryPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-up">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Inventory</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0', fontWeight: 500 }}>
@@ -437,8 +443,8 @@ export default function InventoryPage() {
               <thead>
                 <tr>
                   <th style={{ width: 220 }}>Item Name</th>
-                  <th style={{ width: 140 }}>Category</th>
-                  <th style={{ width: 120 }}>SKU</th>
+                  <th className="mobile-hide" style={{ width: 140 }}>Category</th>
+                  <th className="mobile-hide" style={{ width: 120 }}>SKU</th>
                   <th style={{ width: 110, textAlign: 'right' }}>Price</th>
                   <th style={{ width: 100, textAlign: 'right' }}>Qty</th>
                   <th style={{ width: 130, textAlign: 'right' }}>Stock Value</th>
@@ -458,13 +464,13 @@ export default function InventoryPage() {
                           <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{item.sku || 'No SKU'}</span>
                         </div>
                       </td>
-                      <td>
+                      <td className="mobile-hide">
                         <span style={{
                           fontSize: 10, padding: '3px 8px', borderRadius: 6, fontWeight: 700,
                           background: cm.bg, color: cm.color, border: `1px solid ${cm.color}20`
                         }}>{item.category}</span>
                       </td>
-                      <td>
+                      <td className="mobile-hide">
                         <code style={{ fontSize: 11.5, color: 'var(--muted-light)' }}>{item.sku || '—'}</code>
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>₹{Number(item.price).toLocaleString('en-IN')}</td>
