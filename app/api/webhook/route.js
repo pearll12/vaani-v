@@ -367,6 +367,19 @@ export async function POST(req) {
             `#${String(pendingOrder.id).padStart(4, '0')}`
           ).catch(e => console.error('Owner notify failed:', e))
         }
+
+        // Auto-generate invoice
+        try {
+          const invoiceUrl = new URL('/api/invoice', req.url)
+          // We intentionally do not await this so the webhook can respond quickly
+          fetch(invoiceUrl.toString(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: pendingOrder.id, phone: from }),
+          }).catch(err => console.error('Auto-invoice background error:', err))
+        } catch (err) {
+          console.error('Auto-invoice error:', err)
+        }
       }
       return new NextResponse('OK', { status: 200 })
     }
@@ -625,12 +638,12 @@ export async function POST(req) {
 
       if (lastOrder) {
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-          await fetch(`${baseUrl}/api/invoice`, {
+          const invoiceUrl = new URL('/api/invoice', req.url)
+          fetch(invoiceUrl.toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ orderId: lastOrder.id, phone: from }),
-          })
+          }).catch(err => console.error('Manual invoice background error:', err))
         } catch (err) {
           console.error('Auto-invoice error:', err)
           await sendWhatsApp(from, `✅ Invoice generate ho raha hai. Thoda wait karein! 🙏`)

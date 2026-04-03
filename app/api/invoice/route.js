@@ -235,7 +235,7 @@ export async function POST(req) {
     console.log('Uploading to Supabase:', storagePath)
     const { error: uploadError } = await supabase.storage
       .from('invoices')
-      .upload(storagePath, fileBuffer, { upsert: true })
+      .upload(storagePath, fileBuffer, { upsert: true, contentType: 'application/pdf' })
 
     if (uploadError) {
       console.error('Supabase upload error:', uploadError)
