@@ -81,29 +81,17 @@ function CartFig() {
         position: "absolute", bottom: 10, left: 4, width: 32, height: 18,
         background: P.primary, borderRadius: "2px 2px 6px 6px", boxShadow: `inset -3px -3px 0 ${P.primaryD}`
       }}>
-        <div style={{
-          position: "absolute", top: -5, left: 4, width: 8, height: 8,
-          background: P.sage, borderRadius: 3, transform: "rotate(10deg)"
-        }} />
-        <div style={{
-          position: "absolute", top: -7, right: 4, width: 7, height: 10,
-          background: P.amber, borderRadius: 3, transform: "rotate(-5deg)"
-        }} />
+        <div style={{ position: "absolute", top: -5, left: 4, width: 8, height: 8, background: P.sage, borderRadius: 3, transform: "rotate(10deg)" }} />
+        <div style={{ position: "absolute", top: -7, right: 4, width: 7, height: 10, background: P.amber, borderRadius: 3, transform: "rotate(-5deg)" }} />
       </div>
       <div style={{
         position: "absolute", bottom: 26, left: 8, width: 12, height: 10,
         border: `2.5px solid ${P.primaryD}`, borderBottom: "none", borderRadius: "6px 6px 0 0"
       }} />
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-        style={{
-          position: "absolute", bottom: 2, left: 8, width: 8, height: 8,
-          borderRadius: "50%", background: "#5C3D2E", border: `2px solid ${P.amber}`
-        }} />
+        style={{ position: "absolute", bottom: 2, left: 8, width: 8, height: 8, borderRadius: "50%", background: "#5C3D2E", border: `2px solid ${P.amber}` }} />
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-        style={{
-          position: "absolute", bottom: 2, right: 6, width: 8, height: 8,
-          borderRadius: "50%", background: "#5C3D2E", border: `2px solid ${P.amber}`
-        }} />
+        style={{ position: "absolute", bottom: 2, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#5C3D2E", border: `2px solid ${P.amber}` }} />
     </motion.div>
   );
 }
@@ -111,15 +99,11 @@ function CartFig() {
 function WaveDivider({ from, to, children }) {
   return (
     <div style={{ position: "relative", background: from, marginBottom: -1, overflow: "hidden" }}>
-      <svg viewBox="0 0 1440 80" preserveAspectRatio="none"
-        style={{ display: "block", width: "100%", height: 80 }}>
+      <svg viewBox="0 0 1440 80" preserveAspectRatio="none" style={{ display: "block", width: "100%", height: 80 }}>
         <path d="M0,20 C320,80 520,0 720,40 C920,80 1120,10 1440,30 L1440,80 L0,80 Z" fill={to} />
       </svg>
       {children && (
-        <div style={{
-          position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
-          zIndex: 5, display: "flex", gap: 20, alignItems: "flex-end"
-        }}>
+        <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 5, display: "flex", gap: 20, alignItems: "flex-end" }}>
           {children}
         </div>
       )}
@@ -140,38 +124,37 @@ function Navbar() {
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        height: 64, padding: "0 40px", display: "flex", alignItems: "center",
+        height: 72, padding: "0 40px", display: "flex", alignItems: "center",
         justifyContent: "space-between",
-        background: scrolled ? "rgba(255,248,240,0.92)" : "transparent",
+        background: scrolled ? "rgba(255,248,240,0.95)" : "transparent",
         backdropFilter: scrolled ? "blur(20px)" : "none",
         borderBottom: scrolled ? `1px solid ${P.border}` : "none",
         transition: "all 0.35s ease"
       }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <img src="/logo.png" alt="BusinessVaani" style={{ height: 38, width: "auto" }} />
+        <img src="/logo.png" alt="BusinessVaani" style={{ height: 44, width: "auto" }} />
       </div>
       <div className="nav-links" style={{ display: "flex", gap: 32, fontSize: 14 }}>
         {[{ l: "Features", h: "#features" }, { l: "How it works", h: "#how-it-works" },
         { l: "Contact", h: "#contact" }].map(n => (
           <motion.a key={n.l} href={n.h} whileHover={{ color: P.text, y: -1 }}
-            style={{ color: P.soft, textDecoration: "none", fontWeight: 500, transition: "color 0.2s" }}>{n.l}</motion.a>
+            style={{ color: P.soft, textDecoration: "none", fontWeight: 600, transition: "color 0.2s" }}>{n.l}</motion.a>
         ))}
       </div>
       <div style={{ display: "flex", gap: 10 }}>
         <motion.a href="/login" whileHover={{ background: P.surface }}
           style={{
-            padding: "9px 20px", borderRadius: 11, fontSize: 13, fontWeight: 600,
+            padding: "10px 22px", borderRadius: 12, fontSize: 13, fontWeight: 700,
             color: P.text, textDecoration: "none", border: `1px solid ${P.borderM}`,
             transition: "background 0.2s"
           }}>Login</motion.a>
         <motion.a href="/signup" whileHover={{ scale: 1.04, boxShadow: `0 8px 24px ${P.primary}44` }}
           whileTap={{ scale: 0.97 }}
           style={{
-            padding: "9px 22px", borderRadius: 11, fontSize: 13, fontWeight: 700,
+            padding: "10px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700,
             background: `linear-gradient(135deg, ${P.primary}, ${P.primaryD})`,
             color: "#fff", textDecoration: "none", boxShadow: `0 4px 14px ${P.primary}33`
-          }}>
-          Sign Up</motion.a>
+          }}>Sign Up</motion.a>
       </div>
     </motion.nav>
   );
@@ -206,10 +189,7 @@ function PhoneIllustration() {
         overflow: "hidden", border: `1px solid ${P.border}`
       }}>
       <div style={{ background: "#075E54", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: "50%", background: P.wa,
-          display: "flex", alignItems: "center", justifyContent: "center"
-        }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: P.wa, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <ShoppingBag size={18} color="#fff" />
         </div>
         <div>
@@ -219,10 +199,7 @@ function PhoneIllustration() {
         <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 0.9 }}
           style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "#86EFAC" }} />
       </div>
-      <div style={{
-        background: "#F5EDE5", padding: "12px 10px", minHeight: 320,
-        display: "flex", flexDirection: "column", gap: 6, justifyContent: "flex-end"
-      }}>
+      <div style={{ background: "#F5EDE5", padding: "12px 10px", minHeight: 320, display: "flex", flexDirection: "column", gap: 6, justifyContent: "flex-end" }}>
         <AnimatePresence>
           {heroMsgs.slice(0, count).map((m, i) => (
             <motion.div key={i} initial={{ opacity: 0, scale: 0.85, y: 16 }}
@@ -239,10 +216,7 @@ function PhoneIllustration() {
                 {m.voice ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.9 }}
-                      style={{
-                        width: 28, height: 28, borderRadius: "50%", background: P.sage,
-                        display: "flex", alignItems: "center", justifyContent: "center"
-                      }}>
+                      style={{ width: 28, height: 28, borderRadius: "50%", background: P.sage, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Mic size={13} color="#fff" />
                     </motion.div>
                     <div style={{ flex: 1, height: 2, background: "#ccc", borderRadius: 2, position: "relative" }}>
@@ -260,13 +234,9 @@ function PhoneIllustration() {
         </AnimatePresence>
         {typing && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            style={{
-              display: "flex", gap: 4, padding: "8px 12px", background: P.card,
-              borderRadius: "4px 14px 14px 14px", width: "fit-content", boxShadow: "0 1px 3px rgba(0,0,0,0.08)"
-            }}>
+            style={{ display: "flex", gap: 4, padding: "8px 12px", background: P.card, borderRadius: "4px 14px 14px 14px", width: "fit-content", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
             {[0, 1, 2].map(i => (
-              <motion.div key={i} animate={{ y: [0, -4, 0] }}
-                transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15 }}
+              <motion.div key={i} animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15 }}
                 style={{ width: 6, height: 6, borderRadius: "50%", background: P.muted }} />
             ))}
           </motion.div>
@@ -274,10 +244,7 @@ function PhoneIllustration() {
       </div>
       <div style={{ background: "#EDE5DC", padding: "8px 12px", display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ flex: 1, background: P.card, borderRadius: 20, padding: "7px 14px", fontSize: 12, color: P.muted }}>Type a message</div>
-        <div style={{
-          width: 34, height: 34, borderRadius: "50%", background: P.sage,
-          display: "flex", alignItems: "center", justifyContent: "center"
-        }}>
+        <div style={{ width: 34, height: 34, borderRadius: "50%", background: P.sage, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Mic size={16} color="#fff" />
         </div>
       </div>
@@ -311,22 +278,17 @@ function ChaosIllustration() {
         position: "absolute", left: "50%", top: "66%", transform: "translateX(-50%)",
         fontSize: 12, fontWeight: 600, color: P.rose, background: P.roseL,
         padding: "4px 12px", borderRadius: 999, border: `1px solid ${P.rose}33`, whiteSpace: "nowrap"
-      }}>
-        Can&apos;t keep up!
-      </div>
+      }}>Can&apos;t keep up!</div>
       {chaosItems.map((item, i) => (
         <motion.div key={i} initial={{ opacity: 0, scale: 0, rotate: item.rot * 2 }}
           animate={inView ? { opacity: 1, scale: 1, rotate: item.rot, y: [0, -4, 0] } : {}}
           transition={{ delay: item.delay, duration: 0.5, y: { repeat: Infinity, duration: 2 + i * 0.3, ease: "easeInOut" } }}
           style={{ position: "absolute", left: item.x, top: item.y }}>
           <div style={{
-            padding: "6px 12px", borderRadius: 12, background: item.bg,
-            border: `1px solid ${P.border}`, boxShadow: P.shadow, fontSize: 12,
-            fontWeight: 600, color: P.text, whiteSpace: "nowrap",
-            display: "flex", alignItems: "center", gap: 6
+            padding: "6px 12px", borderRadius: 12, background: item.bg, border: `1px solid ${P.border}`, boxShadow: P.shadow,
+            fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6
           }}>
-            <item.icon size={14} color={item.color} strokeWidth={2.2} />
-            {item.msg}
+            <item.icon size={14} color={item.color} strokeWidth={2.2} /> {item.msg}
           </div>
         </motion.div>
       ))}
@@ -338,38 +300,36 @@ function ChaosIllustration() {
 function HorizontalSection() {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+
   const x = useTransform(scrollYProgress, [0, 1], ["0%", "-50%"]);
-  const dot1 = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
-  const dot2 = useTransform(scrollYProgress, [0.5, 1], [0.3, 1]);
   const progressW = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
+  // Background Image Element for both mobile and desktop
+  const BgImageLayer = () => (
+    <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "url(/large_retail.png)", backgroundSize: "cover", backgroundPosition: "center", opacity: 0.5 }} />
+      {/* Soft gradient overlay to ensure text is extremely readable */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom right, rgba(255,248,240,0.85) 0%, rgba(255,248,240,0.6) 100%)" }} />
+    </div>
+  );
 
   return (
     <div ref={ref} className="horizontal-wrapper" style={{ height: "200vh" }}>
       <div className="horizontal-sticky" style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden" }}>
-        <motion.div className="horizontal-container" style={{ display: "flex", width: "200vw", height: "100vh", x }}>
-          {/* Panel 1: Hero */}
-          <div className="horizontal-panel" style={{ width: "100vw", height: "100vh", flexShrink: 0, overflow: "hidden" }}>
+
+        <BgImageLayer />
+
+        <motion.div className="horizontal-container" style={{ display: "flex", width: "200vw", height: "100vh", x, zIndex: 1, position: "relative" }}>
+          <div className="horizontal-panel" style={{ width: "100vw", height: "100vh", flexShrink: 0, overflow: "hidden", background: "transparent" }}>
             <HeroContent />
           </div>
-          {/* Panel 2: Problem */}
-          <div className="horizontal-panel" style={{ width: "100vw", height: "100vh", flexShrink: 0, overflow: "hidden" }}>
+          <div className="horizontal-panel" style={{ width: "100vw", height: "100vh", flexShrink: 0, overflow: "hidden", background: "rgba(255,241,230,0.7)" }}>
             <ProblemContent />
           </div>
         </motion.div>
-        {/* Scroll dots */}
-        <div className="scroll-indicators" style={{
-          position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)",
-          display: "flex", gap: 8, zIndex: 10
-        }}>
-          <motion.div style={{ width: 8, height: 8, borderRadius: "50%", background: P.primary, opacity: dot1 }} />
-          <motion.div style={{ width: 8, height: 8, borderRadius: "50%", background: P.primary, opacity: dot2 }} />
-        </div>
+
         {/* Progress bar */}
-        <motion.div className="scroll-indicators" style={{
-          position: "absolute", bottom: 0, left: 0, height: 3,
-          background: `linear-gradient(90deg, ${P.primary}, ${P.amber})`,
-          width: progressW, borderRadius: 2, zIndex: 10
-        }} />
+        <motion.div className="scroll-indicators" style={{ position: "absolute", bottom: 0, left: 0, height: 4, background: `linear-gradient(90deg, ${P.primary}, ${P.amber})`, width: progressW, borderRadius: 2, zIndex: 10 }} />
       </div>
     </div>
   );
@@ -379,7 +339,7 @@ function HorizontalSection() {
 function HeroContent() {
   return (
     <section style={{
-      height: "100%", background: P.bg, display: "flex", alignItems: "center",
+      height: "100%", display: "flex", alignItems: "center",
       padding: "80px 40px 40px", position: "relative", overflow: "hidden"
     }}>
       {[{ c: P.sageL, x: "-5%", y: "10%", s: 500 }, { c: P.purpleL, x: "70%", y: "-5%", s: 400 },
@@ -387,65 +347,43 @@ function HeroContent() {
         .map((b, i) => (
           <motion.div key={i} animate={{ scale: [1, 1.08, 1], x: [0, 10, 0], y: [0, -10, 0] }}
             transition={{ repeat: Infinity, duration: 8 + i * 2, ease: "easeInOut" }}
-            style={{
-              position: "absolute", left: b.x, top: b.y, width: b.s, height: b.s,
-              borderRadius: "50%", background: b.c, filter: "blur(80px)", opacity: 0.7, pointerEvents: "none"
-            }} />
+            style={{ position: "absolute", left: b.x, top: b.y, width: b.s, height: b.s, borderRadius: "50%", background: b.c, filter: "blur(80px)", opacity: 0.7, pointerEvents: "none" }} />
         ))}
       <div className="hero-grid" style={{
         maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid",
         gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center", position: "relative", zIndex: 2
       }}>
         <div>
-          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+          <motion.h1 className="hero-text-grad" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              fontSize: "clamp(36px, 5vw, 60px)", fontWeight: 900, lineHeight: 1.08,
-              letterSpacing: "-0.03em", color: P.text, margin: "0 0 20px"
-            }}>
-            Orders are coming.
-            <br />
-            <span style={{
-              background: `linear-gradient(135deg, ${P.primary}, ${P.primaryD})`,
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
-            }}>
+            style={{ fontSize: "clamp(36px, 5vw, 60px)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em", color: P.text, margin: "0 0 20px" }}>
+            Orders are coming. <br />
+            <span style={{ background: `linear-gradient(135deg, ${P.primary}, ${P.primaryD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               Are you keeping up?
             </span>
           </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            style={{ fontSize: 17, color: P.soft, lineHeight: 1.75, marginBottom: 36, maxWidth: 480 }}>
-            BusinessVaani turns your WhatsApp chaos into a clean, automated business —
-            orders, invoices, payments. In Hindi, Tamil, Telugu, Marathi, and more. Automatically.
+          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6 }}
+            style={{ fontSize: 17, color: P.text, lineHeight: 1.75, marginBottom: 36, maxWidth: 480, fontWeight: 500 }}>
+            BusinessVaani turns your WhatsApp chaos into a clean, automated business — orders, invoices, payments. In Hindi, Tamil, Telugu, Marathi, and more. Automatically.
           </motion.p>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
             style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <motion.a href="/login" whileHover={{ scale: 1.05, boxShadow: `0 12px 32px ${P.primary}55` }}
-              whileTap={{ scale: 0.97 }}
+            <motion.a href="/login" whileHover={{ scale: 1.05, boxShadow: `0 12px 32px ${P.primary}55` }} whileTap={{ scale: 0.97 }}
               style={{
-                padding: "15px 32px", borderRadius: 14, fontSize: 16, fontWeight: 800,
-                background: `linear-gradient(135deg, ${P.primary}, ${P.primaryD})`,
-                color: "#fff", textDecoration: "none", boxShadow: `0 6px 22px ${P.primary}44`,
-                display: "flex", alignItems: "center", gap: 8
-              }}>
-              Get Started <ArrowRight size={18} />
-            </motion.a>
-            <motion.a href="#how-it-works" whileHover={{ background: P.surface, borderColor: P.borderM }}
+                padding: "15px 32px", borderRadius: 14, fontSize: 16, fontWeight: 800, background: `linear-gradient(135deg, ${P.primary}, ${P.primaryD})`,
+                color: "#fff", textDecoration: "none", boxShadow: `0 6px 22px ${P.primary}44`, display: "flex", alignItems: "center", gap: 8
+              }}>Get Started <ArrowRight size={18} /></motion.a>
+            <motion.a href="#how-it-works" whileHover={{ background: P.card, borderColor: P.borderM }}
               style={{
-                padding: "15px 24px", borderRadius: 14, fontSize: 15, fontWeight: 600,
-                background: "transparent", border: `1px solid ${P.border}`, color: P.text,
-                cursor: "pointer", textDecoration: "none", transition: "all 0.2s"
-              }}>
-              See How It Works
-            </motion.a>
+                padding: "15px 24px", borderRadius: 14, fontSize: 15, fontWeight: 700, background: "transparent", border: `2px solid ${P.borderM}`,
+                color: P.text, cursor: "pointer", textDecoration: "none", transition: "all 0.2s"
+              }}>See How It Works</motion.a>
           </motion.div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
-            style={{ marginTop: 28, fontSize: 13, color: P.muted, display: "flex", alignItems: "center", gap: 18 }}>
-            {[{ icon: Globe, t: "Built for India" }, { icon: MessageSquare, t: "10+ Languages" },
-            { icon: Zap, t: "AI-Powered" }].map((b, i) => (
-              <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <b.icon size={14} color={P.sage} /> {b.t}
+            style={{ marginTop: 28, fontSize: 13, color: P.soft, display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+            {[{ icon: Globe, t: "Built for India" }, { icon: MessageSquare, t: "10+ Languages" }, { icon: Zap, t: "AI-Powered" }].map((b, i) => (
+              <span key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
+                <b.icon size={16} color={P.sage} /> {b.t}
               </span>
             ))}
           </motion.div>
@@ -466,35 +404,24 @@ function ProblemContent() {
     { icon: CreditCard, title: "Payments go untracked", desc: "\"Kal dunga\" becomes next week, then never.", color: P.purple, bg: P.purpleL },
   ];
   return (
-    <section style={{
-      height: "100%", background: P.surface, display: "flex", alignItems: "center",
-      padding: "80px 40px 40px"
-    }}>
-      <div className="problem-grid" style={{
-        maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid",
-        gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center"
-      }}>
+    <section style={{ height: "100%", display: "flex", alignItems: "center", padding: "80px 40px 40px" }}>
+      <div className="problem-grid" style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
         <div><ChaosIllustration /></div>
         <div>
           <Reveal>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: P.rose, marginBottom: 14 }}>THE PROBLEM</div>
-            <h2 style={{
-              fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em",
-              color: P.text, margin: "0 0 20px", lineHeight: 1.12
-            }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em", color: P.text, margin: "0 0 20px", lineHeight: 1.12 }}>
               Running a business on WhatsApp <span style={{ color: P.rose }}>is chaos.</span>
             </h2>
-            <p style={{ fontSize: 15, color: P.soft, lineHeight: 1.8, marginBottom: 28 }}>
-              Messages pile up. Voice notes you can&apos;t process. Orders in Hindi, Tamil, Telugu, Marathi, English — every format.
-              Manual tracking. Missed payments. And at the end of the day — exhaustion.
+            <p style={{ fontSize: 15, color: P.soft, lineHeight: 1.8, marginBottom: 28, fontWeight: 500 }}>
+              Messages pile up. Voice notes you can&apos;t process. Orders in multiple languages. Manual tracking. Missed payments. And exhaustion.
             </p>
           </Reveal>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {problems.map((p, i) => (
               <Reveal key={i} delay={i * 0.1}>
                 <motion.div whileHover={{ x: 6 }} style={{
-                  display: "flex", gap: 16,
-                  padding: "16px 20px", borderRadius: 16, background: P.card,
+                  display: "flex", gap: 16, padding: "16px 20px", borderRadius: 16, background: P.card,
                   border: `1px solid ${P.border}`, boxShadow: P.shadow, transition: "all 0.2s"
                 }}>
                   <FIcon icon={p.icon} size={20} color={p.color} bg={p.bg} dur={2.5 + i} />
@@ -519,29 +446,14 @@ function FlowStep({ icon: Icon, label, sub, color, bg, index, isLast }) {
   return (
     <div ref={ref} style={{ display: "flex", alignItems: "flex-start" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <motion.div initial={{ scale: 0, rotate: -30 }}
-          animate={inView ? { scale: 1, rotate: 0 } : {}}
+        <motion.div initial={{ scale: 0, rotate: -30 }} animate={inView ? { scale: 1, rotate: 0 } : {}}
           transition={{ delay: index * 0.15, type: "spring", stiffness: 240, damping: 20 }}
-          style={{
-            width: 52, height: 52, borderRadius: 16, flexShrink: 0,
-            background: bg, border: `2px solid ${color}33`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 4px 16px ${color}22`
-          }}>
+          style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, background: bg, border: `2px solid ${color}33`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${color}22` }}>
           <Icon size={22} color={color} strokeWidth={2} />
         </motion.div>
-        {!isLast && (
-          <motion.div initial={{ scaleY: 0 }} animate={inView ? { scaleY: 1 } : {}}
-            transition={{ delay: index * 0.15 + 0.3, duration: 0.5 }}
-            style={{
-              width: 2, height: 36, background: `linear-gradient(${color}, ${color}22)`,
-              transformOrigin: "top", margin: "4px 0"
-            }} />
-        )}
+        {!isLast && <motion.div initial={{ scaleY: 0 }} animate={inView ? { scaleY: 1 } : {}} transition={{ delay: index * 0.15 + 0.3, duration: 0.5 }} style={{ width: 2, height: 36, background: `linear-gradient(${color}, ${color}22)`, transformOrigin: "top", margin: "4px 0" }} />}
       </div>
-      <motion.div initial={{ opacity: 0, x: 20 }} animate={inView ? { opacity: 1, x: 0 } : {}}
-        transition={{ delay: index * 0.15 + 0.1, duration: 0.5 }}
-        style={{ marginLeft: 20, paddingTop: 8 }}>
+      <motion.div initial={{ opacity: 0, x: 20 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ delay: index * 0.15 + 0.1, duration: 0.5 }} style={{ marginLeft: 20, paddingTop: 8 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: P.text }}>{label}</div>
         <div style={{ fontSize: 13, color: P.soft, marginTop: 3, lineHeight: 1.6 }}>{sub}</div>
       </motion.div>
@@ -559,94 +471,48 @@ function HowItWorks() {
   ];
   return (
     <section id="how-it-works" style={{ padding: "100px 40px", background: P.bg }}>
-      <div className="how-it-works-grid" style={{
-        maxWidth: 1100, margin: "0 auto", display: "grid",
-        gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start"
-      }}>
+      <div className="how-it-works-grid" style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
         <div>
           <Reveal>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: P.sage, marginBottom: 14 }}>HOW IT WORKS</div>
-            <h2 style={{
-              fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em",
-              color: P.text, margin: "0 0 16px", lineHeight: 1.12
-            }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em", color: P.text, margin: "0 0 16px", lineHeight: 1.12 }}>
               From chat to cash. <span style={{ color: P.sage }}>Automatically.</span>
             </h2>
-            <p style={{ fontSize: 15, color: P.soft, lineHeight: 1.8, marginBottom: 40 }}>
-              You just chat. Vaani does everything else — in the background, silently.
-            </p>
+            <p style={{ fontSize: 15, color: P.soft, lineHeight: 1.8, marginBottom: 40 }}>You just chat. Vaani does everything else — in the background, silently.</p>
           </Reveal>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {steps.map((s, i) => <FlowStep key={i} {...s} index={i} isLast={i === steps.length - 1} />)}
           </div>
         </div>
         <Reveal delay={0.2} x={30} y={0}>
-          <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-            style={{ position: "sticky", top: 100 }}>
-            <div style={{
-              background: P.card, borderRadius: 24, boxShadow: P.shadowL,
-              border: `1px solid ${P.border}`, overflow: "hidden"
-            }}>
-              <div style={{
-                padding: "20px 24px", borderBottom: `1px solid ${P.border}`,
-                display: "flex", alignItems: "center", gap: 12, background: P.surface
-              }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 10,
-                  background: `linear-gradient(135deg, ${P.primary}, ${P.primaryD})`,
-                  display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
+          <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }} style={{ position: "sticky", top: 100 }}>
+            <div style={{ background: P.card, borderRadius: 24, boxShadow: P.shadowL, border: `1px solid ${P.border}`, overflow: "hidden" }}>
+              <div style={{ padding: "20px 24px", borderBottom: `1px solid ${P.border}`, display: "flex", alignItems: "center", gap: 12, background: P.surface }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: `linear-gradient(135deg, ${P.primary}, ${P.primaryD})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Zap size={16} color="#fff" />
                 </div>
                 <span style={{ fontSize: 14, fontWeight: 700, color: P.text }}>Vaani — Order Created</span>
-                <motion.div animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 1.2 }}
-                  style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: P.sage }} />
+                <motion.div animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 1.2 }} style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: P.sage }} />
               </div>
               <div style={{ padding: "20px 24px" }}>
-                <div style={{
-                  padding: "12px 14px", background: P.sageL, borderRadius: 12,
-                  marginBottom: 20, border: `1px solid ${P.sage}22`
-                }}>
+                <div style={{ padding: "12px 14px", background: P.sageL, borderRadius: 12, marginBottom: 20, border: `1px solid ${P.sage}22` }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: P.sage, marginBottom: 4 }}>ORIGINAL WHATSAPP MESSAGE</div>
-                  <div style={{ fontSize: 13, color: P.text, fontStyle: "italic" }}>
-                    &quot;bhaiya kal 2kg aloo aur 1kg tamatar bhejna, kal taak chahiye&quot;
-                  </div>
+                  <div style={{ fontSize: 13, color: P.text, fontStyle: "italic" }}>&quot;bhaiya kal 2kg aloo aur 1kg tamatar bhejna, kal taak chahiye&quot;</div>
                   <div style={{ fontSize: 10, color: P.muted, marginTop: 4 }}>Ramesh Kumar · 9:12 AM</div>
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: P.muted, marginBottom: 12 }}>
-                  AI PARSED
-                </div>
-                {[{ label: "Customer", val: "Ramesh Kumar", color: P.purple },
-                { label: "Item 1", val: "Aloo — 2 kg", color: P.sage },
-                { label: "Item 2", val: "Tamatar — 1 kg", color: P.teal },
-                { label: "Amount", val: "₹840", color: P.amber },
-                { label: "Deliver by", val: "Tomorrow", color: P.rose }]
-                  .map((r, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -12 }} whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                      style={{
-                        display: "flex", justifyContent: "space-between", padding: "8px 0",
-                        borderBottom: i < 4 ? `1px solid ${P.border}` : "none"
-                      }}>
-                      <span style={{ fontSize: 12, color: P.soft }}>{r.label}</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: r.color }}>{r.val}</span>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: P.muted, marginBottom: 12 }}>AI PARSED</div>
+                {[{ label: "Customer", val: "Ramesh Kumar", color: P.purple }, { label: "Item 1", val: "Aloo — 2 kg", color: P.sage }, { label: "Item 2", val: "Tamatar — 1 kg", color: P.teal }, { label: "Amount", val: "₹840", color: P.amber }, { label: "Deliver by", val: "Tomorrow", color: P.rose }].map((r, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: i < 4 ? `1px solid ${P.border}` : "none" }}>
+                    <span style={{ fontSize: 12, color: P.soft }}>{r.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: r.color }}>{r.val}</span>
+                  </motion.div>
+                ))}
+                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                  {[{ label: "Invoice Sent", icon: FileText, color: P.sage, bg: P.sageL }, { label: "Payment Link", icon: CreditCard, color: P.purple, bg: P.purpleL }].map((a, i) => (
+                    <motion.div key={i} initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.6 + i * 0.15, type: "spring" }} style={{ flex: 1, padding: "10px", borderRadius: 10, background: a.bg, border: `1px solid ${a.color}33`, fontSize: 12, fontWeight: 700, color: a.color, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      <a.icon size={14} /> {a.label}
                     </motion.div>
                   ))}
-                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                  {[{ label: "Invoice Sent", icon: FileText, color: P.sage, bg: P.sageL },
-                  { label: "Payment Link", icon: CreditCard, color: P.purple, bg: P.purpleL }]
-                    .map((a, i) => (
-                      <motion.div key={i} initial={{ scale: 0 }} whileInView={{ scale: 1 }}
-                        viewport={{ once: true }} transition={{ delay: 0.6 + i * 0.15, type: "spring" }}
-                        style={{
-                          flex: 1, padding: "10px", borderRadius: 10, background: a.bg,
-                          border: `1px solid ${a.color}33`, fontSize: 12, fontWeight: 700,
-                          color: a.color, textAlign: "center", display: "flex", alignItems: "center",
-                          justifyContent: "center", gap: 6
-                        }}>
-                        <a.icon size={14} /> {a.label}
-                      </motion.div>
-                    ))}
                 </div>
               </div>
             </div>
@@ -658,31 +524,13 @@ function HowItWorks() {
 }
 
 /* ═══════════════ FEATURES ═══════════════ */
-function FeatureCard({ icon: Icon, title, desc, color, bg, delay, accent }) {
+function FeatureCard({ icon: Icon, title, desc, color, bg, delay }) {
   const [hov, setHov] = useState(false);
   return (
-    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }} transition={{ delay, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      onHoverStart={() => setHov(true)} onHoverEnd={() => setHov(false)}
-      style={{
-        padding: "32px 28px", borderRadius: 22, background: P.card,
-        borderTop: `1px solid ${hov ? color + "44" : P.border}`,
-        borderRight: `1px solid ${hov ? color + "44" : P.border}`,
-        borderBottom: `1px solid ${hov ? color + "44" : P.border}`,
-        borderLeft: `4px solid ${color}`,
-        boxShadow: hov ? `${P.shadowM}, 0 0 0 4px ${color}11` : P.shadow,
-        transition: "all 0.3s ease", cursor: "default", position: "relative", overflow: "hidden"
-      }}>
-      <div style={{
-        position: "absolute", top: -20, right: -20, width: 80, height: 80,
-        borderRadius: "50%", background: `${bg}`, opacity: 0.5
-      }} />
-      <motion.div animate={hov ? { scale: 1.15, rotate: 10, y: -4 } : { scale: 1, rotate: 0, y: 0 }}
-        style={{
-          width: 56, height: 56, borderRadius: 18, background: bg,
-          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20,
-          boxShadow: `0 4px 16px ${color}22`, position: "relative", zIndex: 1
-        }}>
+    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay, duration: 0.55, ease: [0.22, 1, 0.36, 1] }} onHoverStart={() => setHov(true)} onHoverEnd={() => setHov(false)}
+      style={{ padding: "32px 28px", borderRadius: 22, background: P.card, borderTop: `1px solid ${hov ? color + "44" : P.border}`, borderRight: `1px solid ${hov ? color + "44" : P.border}`, borderBottom: `1px solid ${hov ? color + "44" : P.border}`, borderLeft: `6px solid ${color}`, boxShadow: hov ? `${P.shadowM}, 0 0 0 4px ${color}11` : P.shadow, transition: "all 0.3s ease", cursor: "default", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: `${bg}`, opacity: 0.5 }} />
+      <motion.div animate={hov ? { scale: 1.15, rotate: 10, y: -4 } : { scale: 1, rotate: 0, y: 0 }} style={{ width: 56, height: 56, borderRadius: 18, background: bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, boxShadow: `0 4px 16px ${color}22`, position: "relative", zIndex: 1 }}>
         <Icon size={26} color={color} strokeWidth={2} />
       </motion.div>
       <div style={{ fontSize: 17, fontWeight: 800, color: P.text, marginBottom: 10, position: "relative", zIndex: 1 }}>{title}</div>
@@ -693,12 +541,12 @@ function FeatureCard({ icon: Icon, title, desc, color, bg, delay, accent }) {
 
 function Features() {
   const features = [
-    { icon: Globe, title: "Multi-Language AI", desc: "Understands Hindi, Tamil, Telugu, Marathi, English, and Hinglish natively. No training or setup needed.", color: P.sage, bg: P.sageL },
-    { icon: Mic, title: "Voice Intelligence", desc: "Transcribes voice notes and extracts orders using Whisper AI. Works in 10+ Indian languages.", color: P.purple, bg: P.purpleL },
-    { icon: FileText, title: "Smart Invoicing", desc: "GST-compliant PDF invoices auto-generated with Razorpay payment links — delivered via WhatsApp instantly.", color: P.teal, bg: P.tealL },
-    { icon: BarChart3, title: "Live Dashboard", desc: "Real-time analytics for orders, revenue, inventory, and customer insights. Zero spreadsheets needed.", color: P.rose, bg: P.roseL },
-    { icon: Package, title: "Inventory & Alerts", desc: "Automatic stock deduction per order with low-stock alerts. Never miss a restock opportunity.", color: P.amber, bg: P.amberL },
-    { icon: Bell, title: "Smart Reminders", desc: "Automated payment follow-ups on WhatsApp. Recover revenue from every pending promise.", color: P.primary, bg: P.primaryL },
+    { icon: Globe, title: "Multi-Language AI", desc: "Understands Hindi, Tamil, Telugu, Marathi, English natively. No manual translation needed.", color: P.sage, bg: P.sageL },
+    { icon: Mic, title: "Voice Intelligence", desc: "Transcribes voice notes and extracts orders easily. Perfect for busy moments.", color: P.purple, bg: P.purpleL },
+    { icon: FileText, title: "Smart Invoicing", desc: "GST-compliant PDF invoices with Razorpay payment links.", color: P.teal, bg: P.tealL },
+    { icon: BarChart3, title: "Live Dashboard", desc: "Real-time analytics for orders, revenue, inventory. Zero spreadsheets.", color: P.rose, bg: P.roseL },
+    { icon: Package, title: "Inventory & Alerts", desc: "Automatic stock deduction per order with low-stock alerts.", color: P.amber, bg: P.amberL },
+    { icon: Bell, title: "Smart Reminders", desc: "Automated payment follow-ups on WhatsApp to recover revenue.", color: P.primary, bg: P.primaryL },
   ];
   return (
     <section id="features" style={{ padding: "80px 40px 100px", background: P.surface }}>
@@ -706,18 +554,12 @@ function Features() {
         <Reveal>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: P.teal, marginBottom: 14 }}>FEATURES</div>
-            <h2 style={{
-              fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em",
-              color: P.text, margin: "0 0 12px", lineHeight: 1.12
-            }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em", color: P.text, margin: "0 0 12px", lineHeight: 1.12 }}>
               Everything automated. <span style={{ color: P.soft, fontWeight: 500 }}>Nothing manual.</span>
             </h2>
-            <p style={{ fontSize: 15, color: P.muted, maxWidth: 500, margin: "0 auto" }}>
-              Six powerful features working together to run your business on autopilot.
-            </p>
           </div>
         </Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+        <div className="features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
           {features.map((f, i) => <FeatureCard key={i} {...f} delay={i * 0.08} />)}
         </div>
       </div>
@@ -728,74 +570,55 @@ function Features() {
 /* ═══════════════ CONTACT US ═══════════════ */
 function ContactUs() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const [sent, setSent] = useState(false);
-  const handleSubmit = (e) => { e.preventDefault(); setSent(true); setTimeout(() => setSent(false), 3000); };
-  const inputStyle = {
-    width: "100%", padding: "14px 16px", borderRadius: 12, border: `1px solid ${P.border}`,
-    background: P.bg, fontSize: 14, color: P.text, outline: "none", fontFamily: "inherit",
-    transition: "border-color 0.2s"
+  const [status, setStatus] = useState("idle");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
+      if (res.ok) {
+        setStatus("sent");
+        setForm({ name: "", email: "", message: "" });
+        setTimeout(() => setStatus("idle"), 4000);
+      } else {
+        setStatus("error");
+        setTimeout(() => setStatus("idle"), 3000);
+      }
+    } catch {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    }
   };
+
+  const inputStyle = { width: "100%", padding: "14px 16px", borderRadius: 12, border: `1px solid ${P.border}`, background: P.bg, fontSize: 14, color: P.text, outline: "none", fontFamily: "inherit", transition: "border-color 0.2s" };
+
   return (
     <section id="contact" style={{ padding: "80px 40px 100px", background: P.bg }}>
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
         <Reveal>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: P.primary, marginBottom: 14 }}>GET IN TOUCH</div>
-            <h2 style={{
-              fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em",
-              color: P.text, margin: "0 0 12px", lineHeight: 1.12
-            }}>
-              We&apos;d love to hear from you
-            </h2>
-            <p style={{ fontSize: 15, color: P.soft, lineHeight: 1.8 }}>
-              Questions about BusinessVaani? Drop us a message and we&apos;ll get back within 24 hours.
-            </p>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em", color: P.text, margin: "0 0 12px" }}>We&apos;d love to hear from you</h2>
+            <p style={{ fontSize: 15, color: P.soft, lineHeight: 1.8 }}>Questions about BusinessVaani? Drop us a message.</p>
           </div>
         </Reveal>
         <Reveal delay={0.1}>
-          <form onSubmit={handleSubmit} style={{
-            background: P.card, borderRadius: 24, padding: "40px 36px",
-            boxShadow: P.shadowM, border: `1px solid ${P.border}`
-          }}>
+          <form onSubmit={handleSubmit} style={{ background: P.card, borderRadius: 24, padding: "40px 36px", boxShadow: P.shadowM, border: `1px solid ${P.border}` }}>
             <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: P.soft, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>YOUR NAME</label>
-                <input style={inputStyle} placeholder="Sharma Ji" value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })} required />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: P.soft, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>EMAIL ADDRESS</label>
-                <input type="email" style={inputStyle} placeholder="you@example.com" value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })} required />
-              </div>
+              <div><input style={inputStyle} placeholder="Your Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required disabled={status === "loading"} /></div>
+              <div><input type="email" style={inputStyle} placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required disabled={status === "loading"} /></div>
             </div>
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: P.soft, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>YOUR MESSAGE</label>
-              <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
-                placeholder="Tell us how we can help..." value={form.message}
-                onChange={e => setForm({ ...form, message: e.target.value })} required />
-            </div>
-            <motion.button type="submit" whileHover={{ scale: 1.02, boxShadow: `0 8px 24px ${P.primary}44` }}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                width: "100%", padding: "16px 32px", borderRadius: 14, border: "none",
-                background: sent ? P.sage : `linear-gradient(135deg, ${P.primary}, ${P.primaryD})`,
-                color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                fontFamily: "inherit", transition: "background 0.3s"
-              }}>
-              {sent ? <><span>Message Sent</span></> : <><span>Send Message</span><Send size={16} /></>}
+            <div style={{ marginBottom: 24 }}><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 120 }} placeholder="Message..." value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} required disabled={status === "loading"} /></div>
+            <motion.button type="submit" disabled={status === "loading"} whileHover={status === "idle" ? { scale: 1.02, boxShadow: `0 8px 24px ${P.primary}44` } : {}} whileTap={status === "idle" ? { scale: 0.98 } : {}} style={{ width: "100%", padding: "16px 32px", borderRadius: 14, border: "none", background: status === "sent" ? P.sage : status === "error" ? P.rose : P.primary, color: "#fff", fontSize: 15, fontWeight: 700, cursor: status === "loading" ? "not-allowed" : "pointer", transition: "background 0.3s" }}>
+              {status === "loading" ? "Sending..." : status === "sent" ? "Sent!" : status === "error" ? "Error Sending" : "Send Message"}
             </motion.button>
           </form>
         </Reveal>
-        <div style={{ display: "flex", justifyContent: "center", gap: 32, marginTop: 32 }}>
-          {[{ icon: Mail, t: "hello@businessvaani.com" }, { icon: Phone, t: "+91 98765 43210" },
-          { icon: MessageSquare, t: "WhatsApp Support" }].map((c, i) => (
-            <span key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: P.muted }}>
-              <c.icon size={14} color={P.primary} /> {c.t}
-            </span>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -810,34 +633,17 @@ function WhatsAppTwilio() {
     <>
       <AnimatePresence>
         {showLabel && (
-          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            style={{
-              position: "fixed", bottom: 38, right: 94, zIndex: 999,
-              padding: "8px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700,
-              background: P.wa, color: "#fff", boxShadow: P.shadow,
-              whiteSpace: "nowrap", fontFamily: "monospace"
-            }}>
+          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
+            style={{ position: "fixed", bottom: 38, right: 94, zIndex: 999, padding: "8px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700, background: P.wa, color: "#fff", boxShadow: P.shadow, whiteSpace: "nowrap", fontFamily: "monospace" }}>
             {TWILIO_JOIN_CODE}
           </motion.div>
         )}
       </AnimatePresence>
       <motion.a onMouseEnter={() => setShowLabel(true)} onMouseLeave={() => setShowLabel(false)}
-        href={`https://wa.me/${TWILIO_PHONE}/?text=${encodeURIComponent(TWILIO_JOIN_CODE)}`}
-        target="_blank" rel="noopener noreferrer"
-        whileHover={{ scale: 1.12, boxShadow: `0 12px 32px ${P.wa}55` }}
-        whileTap={{ scale: 0.95 }}
-        animate={{ y: [0, -6, 0] }}
-        transition={{ y: { repeat: Infinity, duration: 2.5, ease: "easeInOut" } }}
-        style={{
-          position: "fixed", bottom: 28, right: 28, zIndex: 1000,
-          width: 56, height: 56, borderRadius: "50%", border: "none",
-          background: `linear-gradient(135deg, ${P.wa}, #16A34A)`,
-          boxShadow: `0 8px 24px ${P.wa}55`, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          textDecoration: "none"
-        }}>
-        <MessageSquare size={24} color="#fff" />
+        href={`https://wa.me/${TWILIO_PHONE}/?text=${encodeURIComponent(TWILIO_JOIN_CODE)}`} target="_blank" rel="noopener noreferrer"
+        whileHover={{ scale: 1.12, boxShadow: `0 12px 32px ${P.wa}55` }} whileTap={{ scale: 0.95 }} animate={{ y: [0, -6, 0] }} transition={{ y: { repeat: Infinity, duration: 2.5, ease: "easeInOut" } }}
+        style={{ position: "fixed", bottom: 28, right: 28, zIndex: 1000, width: 62, height: 62, borderRadius: "50%", border: "none", background: `linear-gradient(135deg, ${P.wa}, #16A34A)`, boxShadow: `0 8px 24px ${P.wa}55`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+        <MessageSquare size={28} color="#fff" />
       </motion.a>
     </>
   );
@@ -845,71 +651,31 @@ function WhatsAppTwilio() {
 
 /* ═══════════════ FOOTER ═══════════════ */
 function Footer() {
-  const linkStyle = {
-    display: "block", fontSize: 13, color: "rgba(255,255,255,0.55)",
-    textDecoration: "none", marginBottom: 10, transition: "color 0.2s"
-  };
+  const linkStyle = { display: "block", fontSize: 13, color: "rgba(255,255,255,0.55)", textDecoration: "none", marginBottom: 12, transition: "color 0.2s" };
   return (
-    <footer style={{ background: "#2C1E16", color: "#fff", padding: "64px 40px 28px" }}>
+    <footer style={{ background: "#1A110D", color: "#fff", padding: "80px 40px 32px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 48 }}>
           <div>
-            <img src="/logo.png" alt="BusinessVaani" style={{ height: 38, width: "auto", marginBottom: 14, filter: "brightness(1.2)" }} />
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: 280 }}>
-              Turning WhatsApp conversations into automated business operations.
-              Built for Indian shopkeepers and SMBs.
-            </p>
-            <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-              {[Globe, MessageSquare, Mail].map((Ic, i) => (
-                <motion.div key={i} whileHover={{ scale: 1.15, background: "rgba(255,255,255,0.15)" }}
-                  style={{
-                    width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.08)",
-                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer"
-                  }}>
-                  <Ic size={16} color="rgba(255,255,255,0.6)" />
-                </motion.div>
-              ))}
-            </div>
+            <img src="/logo.png" alt="BusinessVaani" style={{ height: 44, filter: "brightness(8)", marginBottom: 16 }} />
+            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, maxWidth: 300, lineHeight: 1.8 }}>Built specifically for Indian shopkeepers. Scale your retail or wholesale business using the power of WhatsApp AI.</p>
           </div>
           <div>
-            <h4 style={{
-              fontSize: 12, fontWeight: 700, marginBottom: 18, color: P.amber,
-              letterSpacing: "0.08em"
-            }}>PRODUCT</h4>
-            {["Features", "How it Works", "Dashboard", "Pricing"].map(l => (
-              <a key={l} href={`#${l.toLowerCase().replace(/ /g, "-")}`} style={linkStyle}>{l}</a>
-            ))}
+            <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 18, color: P.amber, letterSpacing: "0.08em" }}>PRODUCT</h4>
+            {["Features", "Dashboard", "Pricing"].map(l => <a key={l} href="#" style={linkStyle}>{l}</a>)}
           </div>
           <div>
-            <h4 style={{
-              fontSize: 12, fontWeight: 700, marginBottom: 18, color: P.amber,
-              letterSpacing: "0.08em"
-            }}>COMPANY</h4>
-            {["About Us", "Blog", "Careers", "Contact"].map(l => (
-              <a key={l} href={l === "Contact" ? "#contact" : "#"} style={linkStyle}>{l}</a>
-            ))}
+            <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 18, color: P.amber, letterSpacing: "0.08em" }}>COMPANY</h4>
+            {["About Us", "Contact"].map(l => <a key={l} href="#" style={linkStyle}>{l}</a>)}
           </div>
           <div>
-            <h4 style={{
-              fontSize: 12, fontWeight: 700, marginBottom: 18, color: P.amber,
-              letterSpacing: "0.08em"
-            }}>SUPPORT</h4>
-            {["Help Center", "API Docs", "Status", "WhatsApp"].map(l => (
-              <a key={l} href="#" style={linkStyle}>{l}</a>
-            ))}
+            <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 18, color: P.amber, letterSpacing: "0.08em" }}>SUPPORT</h4>
+            {["Help Center", "WhatsApp API"].map(l => <a key={l} href="#" style={linkStyle}>{l}</a>)}
           </div>
         </div>
-        <div style={{
-          borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24,
-          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
-          fontSize: 12, color: "rgba(255,255,255,0.35)"
-        }}>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 24, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
           <span>© 2025 BusinessVaani. All rights reserved.</span>
-          <div style={{ display: "flex", gap: 24 }}>
-            <a href="#" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Privacy Policy</a>
-            <a href="#" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Terms of Service</a>
-          </div>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>Made with <Heart size={12} color={P.primary} fill={P.primary} /> in India</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>Made with <Heart size={12} fill={P.primary} color={P.primary} /> in India</span>
         </div>
       </div>
     </footer>
@@ -922,35 +688,25 @@ export default function Page() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
-        body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:${P.bg};color:${P.text}}
-        ::-webkit-scrollbar{width:4px}
-        ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:${P.amber};border-radius:999px}
+        *{box-sizing:border-box;margin:0;padding:0} html{scroll-behavior:smooth}
+        body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:${P.bg};color:${P.text}; overflow-x: hidden;}
+        ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:${P.amber};border-radius:999px}
         @media(max-width:768px){
           .nav-links{display:none!important}
-          .footer-grid{grid-template-columns:1fr!important;gap:30px!important}
-          .contact-grid{grid-template-columns:1fr!important}
-          .hero-grid, .problem-grid, .how-it-works-grid { grid-template-columns: 1fr!important; gap: 40px!important; }
-          
-          /* Disable horizontal scroll on mobile */
+          .hero-grid, .problem-grid, .how-it-works-grid, .footer-grid, .contact-grid, .features-grid { grid-template-columns: 1fr!important; gap: 40px!important; }
+          .contact-grid { gap: 16px!important; }
           .horizontal-wrapper { height: auto!important; }
-          .horizontal-sticky { position: relative!important; height: auto!important; overflow: visible!important; }
+          .horizontal-sticky { position: relative!important; height: auto!important; overflow: hidden!important; }
           .horizontal-container { flex-direction: column!important; width: 100%!important; height: auto!important; transform: none!important; }
-          .horizontal-panel { width: 100%!important; height: auto!important; padding: 60px 0!important; overflow: visible!important; }
+          .horizontal-panel { width: 100%!important; height: auto!important; padding: 20px 0!important; overflow: hidden!important; }
           .scroll-indicators { display: none!important; }
-
-          /* Adjust paddings for mobile */
-          section { padding: 60px 20px!important; }
-          footer { padding: 40px 20px 20px!important; }
-          
-          /* Hero mobile tweaks */
+          section { padding: 80px 20px!important; }
           .hero-grid { text-align: center; }
-          .hero-grid .phone-illustration { margin: 0 auto; order: -1; }
-          .hero-grid h1 { font-size: 32px!important; margin-top: 20px!important; }
+          .hero-grid h1 { font-size: 38px!important; margin-top: 20px!important; }
           .hero-grid p { margin: 0 auto 30px!important; }
           .hero-grid > div > div { justify-content: center; }
+          .hero-text-grad { padding-top: 32px; }
+          form { padding: 32px 24px!important; }
         }
       `}</style>
       <Navbar />
