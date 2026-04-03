@@ -28,16 +28,22 @@ export async function POST(req) {
       const paymentId = payload?.id
 
       if (orderId) {
+        // Fetch order first to check current status
+        const { data: order } = await supabase
+          .from('orders').select('*').eq('id', orderId).single()
+
+        // 🛑 Anti-Duplicate Check: If already paid, DO NOT send another message!
+        if (order?.status === 'paid') {
+          console.log(`Order ${orderId} already paid. Skipping duplicate message.`)
+          return NextResponse.json({ ok: true, skipped: true })
+        }
+
         // Update order status
         await supabase.from('orders').update({
           status: 'paid',
           paid_at: new Date().toISOString(),
           razorpay_payment_id: paymentId,
         }).eq('id', orderId)
-
-        // Fetch order to get customer phone
-        const { data: order } = await supabase
-          .from('orders').select('*').eq('id', orderId).single()
 
         if (order?.customer_phone) {
           await sendWhatsApp(order.customer_phone, [
