@@ -149,8 +149,8 @@ export async function POST(req) {
     
     const now = new Date()
     doc.fillColor('#94a3b8').fontSize(10)
-    doc.text(`Date: ${now.toLocaleDateString('en-IN')}`, doc.page.width - 200, 55, { align: 'right', width: 150 })
-    doc.text(`Time: ${now.toLocaleTimeString('en-IN')}`, doc.page.width - 200, 70, { align: 'right', width: 150 })
+    doc.text(`Date: ${now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}`, doc.page.width - 200, 55, { align: 'right', width: 150 })
+    doc.text(`Time: ${now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`, doc.page.width - 200, 70, { align: 'right', width: 150 })
 
     doc.fillColor('#000000').moveDown(3)
 

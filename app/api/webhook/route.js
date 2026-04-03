@@ -282,7 +282,6 @@ export async function POST(req) {
           `📋 *"track"* — Track your latest order\n` +
           `✅ *"confirm"* — Confirm pending order\n` +
           `❌ *"cancel"* — Cancel pending order\n` +
-          `📄 *"invoice"* — Get bill/invoice\n` +
           `💰 *"hisab"* — Check payment status\n` +
           `🎙️ *Voice Note* — Send voice order!\n` +
           `❓ *"help"* — Show this guide\n\n` +
@@ -295,7 +294,6 @@ export async function POST(req) {
           `📋 *"track"* — Order ka status dekhein\n` +
           `✅ *"confirm"* — Pending order confirm karein\n` +
           `❌ *"cancel"* — Order cancel karein\n` +
-          `📄 *"invoice"* — Bill/invoice mangein\n` +
           `💰 *"hisab"* — Payment status check karein\n` +
           `🎙️ *Voice Note* — Voice se order bhejein!\n` +
           `❓ *"help"* — Ye guide dikhao\n\n` +
@@ -340,7 +338,7 @@ export async function POST(req) {
           const amt = Number(o.total_amount || 0)
           const grand = +(amt * 1.18).toFixed(2)
           const st = statusEmojis[o.status] || `📌 ${o.status}`
-          const date = new Date(o.created_at).toLocaleDateString('en-IN')
+          const date = new Date(o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })
 
           msg += `🔖 *Order #${String(o.id).padStart(4, '0')}*\n`
           msg += `   📅 ${date}\n`
@@ -762,12 +760,12 @@ function buildConfirmation(items, orderId, totalAmount, language, stockAlerts = 
   }
 
   const templates = {
-    tamil: `✅ *Order பதிவு! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Order confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" — Bill mangein 🙏`,
-    marathi: `✅ *ऑर्डर नोंदवला! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Order confirm करा\n❌ "cancel" — Cancel करा\n📄 "invoice" लिहा bill साठी 🙏`,
-    telugu: `✅ *ఆర్డర్ నమోదు! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm చేయండి\n❌ "cancel" — Cancel చేయండి\n📄 "invoice" పంపండి bill కోసం 🙏`,
-    english: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ Reply "confirm" to confirm\n❌ Reply "cancel" to cancel\n📄 Reply "invoice" for bill 🙏`,
-    hindi: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" bhejein bill ke liye 🙏`,
-    hinglish: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein\n📄 "invoice" bhejein bill ke liye 🙏`,
+    tamil: `✅ *Order பதிவு! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Order confirm karein\n❌ "cancel" — Cancel karein`,
+    marathi: `✅ *ऑर्डर नोंदवला! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Order confirm करा\n❌ "cancel" — Cancel करा`,
+    telugu: `✅ *ఆర్డర్ నమోదు! (#${orderId})*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm చేయండి\n❌ "cancel" — Cancel చేయండి`,
+    english: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ Reply "confirm" to confirm\n❌ Reply "cancel" to cancel`,
+    hindi: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein`,
+    hinglish: `✅ *Order #${orderId} Placed!*\n\n${itemList}\n\n💵 Subtotal: ₹${sub}\n🧾 GST (18%): ₹${gst}\n💰 *Total: ₹${grand}*${stockAlertSection}\n✅ "confirm" — Confirm karein\n❌ "cancel" — Cancel karein`,
   }
 
   return templates[language] || templates.hinglish

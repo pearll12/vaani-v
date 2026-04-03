@@ -21,8 +21,8 @@ export async function POST(req) {
     const event = JSON.parse(body)
     console.log('Razorpay webhook:', event.event)
 
-    if (event.event === 'payment_link.paid' || event.event === 'payment.captured') {
-      const payload = event.payload?.payment_link?.entity || event.payload?.payment?.entity
+    if (event.event === 'payment_link.paid') {
+      const payload = event.payload?.payment_link?.entity
       const orderId = payload?.notes?.order_id
       const amount = payload?.amount ? (payload.amount / 100).toFixed(2) : null
       const paymentId = payload?.id

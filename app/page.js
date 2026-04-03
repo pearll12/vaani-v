@@ -5,30 +5,30 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
 
 /* ─── Palette ──────────────────────────────────────────────────────── */
 const P = {
-  bg:       "#FFFBF5",
-  surface:  "#FFF8EF",
-  card:     "#FFFFFF",
-  border:   "rgba(28,25,23,0.08)",
-  borderM:  "rgba(28,25,23,0.14)",
-  text:     "#1C1917",
-  soft:     "#57534E",
-  muted:    "#A8A29E",
-  green:    "#16A34A",
-  greenL:   "#DCFCE7",
-  greenM:   "#86EFAC",
-  wa:       "#25D366",
-  waL:      "#D1FAE5",
-  purple:   "#7C3AED",
-  purpleL:  "#EDE9FE",
-  teal:     "#0891B2",
-  tealL:    "#CFFAFE",
-  rose:     "#E11D48",
-  roseL:    "#FFE4E6",
-  amber:    "#D97706",
-  amberL:   "#FEF3C7",
-  shadow:   "0 4px 24px rgba(28,25,23,0.08)",
-  shadowM:  "0 8px 40px rgba(28,25,23,0.12)",
-  shadowL:  "0 20px 60px rgba(28,25,23,0.14)",
+  bg: "#FFFBF5",
+  surface: "#FFF8EF",
+  card: "#FFFFFF",
+  border: "rgba(28,25,23,0.08)",
+  borderM: "rgba(28,25,23,0.14)",
+  text: "#1C1917",
+  soft: "#57534E",
+  muted: "#A8A29E",
+  green: "#16A34A",
+  greenL: "#DCFCE7",
+  greenM: "#86EFAC",
+  wa: "#25D366",
+  waL: "#D1FAE5",
+  purple: "#7C3AED",
+  purpleL: "#EDE9FE",
+  teal: "#0891B2",
+  tealL: "#CFFAFE",
+  rose: "#E11D48",
+  roseL: "#FFE4E6",
+  amber: "#D97706",
+  amberL: "#FEF3C7",
+  shadow: "0 4px 24px rgba(28,25,23,0.08)",
+  shadowM: "0 8px 40px rgba(28,25,23,0.12)",
+  shadowL: "0 20px 60px rgba(28,25,23,0.14)",
 };
 
 /* ─── Reveal wrapper ───────────────────────────────────────────────── */
@@ -129,7 +129,7 @@ function PhoneIllustration() {
         </AnimatePresence>
         {typing && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", gap: 4, padding: "8px 12px", background: P.card, borderRadius: "4px 14px 14px 14px", width: "fit-content", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-            {[0,1,2].map(i => (
+            {[0, 1, 2].map(i => (
               <motion.div key={i} animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15 }}
                 style={{ width: 6, height: 6, borderRadius: "50%", background: "#90949c" }} />
             ))}
@@ -148,14 +148,14 @@ function PhoneIllustration() {
 
 /* ─── Chaos bubbles illustration ───────────────────────────────────── */
 const chaosItems = [
-  { msg: "bhaiya 2kg aloo", icon: "😅", x: "5%",  y: "10%", rot: -8,  color: P.waL,     delay: 0 },
-  { msg: "kal dunga bhaiya", icon: "⏰", x: "60%", y: "5%",  rot: 5,   color: P.amberL,  delay: 0.1 },
-  { msg: "🎤 Voice 0:42",    icon: "🎤", x: "20%", y: "35%", rot: -3,  color: P.purpleL, delay: 0.2 },
-  { msg: "invoice kab?",     icon: "❓", x: "55%", y: "30%", rot: 7,   color: P.roseL,   delay: 0.3 },
-  { msg: "HELLO??",          icon: "😠", x: "8%",  y: "60%", rot: -10, color: P.roseL,   delay: 0.4 },
-  { msg: "order cancel!",    icon: "❌", x: "65%", y: "58%", rot: 4,   color: P.amberL,  delay: 0.5 },
-  { msg: "5kg tamatar",      icon: "🍅", x: "35%", y: "68%", rot: -6,  color: P.waL,     delay: 0.6 },
-  { msg: "receipt bhejo",    icon: "🧾", x: "70%", y: "80%", rot: 8,   color: P.tealL,   delay: 0.7 },
+  { msg: "bhaiya 2kg aloo", icon: "😅", x: "5%", y: "10%", rot: -8, color: P.waL, delay: 0 },
+  { msg: "kal dunga bhaiya", icon: "⏰", x: "60%", y: "5%", rot: 5, color: P.amberL, delay: 0.1 },
+  { msg: "🎤 Voice 0:42", icon: "🎤", x: "20%", y: "35%", rot: -3, color: P.purpleL, delay: 0.2 },
+  { msg: "invoice kab?", icon: "❓", x: "55%", y: "30%", rot: 7, color: P.roseL, delay: 0.3 },
+  { msg: "HELLO??", icon: "😠", x: "8%", y: "60%", rot: -10, color: P.roseL, delay: 0.4 },
+  { msg: "order cancel!", icon: "❌", x: "65%", y: "58%", rot: 4, color: P.amberL, delay: 0.5 },
+  { msg: "5kg tamatar", icon: "🍅", x: "35%", y: "68%", rot: -6, color: P.waL, delay: 0.6 },
+  { msg: "receipt bhejo", icon: "🧾", x: "70%", y: "80%", rot: 8, color: P.tealL, delay: 0.7 },
 ];
 
 function ChaosIllustration() {
@@ -325,7 +325,7 @@ function Navbar() {
       </div>
       <div style={{ display: "flex", gap: 32, fontSize: 14, color: P.soft }}>
         {[
-          { label: "Features",    href: "#features" },
+          { label: "Features", href: "#features" },
           { label: "How it works", href: "#how-it-works" },
         ].map(n => (
           <motion.a key={n.label} href={n.href} whileHover={{ color: P.text, y: -1 }} style={{ color: P.soft, textDecoration: "none", transition: "color 0.2s" }}>{n.label}</motion.a>
@@ -359,10 +359,10 @@ function Hero() {
     }}>
       {/* Warm background blobs */}
       {[
-        { c: P.waL,     x: "-5%",  y: "10%",  s: 500 },
-        { c: P.purpleL, x: "70%",  y: "-5%",  s: 400 },
-        { c: P.amberL,  x: "80%",  y: "70%",  s: 350 },
-        { c: P.tealL,   x: "-8%",  y: "70%",  s: 300 },
+        { c: P.waL, x: "-5%", y: "10%", s: 500 },
+        { c: P.purpleL, x: "70%", y: "-5%", s: 400 },
+        { c: P.amberL, x: "80%", y: "70%", s: 350 },
+        { c: P.tealL, x: "-8%", y: "70%", s: 300 },
       ].map((b, i) => (
         <motion.div key={i}
           animate={{ scale: [1, 1.08, 1], x: [0, 10, 0], y: [0, -10, 0] }}
@@ -536,7 +536,7 @@ function HowItWorks() {
               <div style={{ padding: "20px 24px", borderBottom: `1px solid ${P.border}`, display: "flex", alignItems: "center", gap: 12, background: P.surface }}>
                 <div style={{ width: 32, height: 32, borderRadius: 10, background: `linear-gradient(135deg, ${P.wa}, ${P.green})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: "#fff", fontSize: 15 }}>V</div>
                 <span style={{ fontSize: 14, fontWeight: 700, color: P.text }}>Vaani — Order Created</span>
-                <motion.div animate={{ opacity: [1,0,1] }} transition={{ repeat: Infinity, duration: 1.2 }}
+                <motion.div animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 1.2 }}
                   style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: P.green }}
                 />
               </div>
@@ -593,12 +593,12 @@ function HowItWorks() {
 /* ─── Features ─────────────────────────────────────────────────────── */
 function Features() {
   const features = [
-    { icon: "🗣️", title: "Hinglish AI",        desc: "Understands mixed-language messages natively. No training, no setup.",                             color: P.green,  colorL: P.greenL },
-    { icon: "🎙️", title: "Voice Note AI",       desc: "Transcribes and extracts orders from audio in 10+ Indian languages.",                             color: P.purple, colorL: P.purpleL },
-    { icon: "🧾", title: "Auto Invoice",         desc: "Professional PDF invoices generated and WhatsApp-sent the moment an order is confirmed.",         color: P.teal,   colorL: P.tealL },
-    { icon: "💳", title: "Razorpay Payments",    desc: "Auto-sends payment links. UPI, cards, net banking. Revenue collected instantly.",                  color: P.amber,  colorL: P.amberL },
-    { icon: "📊", title: "Live Dashboard",       desc: "See every order, invoice, and payment in real-time. No spreadsheets.",                            color: P.rose,   colorL: P.roseL },
-    { icon: "🔔", title: "Payment Reminders",    desc: "\"Kal dunga\" automated follow-ups. Recover revenue you thought was lost.",                        color: P.wa,     colorL: P.waL },
+    { icon: "🗣️", title: "Hinglish AI", desc: "Understands mixed-language messages natively. No training, no setup.", color: P.green, colorL: P.greenL },
+    { icon: "🎙️", title: "Voice Note AI", desc: "Transcribes and extracts orders from audio in 10+ Indian languages.", color: P.purple, colorL: P.purpleL },
+    { icon: "🧾", title: "Auto Invoice", desc: "Professional PDF invoices generated and WhatsApp-sent the moment an order is confirmed.", color: P.teal, colorL: P.tealL },
+    { icon: "💳", title: "Razorpay Payments", desc: "Auto-sends payment links. UPI, cards, net banking. Revenue collected instantly.", color: P.amber, colorL: P.amberL },
+    { icon: "📊", title: "Live Dashboard", desc: "See every order, invoice, and payment in real-time. No spreadsheets.", color: P.rose, colorL: P.roseL },
+    { icon: "🔔", title: "Payment Reminders", desc: "\"Kal dunga\" automated follow-ups. Recover revenue you thought was lost.", color: P.wa, colorL: P.waL },
   ];
   return (
     <section style={{ padding: "100px 40px", background: P.surface }}>
@@ -623,7 +623,7 @@ function Features() {
 /* ─── WhatsApp Twilio FAB ─────────────────────────────────────────── */
 function WhatsAppTwilio() {
   const TWILIO_PHONE = "+14155238886";
-  const TWILIO_JOIN_CODE = "join visitor-mistake";
+  const TWILIO_JOIN_CODE = "join tip-book";
   const [showLabel, setShowLabel] = useState(false);
 
   return (
