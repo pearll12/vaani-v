@@ -41,16 +41,17 @@ function InvoiceResult({ result, onClose }) {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             width: 56, height: 56, borderRadius: '50%', margin: '0 auto 16px',
-            background: result.success ? 'var(--emerald-dim)' : 'var(--rose-dim)',
-            border: `1px solid ${result.success ? 'var(--emerald-border)' : 'rgba(244,96,123,0.2)'}`,
+            background: result.success && !result.warning ? 'var(--emerald-dim)' : (result.success && result.warning ? 'var(--amber-dim)' : 'var(--rose-dim)'),
+            border: `1px solid ${result.success && !result.warning ? 'var(--emerald-border)' : (result.success && result.warning ? 'var(--amber)' : 'rgba(244,96,123,0.2)')}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
           }}>
-            {result.success ? '✓' : '✕'}
+            {result.success && !result.warning ? '✓' : (result.success && result.warning ? '⚠️' : '✕')}
           </div>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: result.success ? 'var(--emerald)' : '#f4607b' }}>
-            {result.success ? 'Invoice Sent!' : 'Failed to Send'}
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: result.success && !result.warning ? 'var(--emerald)' : (result.success && result.warning ? 'var(--amber)' : '#f4607b') }}>
+            {result.success && !result.warning ? 'Invoice Sent!' : (result.success && result.warning ? 'Partially Successful' : 'Failed to Send')}
           </h3>
-          {result.error && <p style={{ color: 'var(--muted-light)', fontSize: 13, margin: '8px 0 0' }}>{result.error}</p>}
+          {result.error && <p style={{ color: 'var(--rose)', fontSize: 13, margin: '8px 0 0' }}>{result.error}</p>}
+          {result.warning && <p style={{ color: 'var(--amber)', fontSize: 13, margin: '8px 0 0' }}>{result.warning}</p>}
         </div>
 
         {result.success && (
