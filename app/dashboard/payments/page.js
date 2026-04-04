@@ -64,6 +64,8 @@ export default function PaymentsPage() {
   const [filter, setFilter]     = useState('all')
   const [toast, setToast]       = useState(null)
   const [justPaid, setJustPaid] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
   const interval                = useRef(null)
 
   useEffect(() => {
@@ -117,6 +119,9 @@ export default function PaymentsPage() {
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 2800) }
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+  const totalPages  = rowsPerPage === -1 ? 1 : Math.ceil(filtered.length / rowsPerPage)
+  const paginated   = rowsPerPage === -1 ? filtered : filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+
 
   const stats = {
     pending:  orders.filter(o => o.status === 'pending').length,
@@ -201,19 +206,38 @@ export default function PaymentsPage() {
         </span>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 6 }}>
-        {[
-          { key: 'all',      label: 'All',      count: orders.length },
-          { key: 'pending',  label: 'Pending',  count: stats.pending },
-          { key: 'invoiced', label: 'Invoiced', count: stats.invoiced },
-          { key: 'paid',     label: 'Paid',     count: stats.paid },
-        ].map(t => (
-          <button key={t.key} onClick={() => setFilter(t.key)} className={`filter-tab ${filter === t.key ? 'active' : 'inactive'}`}>
-            {t.label}
-            {t.count > 0 && <span className="filter-count">{t.count}</span>}
-          </button>
-        ))}
+      {/* Filters & Rows Selection */}
+      <div className="filter-row-container" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[
+            { key: 'all',      label: 'All',      count: orders.length },
+            { key: 'pending',  label: 'Pending',  count: stats.pending },
+            { key: 'invoiced', label: 'Invoiced', count: stats.invoiced },
+            { key: 'paid',     label: 'Paid',     count: stats.paid },
+          ].map(t => (
+            <button key={t.key} onClick={() => { setFilter(t.key); setCurrentPage(1); }} className={`filter-tab ${filter === t.key ? 'active' : 'inactive'}`}>
+              {t.label}
+              {t.count > 0 && <span className="filter-count">{t.count}</span>}
+            </button>
+          ))}
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>Rows:</span>
+          <select 
+            value={rowsPerPage} 
+            onChange={e => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            style={{ 
+              background: 'var(--card)', border: '1px solid var(--border)', 
+              color: 'var(--text)', fontSize: 12, padding: '4px 8px', borderRadius: 8,
+              outline: 'none', cursor: 'pointer'
+            }}
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={-1}>All</option>
+          </select>
+        </div>
       </div>
 
       {/* Orders list */}
@@ -230,7 +254,7 @@ export default function PaymentsPage() {
               No {filter === 'all' ? '' : filter} orders
             </p>
           </div>
-        ) : filtered.map(order => {
+        ) : paginated.map(order => {
           const grand  = +(Number(order.total_amount) * 1.18).toFixed(2)
           const time   = parseUtc(order.created_at)
           const isToday = new Date().toDateString() === time.toDateString()
@@ -358,6 +382,33 @@ export default function PaymentsPage() {
           )
         })}
       </div>
+
+      {/* Pagination Controls */}
+      {filtered.length > 0 && rowsPerPage !== -1 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 8px' }}>
+          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+            Showing <strong>{((currentPage - 1) * rowsPerPage) + 1}</strong> to <strong>{Math.min(currentPage * rowsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong>
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button 
+              className="btn-ghost" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              style={{ padding: '6px 14px', opacity: currentPage === 1 ? 0.5 : 1 }}
+            >
+              Previous
+            </button>
+            <button 
+              className="btn-ghost" 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              style={{ padding: '6px 14px', opacity: currentPage === totalPages ? 0.5 : 1 }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className="toast">

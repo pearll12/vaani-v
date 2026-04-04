@@ -8,10 +8,10 @@ function StatCard({ label, value, sub, icon, color, borderColor, bg }) {
       borderRadius: 16, padding: '20px 22px', position: 'relative', overflow: 'hidden',
     }} className="animate-fade-up">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-        <p style={{ fontSize: 10.5, color: color || 'var(--muted)', opacity: 0.9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>{label}</p>
+        <p className="kpi-card-label" style={{ fontSize: 10.5, color: color || 'var(--muted)', opacity: 0.9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>{label}</p>
         <span style={{ fontSize: 18, opacity: 0.85 }}>{icon}</span>
       </div>
-      <p style={{ fontSize: 27, fontWeight: 800, color: color || '#fff', margin: 0, letterSpacing: '-0.03em' }}>{value}</p>
+      <p className="kpi-card-val" style={{ fontSize: 27, fontWeight: 800, color: color || '#fff', margin: 0, letterSpacing: '-0.03em' }}>{value}</p>
       <p style={{ fontSize: 12, color: color ? `${color}99` : 'var(--muted)', marginTop: 5, marginBottom: 0, fontWeight: 500 }}>{sub}</p>
     </div>
   )
@@ -122,9 +122,9 @@ function timeAgo(dateStr) {
 }
 
 const STATUS_STYLE = {
-  pending:  { bg: 'rgba(245,166,35,0.12)', color: '#f5a623', border: 'rgba(245,166,35,0.25)' },
+  pending: { bg: 'rgba(245,166,35,0.12)', color: '#f5a623', border: 'rgba(245,166,35,0.25)' },
   invoiced: { bg: 'rgba(124,109,248,0.12)', color: '#7c6df8', border: 'rgba(124,109,248,0.25)' },
-  paid:     { bg: 'rgba(0,214,143,0.12)',   color: '#00d68f', border: 'rgba(0,214,143,0.25)' },
+  paid: { bg: 'rgba(0,214,143,0.12)', color: '#00d68f', border: 'rgba(0,214,143,0.25)' },
 }
 
 export default function DashboardPage() {
@@ -161,7 +161,7 @@ export default function DashboardPage() {
   const lowStockItems = data?.lowStockItems || []
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 26, paddingBottom: 40 }}>
       <div>
         <h1 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Analytics</h1>
         <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, fontWeight: 500 }}>
@@ -170,12 +170,75 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Grid */}
-      <div className="kpi-grid" style={{ display: 'grid', gap: 16 }}>
-        {loading ? Array(4).fill(0).map((_, i) => <Skeleton key={i} />) : kpis.map(k => <StatCard key={k.label} {...k} />)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+        {loading ? Array(4).fill(0).map((_, i) => <Skeleton key={i} />) : (
+          <>
+            {/* Quick Actions - MOBILE ONLY (Horizontal Row) */}
+            <div className="mobile-only quick-actions-mobile-row" style={{ 
+              gridColumn: '1 / -1', 
+              display: 'flex',
+              flexDirection: 'row',
+              gap: 14, 
+              overflowX: 'auto', 
+              padding: '4px 4px 14px',
+              margin: '0 -4px',
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}>
+              {[
+                { label: 'Add Item', icon: '📦', href: '/dashboard/inventory', bg: 'linear-gradient(135deg, #3b9eff 0%, #2563eb 100%)' },
+                { label: 'Payments', icon: '💸', href: '/dashboard/payments', bg: 'linear-gradient(135deg, #f5a623 0%, #d97706 100%)' },
+              ].map(action => (
+                <div key={action.label} 
+                  onClick={() => window.location.href = action.href}
+                  className="quick-action-card"
+                  style={{ 
+                    flex: '0 0 auto', 
+                    width: 135, 
+                    height: 105,
+                    background: action.bg, 
+                    borderRadius: 20, 
+                    padding: '16px', 
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 8,
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    userSelect: 'none',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                  }}
+                  onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+                  onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <div style={{ 
+                    fontSize: 32, 
+                    background: 'rgba(255,255,255,0.2)', 
+                    width: 52, 
+                    height: 52, 
+                    borderRadius: '50%',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                  }}>{action.icon}</div>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{action.label}</span>
+                </div>
+              ))}
+            </div>
+
+
+
+            {kpis.map(k => <StatCard key={k.label} {...k} />)}
+          </>
+        )}
       </div>
 
       {/* Low Stock + Order Status Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: 16 }}>
 
         {/* Low Stock Alerts (LEFT) — Real-time from Supabase inventory */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column' }}>
@@ -242,18 +305,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Latest Orders (left) + Latest Purchases (right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: 16 }}>
 
         {/* Latest Orders — pending/invoiced */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <span style={{ fontSize: 16 }}>📦</span>
             <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>Latest Orders</p>
-            <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 'auto', fontWeight: 500 }}>Pending / Invoiced</span>
+            <a href="/dashboard/orders" style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: 'var(--indigo)', textDecoration: 'none', background: 'var(--indigo-dim)', padding: '4px 10px', borderRadius: 6, border: '1px solid var(--indigo-border)' }}>View All</a>
           </div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 40 }} />)}
+              {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 40 }} />)}
             </div>
           ) : !data?.latestOrders?.length ? (
             <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>No pending orders</p>
@@ -264,7 +327,7 @@ export default function DashboardPage() {
                 const items = Array.isArray(o.items) ? o.items : []
                 const itemNames = items.map(it => it.name || it.item).filter(Boolean).join(', ')
                 return (
-                  <div key={o.id || i} style={{
+                  <div key={o.id || i} className="latest-item" style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '8px 10px', borderRadius: 10,
                     background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
@@ -284,11 +347,11 @@ export default function DashboardPage() {
                         {itemNames || `${items.length || 0} items`}
                       </p>
                     </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ margin: 0, fontSize: 12.5, fontWeight: 800, color: '#f5a623', fontFamily: 'DM Mono, monospace' }}>
+                    <div className="latest-item-right" style={{ textAlign: 'right', flexShrink: 0, minWidth: 70 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#f5a623', fontFamily: 'JetBrains Mono, monospace' }}>
                         ₹{(o.total_amount || 0).toLocaleString('en-IN')}
                       </p>
-                      <p style={{ margin: 0, fontSize: 9.5, color: 'var(--muted)' }}>{timeAgo(o.created_at)}</p>
+                      <p style={{ margin: 0, fontSize: 9.5, color: 'var(--muted)', fontWeight: 500 }}>{timeAgo(o.created_at)}</p>
                     </div>
                   </div>
                 )
@@ -302,11 +365,11 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <span style={{ fontSize: 16 }}>✅</span>
             <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', margin: 0, letterSpacing: '-0.01em' }}>Latest Purchases</p>
-            <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 'auto', fontWeight: 500 }}>Paid</span>
+            <a href="/dashboard/payments" style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: 'var(--indigo)', textDecoration: 'none', background: 'var(--indigo-dim)', padding: '4px 10px', borderRadius: 6, border: '1px solid var(--indigo-border)' }}>View All</a>
           </div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 40 }} />)}
+              {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 40 }} />)}
             </div>
           ) : !data?.latestPaidOrders?.length ? (
             <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>No purchases yet</p>
@@ -316,7 +379,7 @@ export default function DashboardPage() {
                 const items = Array.isArray(o.items) ? o.items : []
                 const itemNames = items.map(it => it.name || it.item).filter(Boolean).join(', ')
                 return (
-                  <div key={o.id || i} style={{
+                  <div key={o.id || i} className="latest-item" style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '8px 10px', borderRadius: 10,
                     background: 'rgba(0,214,143,0.04)', border: '1px solid rgba(0,214,143,0.12)',
@@ -336,11 +399,11 @@ export default function DashboardPage() {
                         {itemNames || `${items.length || 0} items`}
                       </p>
                     </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ margin: 0, fontSize: 12.5, fontWeight: 800, color: '#00d68f', fontFamily: 'DM Mono, monospace' }}>
+                    <div className="latest-item-right" style={{ textAlign: 'right', flexShrink: 0, minWidth: 70 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#00d68f', fontFamily: 'JetBrains Mono, monospace' }}>
                         ₹{(o.total_amount || 0).toLocaleString('en-IN')}
                       </p>
-                      <p style={{ margin: 0, fontSize: 9.5, color: 'var(--muted)' }}>{timeAgo(o.created_at)}</p>
+                      <p style={{ margin: 0, fontSize: 9.5, color: 'var(--muted)', fontWeight: 500 }}>{timeAgo(o.created_at)}</p>
                     </div>
                   </div>
                 )

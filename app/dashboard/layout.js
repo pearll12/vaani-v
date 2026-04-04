@@ -5,16 +5,17 @@ import Link from 'next/link'
 import { useTheme } from '@/lib/theme'
 import Chatbot from './chatbot'
 import Tour from './Tour'
+import InstallPrompt from './InstallPrompt'
+import OfflineStatus from './OfflineStatus'
 
 import { supabase } from '@/lib/supabase'
 
 const NAV = [
   { href: '/dashboard',           icon: '▦',  label: 'Dashboard',  color: '#38bdf8' },
-  { href: '/dashboard/inventory', icon: '⬡',  label: 'Inventory',  color: '#a3e635' },
   { href: '/dashboard/orders',    icon: '◦',  label: 'Orders',     color: '#818cf8' },
+  { href: '/dashboard/khata',     icon: '▤',  label: 'Khata',      color: '#ffb233' },
+  { href: '/dashboard/inventory', icon: '⬡',  label: 'Inventory',  color: '#a3e635' },
   { href: '/dashboard/invoices',  icon: '⬕',  label: 'Invoices',   color: '#f59e0b' },
-  { href: '/dashboard/payments',  icon: '◈',  label: 'Payments',   color: '#00e5c3' },
-  { href: '/dashboard/khata',     icon: '📒', label: 'Khata',      color: '#fb7185' },
   { href: '/dashboard/buyers',    icon: '◉',  label: 'Buyers',     color: '#a78bfa' },
   { href: '/dashboard/settings',  icon: '⚙️',  label: 'Settings',   color: '#cbd5e1' },
 ]
@@ -70,6 +71,16 @@ export default function DashboardLayout({ children }) {
       })
     }
     window.addEventListener('profileUpdated', handleProfileUpdate)
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+          console.log('SW registered:', reg);
+        }).catch((err) => {
+          console.log('SW registration failed:', err);
+        });
+      });
+    }
 
     return () => {
       subscription.unsubscribe()
@@ -305,6 +316,7 @@ export default function DashboardLayout({ children }) {
               </span>
             </div>
             <button
+              id="theme-toggle"
               onClick={toggleTheme}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -337,16 +349,62 @@ export default function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <main className="dashboard-content" style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+        <main className="dashboard-content" style={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          padding: isMobile ? '16px' : '28px 32px', 
+          paddingBottom: isMobile ? 160 : 32 
+        }}>
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          height: 64, background: theme === 'dark' ? 'rgba(15,22,35,0.95)' : 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(10px)',
+          borderTop: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+          zIndex: 90, paddingBottom: 'env(safe-area-inset-bottom)',
+          boxShadow: '0 -4px 12px rgba(0,0,0,0.05)'
+        }}>
+          {[
+            { href: '/dashboard',           icon: '▦',  label: 'Home',     color: '#38bdf8' },
+            { href: '/dashboard/orders',    icon: '◦',  label: 'Orders',   color: '#818cf8' },
+            { href: '/dashboard/khata',     icon: '▤',  label: 'Khata',    color: '#ffb233' },
+            { href: '/dashboard/inventory', icon: '⬡',  label: 'Stock',    color: '#a3e635' },
+          ].map(n => {
+            const active = pathname === n.href
+            return (
+              <Link key={n.href} href={n.href} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                textDecoration: 'none', color: active ? n.color : 'var(--muted)',
+                transition: 'all 0.2s', padding: '8px 12px'
+              }}>
+                <span style={{ fontSize: 18, opacity: active ? 1 : 0.6, transform: active ? 'scale(1.15)' : 'scale(1.1)' }}>{n.icon}</span>
+                <span style={{ fontSize: 10, fontWeight: active ? 800 : 500, opacity: active ? 1 : 0.8 }}>{n.label}</span>
+                {active && (
+                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: n.color, marginTop: -2 }} />
+                )}
+              </Link>
+            )
+          })}
+        </nav>
+      )}
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
 
       {/* Chatbot Widget */}
       <Chatbot />
       
       {/* Onboarding Tour */}
       <Tour />
+
+      {/* Offline Status Alert */}
+      <OfflineStatus />
     </div>
   )
 }

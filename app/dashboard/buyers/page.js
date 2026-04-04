@@ -72,13 +72,13 @@ function PodiumCard({ buyer, rank, podiumIdx }) {
       )}
       <span style={{ fontSize: 20, marginBottom: 8 }}>{medals[rank]}</span>
       <Avatar phone={buyer.phone} idx={rank} size={isTop ? 52 : 42} />
-      <p style={{ margin: '10px 0 3px', fontWeight: 700, fontSize: 12.5, color: '#d4e0ee' }}>
+      <p style={{ margin: '10px 0 3px', fontWeight: 700, fontSize: 11.5, color: '#d4e0ee', wordBreak: 'break-all', textAlign: 'center', lineHeight: 1.2 }}>
         {buyer.phone}
       </p>
-      <p style={{ margin: 0, fontSize: isTop ? 18 : 15, fontWeight: 800, color: isTop ? 'var(--teal)' : 'var(--muted)', letterSpacing: '-0.01em' }}>
+      <p style={{ margin: 0, fontSize: isTop ? 16 : 14, fontWeight: 800, color: isTop ? 'var(--teal)' : 'var(--muted)', letterSpacing: '-0.01em', textAlign: 'center' }}>
         ₹{buyer.totalSpent.toLocaleString('en-IN')}
       </p>
-      <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--muted)' }}>{buyer.totalOrders} orders</p>
+      <p style={{ margin: '3px 0 0', fontSize: 10.5, color: 'var(--muted)' }}>{buyer.totalOrders} orders</p>
     </div>
   )
 }
@@ -87,8 +87,16 @@ export default function BuyersPage() {
   const [buyers, setBuyers]   = useState([])
   const [loading, setLoading] = useState(true)
   const [sort, setSort]       = useState('orders')
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   async function load() {
     const { data: orders = [] } = await supabase.from('orders').select('*')
@@ -121,24 +129,26 @@ export default function BuyersPage() {
   const totalOrders  = buyers.reduce((s, b) => s + b.totalOrders, 0)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 60 }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Buyers</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0', fontWeight: 500 }}>
-            {buyers.length} customers · ₹{totalRevenue.toLocaleString('en-IN')} revenue · {totalOrders} orders total
+            {buyers.length} customers <span className="mobile-hide">· ₹{totalRevenue.toLocaleString('en-IN')} revenue · {totalOrders} orders total</span>
           </p>
         </div>
+        
         {/* Sort controls */}
         <div style={{ display: 'flex', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-          {[['orders', 'By Orders'], ['spent', 'By Spend'], ['avg', 'By Avg']].map(([key, label]) => (
+          {[['orders', 'Orders'], ['spent', 'Spend'], ['avg', 'Avg']].map(([key, label]) => (
             <button key={key} onClick={() => setSort(key)} style={{
-              padding: '8px 16px', border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600,
+              padding: isMobile ? '8px 12px' : '8px 16px', border: 'none', cursor: 'pointer',
+              fontSize: 11, fontWeight: 700,
               background: sort === key ? 'var(--emerald)' : 'transparent',
               color: sort === key ? '#020f0a' : 'var(--muted)',
-              transition: 'all 0.15s', fontFamily: 'DM Sans, sans-serif',
+              transition: 'all 0.15s', fontFamily: 'Plus Jakarta Sans, sans-serif',
+              textTransform: 'uppercase', letterSpacing: '0.02em'
             }}>{label}</button>
           ))}
         </div>
@@ -146,7 +156,18 @@ export default function BuyersPage() {
 
       {/* Podium */}
       {!loading && sorted.length >= 3 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, alignItems: 'flex-end' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr 1fr', 
+          gap: isMobile ? 6 : 14, 
+          alignItems: 'flex-end',
+          overflowX: 'visible',
+          paddingBottom: isMobile ? 8 : 0,
+          margin: 0,
+          padding: 0,
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none'
+        }}>
           {[sorted[1], sorted[0], sorted[2]].map((b, podiumIdx) => {
             const rank = podiumIdx === 1 ? 0 : podiumIdx === 0 ? 1 : 2
             return <PodiumCard key={b.phone} buyer={b} rank={rank} podiumIdx={podiumIdx} />
@@ -154,7 +175,7 @@ export default function BuyersPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Main List */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -165,8 +186,55 @@ export default function BuyersPage() {
             <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.3 }}>◉</div>
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--muted-light)', margin: 0 }}>No buyers yet</p>
           </div>
+        ) : isMobile ? (
+          /* Mobile Card List */
+          <div className="card-list-mobile">
+            {sorted.map((b, i) => {
+              const medals = ['🥇', '🥈', '🥉']
+              return (
+                <div key={b.phone} className="mobile-card" style={{ 
+                  background: i < 3 ? 'rgba(255,255,255,0.02)' : 'var(--card)',
+                  border: i < 3 ? `1px solid ${i === 0 ? 'var(--emerald)' : 'var(--border-strong)'}` : '1px solid var(--border)',
+                  padding: 14
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Avatar phone={b.phone} idx={i} size={32} />
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>
+                          {medals[i] || `#${i + 1}`} {b.phone}
+                        </p>
+                        <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
+                          {b.languages.slice(0, 2).map(l => <LangTag key={l} lang={l} />)}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--emerald)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        ₹{b.totalSpent.toLocaleString('en-IN')}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{b.totalOrders} orders</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: 11, color: 'var(--muted-light)' }}>
+                      Avg: ₹{b.avgOrder.toLocaleString('en-IN')}
+                    </span>
+                    <a
+                      href={`https://wa.me/${b.phone.replace(/\D/g, '')}`}
+                      target="_blank" rel="noreferrer"
+                      style={{ fontSize: 11, color: 'var(--emerald)', textDecoration: 'none', fontWeight: 700 }}
+                    >
+                      💬 Message
+                    </a>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          /* Desktop Table */
+          <div className="desktop-only" style={{ overflowX: 'auto' }}>
             <table className="bv-table">
               <thead>
                 <tr>
@@ -211,16 +279,8 @@ export default function BuyersPage() {
                         <a
                           href={`https://wa.me/${b.phone.replace(/\D/g, '')}`}
                           target="_blank" rel="noreferrer"
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                            background: 'var(--emerald-dim)', color: 'var(--emerald)',
-                            border: '1px solid var(--emerald-border)',
-                            padding: '6px 14px', borderRadius: 8,
-                            fontSize: 12.5, textDecoration: 'none', fontWeight: 600,
-                            transition: 'all 0.15s',
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,214,143,0.14)' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'var(--emerald-dim)' }}
+                          className="btn-ghost"
+                          style={{ fontSize: 11, padding: '6px 12px' }}
                         >
                           💬 WhatsApp
                         </a>
