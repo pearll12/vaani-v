@@ -16,6 +16,7 @@ const NAV = [
   { href: '/dashboard/khata',     icon: '▤',  label: 'Khata',      color: '#ffb233' },
   { href: '/dashboard/inventory', icon: '⬡',  label: 'Inventory',  color: '#a3e635' },
   { href: '/dashboard/invoices',  icon: '⬕',  label: 'Invoices',   color: '#f59e0b' },
+  { href: '/dashboard/payments',  icon: '💳', label: 'Payments',   color: '#eab308' },
   { href: '/dashboard/buyers',    icon: '◉',  label: 'Buyers',     color: '#a78bfa' },
   { href: '/dashboard/delivery',  icon: '🚚', label: 'Delivery',   color: '#ff4757' },
   { href: '/dashboard/settings',  icon: '⚙️',  label: 'Settings',   color: '#cbd5e1' },
@@ -397,13 +398,11 @@ export default function DashboardLayout({ children }) {
 
       {/* PWA Install Prompt */}
       <InstallPrompt />
-
       {/* Chatbot Widget */}
       <Chatbot />
       
       {/* Onboarding Tour */}
       <Tour />
-
       {/* Offline Status Alert */}
       <OfflineStatus />
     </div>

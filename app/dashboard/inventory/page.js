@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 
 const UNITS = ['pcs', 'kg', 'g', 'L', 'ml', 'box', 'pack', 'dozen']
 const CATS  = ['General', 'Food & Grocery', 'Electronics', 'Clothing', 'Stationery', 'Home & Kitchen', 'Other']
@@ -206,11 +206,15 @@ function CSVUploadModal({ onClose, onImport }) {
                       <th style={{ textAlign: 'left', padding: '12px 14px' }}>Category</th>
                       <th style={{ textAlign: 'right', padding: '12px 14px' }}>Qty</th>
                       <th style={{ textAlign: 'right', padding: '12px 14px' }}>Price (₹)</th>
+                      {rows.length > 0 && Object.keys(rows[0]).filter(k => !['name','sku','category','quantity','unit','price','lowStockThreshold'].includes(k)).map(key => (
+                        <th key={key} style={{ textAlign: 'left', padding: '12px 14px', textTransform: 'capitalize' }}>{key}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((r, i) => {
                       const cm = CAT_META[r.category] || CAT_META.General
+                      const extras = Object.keys(r).filter(k => !['name','sku','category','quantity','unit','price','lowStockThreshold'].includes(k))
                       return (
                         <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
                           <td style={{ fontWeight: 600, color: 'var(--text)', padding: '12px 14px' }}>{r.name}</td>
@@ -222,6 +226,9 @@ function CSVUploadModal({ onClose, onImport }) {
                           </td>
                           <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, padding: '12px 14px' }}>{r.quantity}</td>
                           <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', padding: '12px 14px' }}>₹{r.price}</td>
+                          {extras.map(ex => (
+                            <td key={ex} style={{ padding: '12px 14px', color: 'var(--muted-light)', fontSize: 13 }}>{r[ex]}</td>
+                          ))}
                         </tr>
                       )
                     })}
@@ -260,6 +267,15 @@ export default function InventoryPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
 
+  const customColumns = useMemo(() => {
+    const cols = new Set()
+    items.forEach(i => {
+      if (i.custom_data) {
+        Object.keys(i.custom_data).forEach(k => cols.add(k))
+      }
+    })
+    return Array.from(cols)
+  }, [items])
   useEffect(() => { load() }, [])
 
   async function load() {
@@ -479,6 +495,9 @@ export default function InventoryPage() {
                       <th style={{ width: 110, textAlign: 'right' }}>Price</th>
                       <th style={{ width: 100, textAlign: 'right' }}>Qty</th>
                       <th style={{ width: 130, textAlign: 'right' }}>Stock Value</th>
+                      {customColumns.map(col => (
+                        <th key={col} style={{ textTransform: 'capitalize' }}>{col.replace(/_/g, ' ')}</th>
+                      ))}
                       <th style={{ width: 120 }}>Status</th>
                       <th style={{ width: 160 }}>Actions</th>
                     </tr>
@@ -512,6 +531,11 @@ export default function InventoryPage() {
                             <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 4 }}>{item.unit}</span>
                           </td>
                           <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--text-dim)' }}>₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN')}</td>
+                          {customColumns.map(col => (
+                            <td key={col} style={{ color: 'var(--muted-light)', fontSize: 13 }}>
+                              {(item.custom_data && item.custom_data[col]) ? String(item.custom_data[col]) : '—'}
+                            </td>
+                          ))}
                           <td><span className={`badge ${low ? 'badge-low' : 'badge-ok'}`}>{low ? 'Low Stock' : 'In Stock'}</span></td>
                           <td>
                             <div style={{ display: 'flex', gap: 8 }}>

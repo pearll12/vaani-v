@@ -15,9 +15,22 @@ export async function GET() {
   }
 }
 
+const KNOWN_KEYS = ['id', 'name', 'sku', 'category', 'quantity', 'unit', 'price', 'lowStockThreshold', 'createdAt', 'updatedAt', 'custom_data']
+
+function extractCustomData(body) {
+  const custom = { ...(body.custom_data || {}) }
+  for (const k of Object.keys(body)) {
+    if (!KNOWN_KEYS.includes(k)) {
+      custom[k] = body[k]
+    }
+  }
+  return custom
+}
+
 export async function POST(req) {
   try {
     const body = await req.json()
+    const custom_data = extractCustomData(body)
     const item = {
       id: body.id || Date.now().toString(),
       name: body.name || 'Unnamed',
@@ -27,11 +40,12 @@ export async function POST(req) {
       unit: body.unit || 'pcs',
       price: Number(body.price) || 0,
       lowStockThreshold: Number(body.lowStockThreshold) || 10,
+      custom_data
     }
     
     const { data, error } = await supabase
       .from('inventory')
-      .insert([item])
+      .upsert([item], { onConflict: 'id' })
       .select()
       .single()
 
@@ -45,10 +59,18 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const body = await req.json()
-    const { id, ...updates } = body
+    const { id, name, sku, category, quantity, unit, price, lowStockThreshold, createdAt, updatedAt } = body
     
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
+    const custom_data = extractCustomData(body)
+
+    const updates = {
+      name, sku, category, quantity, unit, price, lowStockThreshold, custom_data
+    }
+
+    // Clean undefined fields to avoid overwriting with null accidentally
+    Object.keys(updates).forEach(key => updates[key] === undefined && delete updates[key])
     const { data, error } = await supabase
       .from('inventory')
       .update(updates)

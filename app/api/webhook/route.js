@@ -6,6 +6,7 @@ import { transcribeVoiceNote } from '@/lib/transcribe'
 // EXTENSION — Delivery management imports
 import { isDeliveryAgent } from '@/lib/delivery-config'
 import { assignDeliveryAgent, handleDeliveryAgentMessage, getDeliveryStatus } from '@/lib/delivery'
+import { generateAndUploadCataloguePDF } from '@/lib/pdfCatalogue'
 
 const OWNER_PHONE = process.env.BUSINESS_OWNER_PHONE || null
 
@@ -153,7 +154,7 @@ async function buildCatalog(language) {
       const threshold = Number(item.lowStockThreshold) || 10
       const stockLabel = stock <= threshold ? ' ⚠️' : ''
       msg += `  ${idx}⃣  ${item.name} — *₹${price}*/${item.unit}${stockLabel}\n`
-      catalogMap.push({ idx, item })
+      catalogMap.push({ idx, item, category: cat })
       idx++
     })
   }
@@ -162,9 +163,17 @@ async function buildCatalog(language) {
   msg += `💬 *Order Kaise Karein?*\n`
   msg += `🔢 Reply karein sirf numbers: *"1, 3, 5"*\n`
   msg += `📝 Ya likh kar bhejein: *"2 Rice Bag aur 1 Wheat Flour"*\n`
-  msg += `🎙️ Ya ek *Voice Note* bhejein!`
+  msg += `🎙️ Ya ek *Voice Note* bhejein!\n\n`
+  msg += `❓ Sabhi commands ke liye *"help"* likhein`
 
-  return { message: msg, catalogMap }
+  let pdfUrl = null
+  try {
+    pdfUrl = await generateAndUploadCataloguePDF(catalogMap)
+  } catch (err) {
+    console.error('PDF Generation Skipped:', err)
+  }
+
+  return { message: msg, catalogMap, pdfUrl }
 }
 
 // ───── Selection → Order ─────
@@ -187,6 +196,15 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
 }
 
 // ───── Main Webhook ─────
+
+export async function POST(req) {
+  try {
+    const formData = await req.formData()
+
+    const from = formData.get('From')?.replace('whatsapp:', '')
+    const body = formData.get('Body') || ''
+    const mediaType = formData.get('MediaContentType0')
+    const mediaUrl = formData.get('MediaUrl0')
 
     console.log(`📩 Message from ${from}: ${body}, Media: ${mediaType}`)
 
@@ -280,7 +298,6 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
       }
       return new NextResponse('OK', { status: 200 })
     }
-
     // ═══════════════════════════════
     // VOICE NOTE → Transcribe with Groq Whisper
     // ═══════════════════════════════
@@ -417,7 +434,7 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
 
       // Welcome + catalog together
       const welcomeMsg = lang === 'english'
-        ? `🙏 Hello! Welcome to *${bName}*\n\nHere\'s what we have:\n`
+        ? `🙏 Hello! Welcome to *${bName}*\n\nHere's what we have:\n`
         : `🙏 Namaste! *${bName}* mein aapka swagat hai!\n\nYe rahi hamari product list:\n`
 
       if (catalog.catalogMap.length > 0) {
@@ -431,11 +448,9 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
         } catch (e) {
           console.log('Session store skipped (table may not exist):', e.message)
         }
-
-        await sendWhatsApp(from, welcomeMsg + catalog.message)
-      } else {
-        await sendWhatsApp(from, welcomeMsg + catalog.message)
       }
+
+      await sendWhatsApp(from, welcomeMsg + catalog.message, catalog.pdfUrl || null)
       return new NextResponse('OK', { status: 200 })
     }
 
@@ -564,6 +579,8 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
         const amt = Number(pendingOrder.total_amount || 0)
         const grand = +(amt * 1.18).toFixed(2)
 
+        // Exact inventory deduction ONLY on confirm
+        await handleStockAlerts(items)
         await sendWhatsApp(from,
           `✅ *Order #${String(pendingOrder.id).padStart(4, '0')} Confirmed!*\n\n` +
           `📦 ${itemNames}\n` +
@@ -601,7 +618,6 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
             console.error('Address request error (non-blocking):', err)
           }
         }
-
         // Auto-generate invoice
         try {
           const invoiceUrl = new URL('/api/invoice', req.url)
@@ -687,7 +703,7 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
         console.log('Session store skipped:', e.message)
       }
 
-      await sendWhatsApp(from, catalog.message)
+      await sendWhatsApp(from, catalog.message, catalog.pdfUrl || null)
       return new NextResponse('OK', { status: 200 })
     }
 
@@ -906,7 +922,8 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
       `📝 Ya directly likh sakte hain:\n_"5 Rice Bag aur 2 Wheat Flour bhejdo"_\n\n` +
       `💰 "hisab" — Payment status\n` +
       `📋 "track" — Order status\n` +
-      `❓ "help" — Sab commands dekhein`
+      `❓ "help" — Sab commands dekhein`,
+      catalog.pdfUrl || null
     )
     return new NextResponse('OK', { status: 200 })
 

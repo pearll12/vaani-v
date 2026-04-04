@@ -108,6 +108,7 @@ export default function InvoicesPage() {
   const [filter, setFilter]     = useState('all')
   const [toast, setToast]       = useState('')
   const [result, setResult]     = useState(null)
+  const [viewingInvoice, setViewingInvoice] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -120,7 +121,6 @@ export default function InvoicesPage() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
-
   async function fetchOrders() {
     const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
     if (data) setOrders(data)
@@ -146,10 +146,28 @@ export default function InvoicesPage() {
     setSending(null)
   }
 
+  async function viewInvoice(orderId) {
+    setViewingInvoice(orderId)
+    try {
+      const storagePath = `invoice-${orderId}.pdf`
+      const { data, error } = await supabase.storage
+        .from('invoices')
+        .createSignedUrl(storagePath, 60 * 60) // 1 hour
+      if (error || !data?.signedUrl) {
+        showToast('⚠ Invoice not found — send invoice first')
+      } else {
+        window.open(data.signedUrl, '_blank')
+      }
+    } catch {
+      showToast('⚠ Failed to load invoice')
+    }
+    setViewingInvoice(null)
+  }
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
   const counts = {
     all: orders.length,
     pending:  orders.filter(o => o.status === 'pending').length,
+    confirmed: orders.filter(o => o.status === 'confirmed').length,
     invoiced: orders.filter(o => o.status === 'invoiced').length,
     paid:     orders.filter(o => o.status === 'paid').length,
   }
@@ -161,10 +179,11 @@ export default function InvoicesPage() {
   useEffect(() => { setCurrentPage(1) }, [filter, rowsPerPage])
 
   const TAB_FILTERS = [
-    { key: 'all',      label: 'All' },
-    { key: 'pending',  label: 'Pending' },
-    { key: 'invoiced', label: 'Invoiced' },
-    { key: 'paid',     label: 'Paid' },
+    { key: 'all',       label: 'All' },
+    { key: 'pending',   label: 'Pending' },
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'invoiced',  label: 'Invoiced' },
+    { key: 'paid',      label: 'Paid' },
   ]
 
   const paidOrders   = orders.filter(o => o.status !== 'pending')
@@ -175,11 +194,11 @@ export default function InvoicesPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Invoices</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0', fontWeight: 500 }}>
-            <span className="mobile-hide">18% GST (CGST 9% + SGST 9%) · </span>Invoice + Razorpay sent via WhatsApp
+            <span className="mobile-hide">18% GST (CGST 9% + SGST 9%) · </span>Invoice + Razorpay link sent automatically via WhatsApp
           </p>
         </div>
       </div>
@@ -187,15 +206,15 @@ export default function InvoicesPage() {
       {/* GST Summary */}
       <div className="stat-grid-3">
         {[
-          { label: 'Subtotal', value: `₹${totalSub.toLocaleString('en-IN')}`, color: 'var(--violet)', bg: 'var(--violet-dim)', border: 'rgba(124,109,248,0.2)' },
-          { label: 'GST (18%)',  value: `₹${totalGST.toLocaleString('en-IN')}`, color: 'var(--amber)', bg: 'var(--amber-dim)', border: 'rgba(245,166,35,0.2)' },
-          { label: 'Grand Total', value: `₹${totalGrand.toLocaleString('en-IN')}`, color: 'var(--emerald)', bg: 'var(--emerald-dim)', border: 'var(--emerald-border)' },
+          { label: 'Invoiced Subtotal', value: `₹${totalSub.toLocaleString('en-IN')}`, color: 'var(--violet)', bg: 'var(--violet-dim)', border: 'rgba(124,109,248,0.2)' },
+          { label: 'GST Collected (18%)',  value: `₹${totalGST.toLocaleString('en-IN')}`, color: 'var(--amber)', bg: 'var(--amber-dim)', border: 'rgba(245,166,35,0.2)' },
+          { label: 'Grand Total',     value: `₹${totalGrand.toLocaleString('en-IN')}`, color: 'var(--emerald)', bg: 'var(--emerald-dim)', border: 'var(--emerald-border)' },
         ].map(k => (
           <div key={k.label} style={{
             background: k.bg, border: `1px solid ${k.border}`,
             borderRadius: 14, padding: isMobile ? '14px 18px' : '18px 22px',
           }}>
-            <p style={{ fontSize: 10, color: k.color, opacity: 0.8, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>{k.label}</p>
+            <p style={{ fontSize: 10.5, color: k.color, opacity: 0.8, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>{k.label}</p>
             <p style={{ fontSize: isMobile ? 18 : 24, fontWeight: 800, color: k.color, margin: 0, letterSpacing: '-0.02em' }}>{k.value}</p>
           </div>
         ))}
@@ -211,217 +230,250 @@ export default function InvoicesPage() {
         ))}
       </div>
 
-      {/* Desktop Table - Hidden on mobile */}
-      <div className="bv-table-wrap" style={{
-        background: 'var(--card)', border: '1px solid var(--border)',
-        borderRadius: 16, overflow: 'hidden',
-      }}>
+      {/* Table & Mobile Card List Wrapper */}
+      <div className="bv-table-container">
         {loading ? (
           <div style={{ padding: 48, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 48 }} />)}
           </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState filter={filter} />
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="bv-table">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Customer</th>
-                  <th>Items</th>
-                  <th style={{ textAlign: 'right' }}>Subtotal</th>
-                  <th style={{ textAlign: 'right' }}>CGST 9%</th>
-                  <th style={{ textAlign: 'right' }}>SGST 9%</th>
-                  <th style={{ textAlign: 'right' }}>Total</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+          <>
+            <div className="desktop-only">
+              <div className="bv-table-wrap">
+                <table className="bv-table">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th className="mobile-hide">Customer</th>
+                      <th className="mobile-hide">Items</th>
+                      <th style={{ textAlign: 'right' }}>Subtotal</th>
+                      <th style={{ textAlign: 'right' }}>CGST 9%</th>
+                      <th style={{ textAlign: 'right' }}>SGST 9%</th>
+                      <th style={{ textAlign: 'right' }}>Total</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginated.map(order => {
+                      const sub   = Number(order.total_amount) || 0
+                      const cgst  = +(sub * 0.09).toFixed(2)
+                      const sgst  = +(sub * 0.09).toFixed(2)
+                      const grand = +(sub + cgst + sgst).toFixed(2)
+                      const lang  = order.language || 'english'
+                      const date  = parseUtc(order.created_at)
+                      const canViewInvoice = ['confirmed', 'invoiced', 'paid'].includes(order.status)
+
+                      return (
+                        <tr key={order.id}>
+                          <td>
+                            <div>
+                               <p style={{ margin: 0, fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--muted-light)', fontWeight: 500 }}>
+                                 #{String(order.id).padStart(4, '0')}
+                               </p>
+                               <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                                 {date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
+                               </p>
+                            </div>
+                          </td>
+                          <td className="mobile-hide">
+                            <div>
+                               <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>
+                                 {order.customer_phone}
+                               </p>
+                               <LangBadge lang={lang} />
+                            </div>
+                          </td>
+                          <td className="mobile-hide" style={{ maxWidth: 200 }}>
+                            <div style={{ fontSize: 12.5, color: 'var(--muted-light)', lineHeight: 1.5 }}>
+                               {(order.items || []).map((i, idx) => (
+                                 <span key={idx}>
+                                   {idx > 0 && <span style={{ color: 'var(--muted)', margin: '0 4px' }}>·</span>}
+                                   <span style={{ color: 'var(--muted-light)', fontWeight: 500 }}>{i.name}</span>
+                                   <span style={{ color: 'var(--muted)', fontSize: 11 }}> (₹{i.price}) ×{i.quantity}</span>
+                                 </span>
+                               ))}
+                            </div>
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--text)' }}>₹{sub.toFixed(2)}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{cgst.toFixed(2)}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{sgst.toFixed(2)}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>₹{grand.toFixed(2)}</span>
+                          </td>
+                          <td><span className={`badge badge-${order.status}`}>{order.status}</span></td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                              <div style={{ width: 130 }}>
+                                {order.status === 'pending' ? (
+                                  <button
+                                    className="btn-primary"
+                                    style={{ fontSize: 12, padding: '7px 14px', whiteSpace: 'nowrap', width: '100%' }}
+                                    onClick={() => sendInvoice(order)}
+                                    disabled={sending === order.id}
+                                  >
+                                    {sending === order.id ? <>⏳ Sending…</> : <>📲 Send Invoice</>}
+                                  </button>
+                                ) : order.status === 'invoiced' ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                    <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>📤 Sent</span>
+                                    <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>WhatsApp + Razorpay</span>
+                                  </div>
+                                ) : order.status === 'paid' ? (
+                                  <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600 }}>✓ Paid</span>
+                                ) : null}
+                              </div>
+
+                              {canViewInvoice && (
+                                <button
+                                  onClick={() => viewInvoice(order.id)}
+                                  disabled={viewingInvoice === order.id}
+                                  style={{
+                                    background: 'rgba(129,140,248,0.08)', color: '#818cf8',
+                                    border: '1px solid rgba(129,140,248,0.2)', padding: '5px 12px',
+                                    borderRadius: 8, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+                                    fontFamily: 'Plus Jakarta Sans, sans-serif', transition: 'all 0.15s',
+                                    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(129,140,248,0.16)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(129,140,248,0.08)'; e.currentTarget.style.transform = 'translateY(0)' }}
+                                >
+                                  {viewingInvoice === order.id ? <>⏳ Loading…</> : <>📄 View</>}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="mobile-only" style={{ padding: '0px' }}>
+              <div className="card-list-mobile">
                 {paginated.map(order => {
                   const sub   = Number(order.total_amount) || 0
-                  const cgst  = +(sub * 0.09).toFixed(2)
-                  const sgst  = +(sub * 0.09).toFixed(2)
-                  const grand = +(sub + cgst + sgst).toFixed(2)
-                  const lang  = order.language || 'english'
+                  const grand = +(sub * 1.18).toFixed(2)
                   const date  = parseUtc(order.created_at)
+                  const canViewInvoice = ['confirmed', 'invoiced', 'paid'].includes(order.status)
 
                   return (
-                    <tr key={order.id}>
-                      <td>
+                    <div key={order.id} className="mobile-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                          <p style={{ margin: 0, fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--muted-light)', fontWeight: 500 }}>
+                          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
                             #{String(order.id).padStart(4, '0')}
-                          </p>
-                          <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                          </h4>
+                          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--muted)' }}>
                             {date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
                           </p>
                         </div>
-                      </td>
-                      <td>
-                        <div>
-                          <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>
-                            {order.customer_phone}
-                          </p>
-                          <LangBadge lang={lang} />
-                        </div>
-                      </td>
-                      <td style={{ maxWidth: 200 }}>
-                        <div style={{ fontSize: 12.5, color: 'var(--muted-light)', lineHeight: 1.5 }}>
+                        <span className={`badge badge-${order.status}`} style={{ fontSize: 10, padding: '3px 8px' }}>
+                          {order.status}
+                        </span>
+                      </div>
+
+                      <div style={{ marginTop: 8 }}>
+                        <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>
+                          {order.customer_phone}
+                        </p>
+                        <div style={{ fontSize: 11, color: 'var(--muted-light)', marginTop: 4, lineHeight: 1.4 }}>
                           {(order.items || []).map((i, idx) => (
                             <span key={idx}>
                               {idx > 0 && <span style={{ color: 'var(--muted)', margin: '0 4px' }}>·</span>}
-                              <span style={{ color: 'var(--muted-light)', fontWeight: 500 }}>{i.name}</span>
-                              <span style={{ color: 'var(--muted)', fontSize: 11 }}> (₹{i.price}) ×{i.quantity}</span>
+                              {i.quantity}× {i.name}
                             </span>
                           ))}
                         </div>
-                      </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--text)' }}>₹{sub.toFixed(2)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{cgst.toFixed(2)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{sgst.toFixed(2)}</td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>₹{grand.toFixed(2)}</span>
-                      </td>
-                      <td><span className={`badge badge-${order.status}`}>{order.status}</span></td>
-                      <td>
+                      </div>
+
+                      <div className="mobile-card-row" style={{ background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', marginTop: 12 }}>
+                        <div>
+                          <p className="mobile-card-label" style={{ fontSize: 9 }}>Amount</p>
+                          <p className="mobile-card-value" style={{ fontSize: 15, color: 'var(--emerald)', fontWeight: 700 }}>₹{grand.toLocaleString('en-IN')}</p>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
                         {order.status === 'pending' ? (
                           <button
                             className="btn-primary"
-                            style={{ fontSize: 11, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                            style={{ flex: 1, padding: '8px', fontSize: 12 }}
                             onClick={() => sendInvoice(order)}
                             disabled={sending === order.id}
                           >
-                            {sending === order.id ? (
-                               '⏳ Sending...'
-                            ) : (
-                               '📲 Send Invoice'
-                            )}
+                            {sending === order.id ? 'Sending…' : 'Send Invoice'}
                           </button>
+                        ) : order.status === 'paid' ? (
+                          <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center' }}>✓ Paid</span>
                         ) : order.status === 'invoiced' ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>📤 Sent</span>
-                            <span style={{ fontSize: 9, color: 'var(--muted)' }}>WhatsApp</span>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600 }}>✓ Paid</span>
+                          <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center' }}>📤 Sent</span>
+                        ) : null}
+
+                        {canViewInvoice && (
+                          <button
+                            onClick={() => viewInvoice(order.id)}
+                            disabled={viewingInvoice === order.id}
+                            style={{
+                              flex: order.status === 'paid' ? 0 : 1,
+                              background: 'rgba(129,140,248,0.08)', color: '#818cf8',
+                              border: '1px solid rgba(129,140,248,0.2)', padding: '8px 12px',
+                              borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                            }}
+                          >
+                            {viewingInvoice === order.id ? '⏳' : '📄 View'}
+                          </button>
                         )}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   )
                 })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Pagination Controls (Shared) */}
-      {!loading && filtered.length > 5 && (
-        <div style={{ padding: '12px 20px', border: '1px solid var(--border)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', background: 'var(--card)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>Rows per page:</span>
-            <select 
-              value={rowsPerPage} 
-              onChange={e => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 6, padding: '3px 8px', fontSize: 12, outline: 'none' }}
-            >
-              {[5, 10, 20, 50].map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, fontFamily: 'DM Mono, monospace' }}>
-              {Math.min(filtered.length, (currentPage - 1) * rowsPerPage + 1)}-{Math.min(filtered.length, currentPage * rowsPerPage)} of {filtered.length}
-            </span>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button 
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
-                className="btn-ghost"
-                style={{ padding: '6px 12px' }}
-              >‹ Prev</button>
-              <button 
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}
-                className="btn-ghost"
-                style={{ padding: '6px 12px' }}
-              >Next ›</button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Mobile Card List - Only visible on small screens */}
-      {!loading && filtered.length > 0 && (
-        <div className="invoice-card-list">
-          {paginated.map(order => {
-            const sub   = Number(order.total_amount) || 0
-            const cgst  = +(sub * 0.09).toFixed(2)
-            const sgst  = +(sub * 0.09).toFixed(2)
-            const grand = +(sub + cgst + sgst).toFixed(2)
-            const date  = parseUtc(order.created_at)
-
-            return (
-              <div key={order.id} className="invoice-item-card" style={{ 
-                background: 'var(--card)', border: '1px solid var(--border)', padding: 14, borderRadius: 14
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div>
-                    <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>
-                      #{String(order.id).padStart(4, '0')} · {date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
-                    </p>
-                    <p style={{ margin: '4px 0', fontSize: 15, fontWeight: 700, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>
-                      {order.customer_phone}
-                    </p>
-                    <LangBadge lang={order.language || 'english'} />
-                  </div>
-                  <span className={`badge badge-${order.status}`}>{order.status}</span>
+            {/* Pagination Controls (Shared) */}
+            {filtered.length > 5 && (
+              <div style={{ padding: '16px 20px', border: '1px solid var(--border)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', background: 'var(--card)', marginTop: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>Rows per page:</span>
+                  <select 
+                    value={rowsPerPage} 
+                    onChange={e => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 6, padding: '3px 8px', fontSize: 12, outline: 'none' }}
+                  >
+                    {[5, 10, 20, 50].map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
                 </div>
-
-                <div style={{ padding: '12px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {(order.items || []).map((i, idx) => (
-                      <div key={idx} className="mobile-card-row" style={{ fontSize: 12, alignItems: 'center' }}>
-                        <span className="line-clamp-1" style={{ color: 'var(--text-soft)', flex: 1, marginRight: 8 }}>
-                          {i.name}
-                        </span>
-                        <span style={{ color: 'var(--muted)', flexShrink: 0, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>
-                          ₹{i.price * i.quantity}
-                        </span>
-                      </div>
-                    ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, fontFamily: 'DM Mono, monospace' }}>
+                    {Math.min(filtered.length, (currentPage - 1) * rowsPerPage + 1)}-{Math.min(filtered.length, currentPage * rowsPerPage)} of {filtered.length}
+                  </span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button 
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(p => p - 1)}
+                      className="btn-ghost"
+                      style={{ padding: '6px 12px', opacity: currentPage === 1 ? 0.5 : 1 }}
+                    >‹ Prev</button>
+                    <button 
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(p => p + 1)}
+                      className="btn-ghost"
+                      style={{ padding: '6px 12px', opacity: currentPage === totalPages ? 0.5 : 1 }}
+                    >Next ›</button>
                   </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Amount</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>₹{grand.toFixed(2)}</div>
-                  </div>
-                  
-                  {order.status === 'pending' ? (
-                    <button
-                      className="btn-primary"
-                      style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10 }}
-                      onClick={() => sendInvoice(order)}
-                      disabled={sending === order.id}
-                    >
-                      {sending === order.id ? '⏳ Sending...' : '📲 Invoice'}
-                    </button>
-                  ) : (
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 12, color: order.status === 'paid' ? 'var(--emerald)' : 'var(--indigo)', fontWeight: 700, display: 'block' }}>
-                        {order.status === 'paid' ? '✓ Paid' : '📤 Sent'}
-                      </span>
-                      <span style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 500 }}>on WhatsApp</span>
-                    </div>
-                  )}
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
-
+            )}
+          </>
+        )}
+      </div>
 
       {/* Invoice Result Modal */}
       {result && <InvoiceResult result={result} onClose={() => setResult(null)} />}
