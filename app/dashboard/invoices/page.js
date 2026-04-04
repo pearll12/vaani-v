@@ -214,11 +214,8 @@ export default function InvoicesPage() {
         ))}
       </div>
 
-      {/* Table */}
-      <div style={{
-        background: 'var(--card)', border: '1px solid var(--border)',
-        borderRadius: 16, overflow: 'hidden',
-      }}>
+      {/* Table & Mobile Card List Wrapper */}
+      <div className="bv-table-container">
         {loading ? (
           <div style={{ padding: 48, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 48 }} />)}
@@ -226,140 +223,204 @@ export default function InvoicesPage() {
         ) : filtered.length === 0 ? (
           <EmptyState filter={filter} />
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="bv-table">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Customer</th>
-                  <th>Items</th>
-                  <th style={{ textAlign: 'right' }}>Subtotal</th>
-                  <th style={{ textAlign: 'right' }}>CGST 9%</th>
-                  <th style={{ textAlign: 'right' }}>SGST 9%</th>
-                  <th style={{ textAlign: 'right' }}>Total</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+          <>
+            <div className="desktop-only">
+              <div className="bv-table-wrap">
+                <table className="bv-table">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th className="mobile-hide">Customer</th>
+                      <th className="mobile-hide">Items</th>
+                      <th style={{ textAlign: 'right' }}>Subtotal</th>
+                      <th style={{ textAlign: 'right' }}>CGST 9%</th>
+                      <th style={{ textAlign: 'right' }}>SGST 9%</th>
+                      <th style={{ textAlign: 'right' }}>Total</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(order => {
+                      const sub   = Number(order.total_amount) || 0
+                      const cgst  = +(sub * 0.09).toFixed(2)
+                      const sgst  = +(sub * 0.09).toFixed(2)
+                      const grand = +(sub + cgst + sgst).toFixed(2)
+                      const lang  = order.language || 'english'
+                      const date  = parseUtc(order.created_at)
+                      const canViewInvoice = ['confirmed', 'invoiced', 'paid'].includes(order.status)
+
+                      return (
+                        <tr key={order.id}>
+                          <td>
+                            <div>
+                              <p style={{ margin: 0, fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--muted-light)', fontWeight: 500 }}>
+                                #{String(order.id).padStart(4, '0')}
+                              </p>
+                              <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                                {date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="mobile-hide">
+                            <div>
+                              <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>
+                                {order.customer_phone}
+                              </p>
+                              <LangBadge lang={lang} />
+                            </div>
+                          </td>
+                          <td className="mobile-hide" style={{ maxWidth: 200 }}>
+                            <div style={{ fontSize: 12.5, color: 'var(--muted-light)', lineHeight: 1.5 }}>
+                              {(order.items || []).map((i, idx) => (
+                                <span key={idx}>
+                                  {idx > 0 && <span style={{ color: 'var(--muted)', margin: '0 4px' }}>·</span>}
+                                  <span style={{ color: 'var(--muted-light)', fontWeight: 500 }}>{i.name}</span>
+                                  <span style={{ color: 'var(--muted)', fontSize: 11 }}> (₹{i.price}) ×{i.quantity}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--text)' }}>₹{sub.toFixed(2)}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{cgst.toFixed(2)}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{sgst.toFixed(2)}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>₹{grand.toFixed(2)}</span>
+                          </td>
+                          <td><span className={`badge badge-${order.status}`}>{order.status}</span></td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                              <div style={{ width: 130 }}>
+                                {order.status === 'pending' ? (
+                                  <button
+                                    className="btn-primary"
+                                    style={{ fontSize: 12, padding: '7px 14px', whiteSpace: 'nowrap', width: '100%' }}
+                                    onClick={() => sendInvoice(order)}
+                                    disabled={sending === order.id}
+                                  >
+                                    {sending === order.id ? <>⏳ Sending…</> : <>📲 Send Invoice</>}
+                                  </button>
+                                ) : order.status === 'invoiced' ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                    <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>📤 Sent</span>
+                                    <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>WhatsApp + Razorpay</span>
+                                  </div>
+                                ) : order.status === 'paid' ? (
+                                  <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600 }}>✓ Paid</span>
+                                ) : null}
+                              </div>
+
+                              {canViewInvoice && (
+                                <button
+                                  onClick={() => viewInvoice(order.id)}
+                                  disabled={viewingInvoice === order.id}
+                                  style={{
+                                    background: 'rgba(129,140,248,0.08)', color: '#818cf8',
+                                    border: '1px solid rgba(129,140,248,0.2)', padding: '5px 12px',
+                                    borderRadius: 8, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+                                    fontFamily: 'Plus Jakarta Sans, sans-serif', transition: 'all 0.15s',
+                                    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(129,140,248,0.16)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(129,140,248,0.08)'; e.currentTarget.style.transform = 'translateY(0)' }}
+                                >
+                                  {viewingInvoice === order.id ? <>⏳ Loading…</> : <>📄 View</>}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="mobile-only" style={{ padding: '0px' }}>
+              <div className="card-list-mobile">
                 {filtered.map(order => {
                   const sub   = Number(order.total_amount) || 0
-                  const cgst  = +(sub * 0.09).toFixed(2)
-                  const sgst  = +(sub * 0.09).toFixed(2)
-                  const grand = +(sub + cgst + sgst).toFixed(2)
-                  const lang  = order.language || 'english'
+                  const grand = +(sub * 1.18).toFixed(2)
                   const date  = parseUtc(order.created_at)
                   const canViewInvoice = ['confirmed', 'invoiced', 'paid'].includes(order.status)
 
                   return (
-                    <tr key={order.id}>
-                      <td>
+                    <div key={order.id} className="mobile-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                          <p style={{ margin: 0, fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--muted-light)', fontWeight: 500 }}>
+                          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
                             #{String(order.id).padStart(4, '0')}
-                          </p>
-                          <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                          </h4>
+                          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--muted)' }}>
                             {date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
                           </p>
                         </div>
-                      </td>
-                      <td>
-                        <div>
-                          <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>
-                            {order.customer_phone}
-                          </p>
-                          <LangBadge lang={lang} />
-                        </div>
-                      </td>
-                      <td style={{ maxWidth: 200 }}>
-                        <div style={{ fontSize: 12.5, color: 'var(--muted-light)', lineHeight: 1.5 }}>
+                        <span className={`badge badge-${order.status}`} style={{ fontSize: 10, padding: '3px 8px' }}>
+                          {order.status}
+                        </span>
+                      </div>
+
+                      <div style={{ marginTop: 8 }}>
+                        <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>
+                          {order.customer_phone}
+                        </p>
+                        <div style={{ fontSize: 11, color: 'var(--muted-light)', marginTop: 4, lineHeight: 1.4 }}>
                           {(order.items || []).map((i, idx) => (
                             <span key={idx}>
                               {idx > 0 && <span style={{ color: 'var(--muted)', margin: '0 4px' }}>·</span>}
-                              <span style={{ color: 'var(--muted-light)', fontWeight: 500 }}>{i.name}</span>
-                              <span style={{ color: 'var(--muted)', fontSize: 11 }}> (₹{i.price}) ×{i.quantity}</span>
+                              {i.quantity}× {i.name}
                             </span>
                           ))}
                         </div>
-                      </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--text)' }}>₹{sub.toFixed(2)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{cgst.toFixed(2)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--indigo)' }}>₹{sgst.toFixed(2)}</td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>₹{grand.toFixed(2)}</span>
-                      </td>
-                      <td><span className={`badge badge-${order.status}`}>{order.status}</span></td>
-                      <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {order.status === 'pending' ? (
-                            <button
-                              className="btn-primary"
-                              style={{ fontSize: 12, padding: '7px 14px', whiteSpace: 'nowrap' }}
-                              onClick={() => sendInvoice(order)}
-                              disabled={sending === order.id}
-                            >
-                              {sending === order.id ? (
-                                <>⏳ Sending…</>
-                              ) : (
-                                <>📲 Send Invoice</>
-                              )}
-                            </button>
-                          ) : order.status === 'invoiced' ? (
-                            <>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>📤 Sent</span>
-                                <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>WhatsApp + Razorpay</span>
-                              </div>
-                            </>
-                          ) : order.status === 'paid' ? (
-                            <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600 }}>✓ Paid</span>
-                          ) : null}
+                      </div>
 
-                          {/* View Invoice button for confirmed/invoiced/paid */}
-                          {canViewInvoice && (
-                            <button
-                              onClick={() => viewInvoice(order.id)}
-                              disabled={viewingInvoice === order.id}
-                              style={{
-                                background: 'rgba(129,140,248,0.08)',
-                                color: '#818cf8',
-                                border: '1px solid rgba(129,140,248,0.2)',
-                                padding: '5px 12px',
-                                borderRadius: 8,
-                                fontSize: 11.5,
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                fontFamily: 'Plus Jakarta Sans, sans-serif',
-                                transition: 'all 0.15s',
-                                whiteSpace: 'nowrap',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 5,
-                              }}
-                              onMouseEnter={e => {
-                                e.currentTarget.style.background = 'rgba(129,140,248,0.16)'
-                                e.currentTarget.style.transform = 'translateY(-1px)'
-                              }}
-                              onMouseLeave={e => {
-                                e.currentTarget.style.background = 'rgba(129,140,248,0.08)'
-                                e.currentTarget.style.transform = 'translateY(0)'
-                              }}
-                            >
-                              {viewingInvoice === order.id ? (
-                                <>⏳ Loading…</>
-                              ) : (
-                                <>📄 View Invoice</>
-                              )}
-                            </button>
-                          )}
+                      <div className="mobile-card-row" style={{ background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', marginTop: 12 }}>
+                        <div>
+                          <p className="mobile-card-label" style={{ fontSize: 9 }}>Amount</p>
+                          <p className="mobile-card-value" style={{ fontSize: 15, color: 'var(--emerald)', fontWeight: 700 }}>₹{grand.toLocaleString('en-IN')}</p>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                        {order.status === 'pending' ? (
+                          <button
+                            className="btn-primary"
+                            style={{ flex: 1, padding: '8px', fontSize: 12 }}
+                            onClick={() => sendInvoice(order)}
+                            disabled={sending === order.id}
+                          >
+                            {sending === order.id ? 'Sending…' : 'Send Invoice'}
+                          </button>
+                        ) : order.status === 'paid' ? (
+                          <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center' }}>✓ Paid</span>
+                        ) : order.status === 'invoiced' ? (
+                          <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center' }}>📤 Sent</span>
+                        ) : null}
+
+                        {canViewInvoice && (
+                          <button
+                            onClick={() => viewInvoice(order.id)}
+                            disabled={viewingInvoice === order.id}
+                            style={{
+                              flex: order.status === 'paid' ? 0 : 1,
+                              background: 'rgba(129,140,248,0.08)', color: '#818cf8',
+                              border: '1px solid rgba(129,140,248,0.2)', padding: '8px 12px',
+                              borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                            }}
+                          >
+                            {viewingInvoice === order.id ? '⏳' : '📄 View'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

@@ -5,8 +5,6 @@ import Link from 'next/link'
 import { useTheme } from '@/lib/theme'
 import Chatbot from './chatbot'
 import Tour from './Tour'
-import InstallPrompt from './InstallPrompt'
-import OfflineStatus from './OfflineStatus'
 
 import { supabase } from '@/lib/supabase'
 
@@ -16,6 +14,7 @@ const NAV = [
   { href: '/dashboard/khata',     icon: '▤',  label: 'Khata',      color: '#ffb233' },
   { href: '/dashboard/inventory', icon: '⬡',  label: 'Inventory',  color: '#a3e635' },
   { href: '/dashboard/invoices',  icon: '⬕',  label: 'Invoices',   color: '#f59e0b' },
+  { href: '/dashboard/payments',  icon: '💳', label: 'Payments',   color: '#eab308' },
   { href: '/dashboard/buyers',    icon: '◉',  label: 'Buyers',     color: '#a78bfa' },
   { href: '/dashboard/settings',  icon: '⚙️',  label: 'Settings',   color: '#cbd5e1' },
 ]
@@ -394,17 +393,11 @@ export default function DashboardLayout({ children }) {
         </nav>
       )}
 
-      {/* PWA Install Prompt */}
-      <InstallPrompt />
-
       {/* Chatbot Widget */}
       <Chatbot />
       
       {/* Onboarding Tour */}
       <Tour />
-
-      {/* Offline Status Alert */}
-      <OfflineStatus />
     </div>
   )
 }
