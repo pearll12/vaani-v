@@ -18,6 +18,18 @@ const TOUR_DATA = [
     disableBeacon: true,
   },
   {
+    target: '#theme-toggle',
+    placement: 'bottom',
+    en: {
+      title: '🌓 Mode Selection',
+      content: 'Switch between Light and Dark mode to make the screen easier to read during day or night.',
+    },
+    hi: {
+      title: '🌓 थीम मोड बदलें',
+      content: 'दिन या रात के हिसाब से स्क्रीन को पढ़ने में आसान बनाने के लिए लाइट या डार्क मोड चुनें।',
+    }
+  },
+  {
     target: '#tour-nav-orders',
     placement: 'right',
     en: {

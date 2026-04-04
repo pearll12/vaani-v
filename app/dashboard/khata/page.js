@@ -11,6 +11,9 @@ export default function KhataPage() {
   const [sending, setSending]   = useState(null)
   const [expanded, setExpanded] = useState(null)
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+
   useEffect(() => { fetchKhata() }, [])
 
   async function fetchKhata() {
@@ -50,6 +53,10 @@ export default function KhataPage() {
   const activeDebtors    = khata.filter(k => (Number(k.balance) || 0) > 0).length
   const highRisk         = khata.filter(k => (Number(k.balance) || 0) > 5000).length
 
+  // Pagination Logic
+  const totalPages  = rowsPerPage === -1 ? 1 : Math.ceil(khata.length / rowsPerPage)
+  const paginated   = rowsPerPage === -1 ? khata : khata.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+
   // Stats data with icons & colours
   const stats = [
     { label: 'Total Udhaar',    value: `₹${totalOutstanding.toLocaleString('en-IN')}`, icon: '💰', color: '#fb7185', bg: 'var(--rose-dim)',   border: 'var(--rose-border)' },
@@ -59,7 +66,7 @@ export default function KhataPage() {
   ]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-up">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 60 }} className="animate-fade-up">
 
       {/* Header */}
       <div className="orders-header">
@@ -81,7 +88,7 @@ export default function KhataPage() {
         </div>
       </div>
 
-      {/* ✨ NEW: Horizontal stats cards (responsive grid) ✨ */}
+      {/* Stats cards */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -93,16 +100,6 @@ export default function KhataPage() {
             border: `1px solid ${s.border}`,
             borderRadius: 20,
             padding: '16px 12px',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-            cursor: 'default',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)'
-            e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = 'none'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <span style={{ fontSize: 28 }}>{s.icon}</span>
@@ -124,19 +121,29 @@ export default function KhataPage() {
         ))}
       </div>
 
-      {/* High Risk Warning */}
-      {highRisk > 0 && (
-        <div style={{
-          background: 'var(--rose-dim)', border: '1px solid var(--rose-border)',
-          borderRadius: 12, padding: '12px 16px',
-          display: 'flex', alignItems: 'center', gap: 10,
-        }}>
-          <span style={{ fontSize: 20 }}>🚨</span>
-          <span style={{ color: '#fb7185', fontSize: 13, fontWeight: 600 }}>
-            {highRisk} customer{highRisk > 1 ? 's' : ''} with udhaar above ₹5,000 — Send reminders!
-          </span>
+      {/* Row Selection UI */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
+          {highRisk > 0 ? `🚨 ${highRisk} High Risk Debtors` : '✨ All Accounts Status'}
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>Rows:</span>
+          <select 
+            value={rowsPerPage} 
+            onChange={e => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            style={{ 
+              background: 'var(--card)', border: '1px solid var(--border)', 
+              color: 'var(--text)', fontSize: 12, padding: '4px 8px', borderRadius: 8,
+              outline: 'none', cursor: 'pointer'
+            }}
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={-1}>All</option>
+          </select>
         </div>
-      )}
+      </div>
 
       {/* Customer Ledger Cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -151,7 +158,7 @@ export default function KhataPage() {
             <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--muted-light)', margin: '0 0 6px' }}>No customers yet</p>
             <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>Khata entries appear automatically when orders are placed via WhatsApp</p>
           </div>
-        ) : khata.map(customer => {
+        ) : paginated.map(customer => {
           const balance   = Number(customer.balance) || 0
           const isHigh    = balance > 5000
           const isExpanded = expanded === customer.customer_phone
@@ -163,20 +170,19 @@ export default function KhataPage() {
             <div key={customer.customer_phone} style={{
               background: 'var(--card)', border: `1px solid ${isHigh ? 'var(--rose-border)' : 'var(--border)'}`,
               borderRadius: 14, overflow: 'hidden',
-              transition: 'all 0.2s',
             }}>
               {/* Main Row */}
               <div
                 onClick={() => setExpanded(isExpanded ? null : customer.customer_phone)}
+                className="payment-card-layout"
                 style={{
                   padding: '16px 20px',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
                   cursor: 'pointer',
-                  flexWrap: 'wrap',
                 }}
               >
                 {/* Left: Avatar + Phone */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 180 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 160 }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
                     background: isHigh
@@ -211,8 +217,8 @@ export default function KhataPage() {
                   </div>
                 </div>
 
-                {/* Middle: Progress bar */}
-                <div style={{ flex: 1, minWidth: 120, maxWidth: 200 }}>
+                {/* Middle: Progress bar (Hide on very small screens or handle in card-list) */}
+                <div className="mobile-hide" style={{ flex: 1, minWidth: 100, maxWidth: 160 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>
                     <span>Collection</span>
                     <span style={{ color: collectPct >= 80 ? '#00e5c3' : collectPct >= 50 ? '#f59e0b' : '#fb7185', fontWeight: 700 }}>
@@ -232,7 +238,7 @@ export default function KhataPage() {
                 </div>
 
                 {/* Right: Balance + Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, justifyContent: 'flex-end' }}>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{
                       margin: 0, fontSize: 18, fontWeight: 800,
@@ -302,7 +308,7 @@ export default function KhataPage() {
                         border: `1px solid ${order.status === 'paid' ? 'rgba(0,229,195,0.12)' : 'rgba(251,113,133,0.12)'}`,
                         flexWrap: 'wrap', gap: 8,
                       }}>
-                        <div style={{ minWidth: 120 }}>
+                        <div style={{ minWidth: 100 }}>
                           <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>
                             #{String(order.id).padStart(4, '0')}
                           </span>
@@ -314,7 +320,7 @@ export default function KhataPage() {
                           </span>
                         </div>
 
-                        <div style={{ flex: 1, fontSize: 11.5, color: 'var(--muted-light)' }}>
+                        <div style={{ flex: 1, fontSize: 11.5, color: 'var(--muted-light)', minWidth: 150 }}>
                           {(order.items || []).map(i => `${i.quantity || 1}× ${i.name}`).join(', ') || '—'}
                         </div>
 
@@ -338,6 +344,33 @@ export default function KhataPage() {
           )
         })}
       </div>
+
+      {/* Pagination Controls */}
+      {khata.length > 0 && rowsPerPage !== -1 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 8px' }}>
+          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+            Showing <strong>{((currentPage - 1) * rowsPerPage) + 1}</strong> to <strong>{Math.min(currentPage * rowsPerPage, khata.length)}</strong> of <strong>{khata.length}</strong>
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button 
+              className="btn-ghost" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              style={{ padding: '6px 14px', opacity: currentPage === 1 ? 0.5 : 1 }}
+            >
+              Previous
+            </button>
+            <button 
+              className="btn-ghost" 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              style={{ padding: '6px 14px', opacity: currentPage === totalPages ? 0.5 : 1 }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className="toast" style={{

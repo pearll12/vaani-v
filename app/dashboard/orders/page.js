@@ -472,6 +472,8 @@ export default function OrdersPage() {
   const [editOrder, setEditOrder] = useState(null)
   const [saving, setSaving]       = useState(false)
   const [inventory, setInventory] = useState([])
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
   const intervalRef               = useRef(null)
 
   // FIX: useCallback so the interval always uses a stable reference
@@ -586,6 +588,16 @@ export default function OrdersPage() {
     return matchFilter && matchSearch
   })
 
+  // Pagination logic
+  const totalPages  = Math.ceil(filtered.length / rowsPerPage)
+  const paginated   = (rowsPerPage === -1) 
+    ? filtered 
+    : filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, filter, rowsPerPage])
+
   const counts = {
     all:      orders.length,
     pending:  orders.filter(o => o.status === 'pending').length,
@@ -691,10 +703,27 @@ export default function OrdersPage() {
             </button>
           ))}
         </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>Rows:</span>
+          <select 
+            value={rowsPerPage} 
+            onChange={e => setRowsPerPage(Number(e.target.value))}
+            style={{ 
+              background: 'var(--card)', border: '1px solid var(--border)', 
+              color: 'var(--text)', fontSize: 12, padding: '4px 8px', borderRadius: 8,
+              outline: 'none', cursor: 'pointer'
+            }}
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={-1}>All</option>
+          </select>
+        </div>
       </div>
 
-      {/* Table */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
+      {/* Table & Mobile Card List Wrapper */}
+      <div className="bv-table-container">
         {loading ? (
           <div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1,2,3,4,5].map(i => <div key={i} className="skeleton" style={{ height: 56 }} />)}
@@ -703,150 +732,174 @@ export default function OrdersPage() {
           <div style={{ padding: '64px 32px', textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }}>◦</div>
             <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--muted-light)', margin: '0 0 6px' }}>No orders found</p>
-            <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>Orders come in via WhatsApp automatically</p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>Orders come via WhatsApp automatically</p>
           </div>
         ) : (
           <>
             {/* Desktop table */}
-            <div className="bv-table-wrap" style={{ 
-              background: 'var(--card)', 
-              border: '1px solid var(--border)', 
-              borderRadius: 16, 
-              overflow: 'hidden' 
-            }}>
-              <div className="bv-table-scroll">
-                <table className="bv-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 80 }}>Order</th>
-                      <th style={{ width: 140 }}>Customer</th>
-                      <th>Items</th>
-                      <th style={{ textAlign: 'right', width: 90 }}>Subtotal</th>
-                      <th style={{ textAlign: 'right', width: 90 }}>w/ GST</th>
-                      <th style={{ width: 110 }}>Status</th>
-                      <th style={{ width: 100 }}>Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {filtered.map(order => {
-                    // FIX: use calcGST helper, not the imprecise * 1.18
-                    const { sub, grand } = calcGST(order.total_amount)
-                    const date      = parseUtc(order.created_at)
-                    const isToday   = new Date().toDateString() === date.toDateString()
-                    const lang      = order.language || 'english'
-                    const langColor = LANG_COLOR[lang] || '#c87137'
-                    const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
-                      (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
-
-                    return (
-                      <tr key={order.id} onClick={() => setSelected(order)} style={{ cursor: 'pointer' }}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)', fontWeight: 500 }}>
-                              #{String(order.id).padStart(4, '0')}
-                            </span>
-                            {isOverdue && <span title="Payment overdue" style={{ fontSize: 12 }}>⏰</span>}
-                          </div>
-                        </td>
-                        <td style={{ width: 180 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 170 }}>
-                            <div style={{
-                              width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                              background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
-                              border: `1px solid ${langColor}30`,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 11, fontWeight: 800, color: langColor,
-                            }}>
-                              {order.customer_phone?.slice(-2)}
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{order.customer_phone}</p>
-                              <span style={{
-                                fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 600, textTransform: 'capitalize',
-                                background: `${langColor}15`, color: langColor, border: `1px solid ${langColor}25`,
-                              }}>{lang}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ maxWidth: 220 }}>
-                          <p className="line-clamp-1" style={{ margin: 0, fontSize: 12, color: 'var(--muted-light)' }}>
-                            {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
-                          </p>
-                        </td>
-                        <td style={{ textAlign: 'right', width: 110, fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--muted-light)' }}>
-                          ₹{sub.toFixed(2)}
-                        </td>
-                        <td style={{ textAlign: 'right', width: 110 }}>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>
-                            ₹{grand.toFixed(2)}
-                          </span>
-                        </td>
-                        <td style={{ width: 110 }}><StatusBadge status={order.status} /></td>
-                        <td style={{ width: 100, fontSize: 11.5, color: 'var(--muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
-                          {isToday
-                            ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
-                            : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
-                        </td>
+            <div className="desktop-only">
+              <div className="bv-table-wrap" style={{ 
+                background: 'var(--card)', 
+                border: '1px solid var(--border)', 
+                borderRadius: 16, 
+                overflow: 'hidden' 
+              }}>
+                <div className="bv-table-scroll">
+                  <table className="bv-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 80 }}>Order</th>
+                        <th style={{ width: 140 }}>Customer</th>
+                        <th>Items</th>
+                        <th style={{ textAlign: 'right', width: 90 }}>Subtotal</th>
+                        <th style={{ textAlign: 'right', width: 90 }}>w/ GST</th>
+                        <th style={{ width: 110 }}>Status</th>
+                        <th style={{ width: 100 }}>Time</th>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                    </thead>
+                    <tbody>
+                    {paginated.map(order => {
+                      const { sub, grand } = calcGST(order.total_amount)
+                      const date      = parseUtc(order.created_at)
+                      const isToday   = new Date().toDateString() === date.toDateString()
+                      const lang      = order.language || 'english'
+                      const langColor = LANG_COLOR[lang] || '#c87137'
+                      const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
+                        (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
 
-          {/* Mobile card list */}
-          <div className="orders-card-list">
-              {filtered.map(order => {
-                const { sub, grand } = calcGST(order.total_amount)
-                const date      = parseUtc(order.created_at)
-                const isToday   = new Date().toDateString() === date.toDateString()
-                const lang      = order.language || 'english'
-                const langColor = LANG_COLOR[lang] || '#94a3b8'
-
-                return (
-                  <div key={order.id} onClick={() => setSelected(order)} style={{
-                    padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    cursor: 'pointer', transition: 'background 0.12s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.025)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{
-                          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                          background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
-                          border: `1px solid ${langColor}30`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 11, fontWeight: 800, color: langColor,
-                        }}>{order.customer_phone?.slice(-2)}</div>
-                        <div>
-                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{order.customer_phone}</p>
-                          <span style={{ fontSize: 10, color: 'var(--muted)' }}>
-                            #{String(order.id).padStart(4, '0')} · {isToday
+                      return (
+                        <tr key={order.id} onClick={() => setSelected(order)} style={{ cursor: 'pointer' }}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)', fontWeight: 500 }}>
+                                #{String(order.id).padStart(4, '0')}
+                              </span>
+                              {isOverdue && <span title="Payment overdue" style={{ fontSize: 12 }}>⏰</span>}
+                            </div>
+                          </td>
+                          <td style={{ width: 180 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 170 }}>
+                              <div style={{
+                                width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                                background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
+                                border: `1px solid ${langColor}30`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 11, fontWeight: 800, color: langColor,
+                              }}>
+                                {order.customer_phone?.slice(-2)}
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{order.customer_phone}</p>
+                                <span style={{
+                                  fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 600, textTransform: 'capitalize',
+                                  background: `${langColor}15`, color: langColor, border: `1px solid ${langColor}25`,
+                                }}>{lang}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ maxWidth: 220 }}>
+                            <p className="line-clamp-1" style={{ margin: 0, fontSize: 12, color: 'var(--muted-light)' }}>
+                              {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
+                            </p>
+                          </td>
+                          <td style={{ textAlign: 'right', width: 110, fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--muted-light)' }}>
+                            ₹{sub.toFixed(2)}
+                          </td>
+                          <td style={{ textAlign: 'right', width: 110 }}>
+                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>
+                              ₹{grand.toFixed(2)}
+                            </span>
+                          </td>
+                          <td style={{ width: 110 }}><StatusBadge status={order.status} /></td>
+                          <td style={{ width: 100, fontSize: 11.5, color: 'var(--muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                            {isToday
                               ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
                               : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
-                          </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="mobile-only">
+              <div className="card-list-mobile">
+                {paginated.map(order => {
+                  const { sub, grand } = calcGST(order.total_amount)
+                  const date      = parseUtc(order.created_at)
+                  const isToday   = new Date().toDateString() === date.toDateString()
+                  const lang      = order.language || 'english'
+                  const langColor = LANG_COLOR[lang] || '#94a3b8'
+
+                  return (
+                    <div key={order.id} onClick={() => setSelected(order)} className="mobile-card" style={{ cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                            background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
+                            border: `1px solid ${langColor}30`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 800, color: langColor,
+                          }}>{order.customer_phone?.slice(-2)}</div>
+                          <div>
+                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{order.customer_phone}</p>
+                            <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                              #{String(order.id).padStart(4, '0')} · {isToday
+                                ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
+                                : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
+                            </span>
+                          </div>
                         </div>
+                        <StatusBadge status={order.status} />
                       </div>
-                      <StatusBadge status={order.status} />
+                      <div className="mobile-card-row" style={{ alignItems: 'center' }}>
+                        <p className="line-clamp-1" style={{ margin: 0, fontSize: 11.5, color: 'var(--muted-light)', flex: 1, marginRight: 12 }}>
+                          {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
+                        </p>
+                        <span style={{ flexShrink: 0, fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: 'var(--teal)' }}>
+                          ₹{grand.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <p className="line-clamp-1" style={{ margin: 0, fontSize: 11.5, color: 'var(--muted-light)', maxWidth: '70%' }}>
-                        {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
-                      </p>
-                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: 'var(--teal)' }}>
-                        ₹{grand.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           </>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {filtered.length > 0 && rowsPerPage !== -1 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 8px' }}>
+          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+            Showing <strong>{((currentPage - 1) * rowsPerPage) + 1}</strong> to <strong>{Math.min(currentPage * rowsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong> orders
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button 
+              className="btn-ghost" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              style={{ padding: '6px 14px', opacity: currentPage === 1 ? 0.5 : 1 }}
+            >
+              Previous
+            </button>
+            <button 
+              className="btn-ghost" 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              style={{ padding: '6px 14px', opacity: currentPage === totalPages ? 0.5 : 1 }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       <OrderDrawer
         order={selected}

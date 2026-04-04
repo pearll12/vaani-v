@@ -136,16 +136,48 @@ body {
 
 /* TABLE */
 .bv-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.bv-table thead th {
-  text-align: left; padding: 14px 18px;
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted);
-  background: rgba(255,255,255,0.02);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
+/* Responsive Stat Grid & Pills */
+.stat-grid, .stat-pills-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
 }
-.bv-table thead th:first-child { padding-left: 28px; }
-.bv-table thead th:last-child  { padding-right: 28px; }
+
+@media (max-width: 768px) {
+  .stat-grid, .stat-pills-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.search-filters-row {
+  display: flex !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+}
+
+.filter-tabs-wrap {
+  display: flex !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+.mobile-card-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .bv-table tbody td {
   padding: 12px 18px; font-size: 12.5px; color: var(--text-soft);
   border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -389,7 +421,8 @@ body {
 
   /* Main padding */
   .dashboard-content {
-    padding: 16px !important;
+    padding: 12px !important;
+    overflow-x: hidden !important;
   }
 
   /* Order drawer full width on mobile */
@@ -408,7 +441,8 @@ body {
 
   /* Show mobile cards, hide table */
   .orders-card-list { display: block; }
-  .orders-table-wrap { display: none; }
+  .inventory-card-list { display: block; }
+  .bv-table-wrap { display: none; }
 
   /* Stat pills: 1 col on small mobile */
   .stat-pills-grid {
@@ -424,7 +458,7 @@ body {
   }
   .filter-tabs-wrap {
     overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch;
-    padding-bottom: 4px;
+    padding-bottom: 4px; gap: 8px;
   }
 
   /* Modal responsive */
@@ -456,8 +490,12 @@ body {
     padding: 6px 12px; font-size: 11.5px;
   }
 
-  h1 {
-    font-size: 20px !important;
+  /* Compact KPI cards on small mobile */
+  .kpi-card-val {
+    font-size: 22px !important;
+  }
+  .kpi-card-label {
+    font-size: 9px !important;
   }
 }
 
@@ -492,12 +530,29 @@ body {
 @media (max-width: 768px) {
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .charts-row { grid-template-columns: 1fr; }
-  .stat-grid-3 { grid-template-columns: 1fr; }
+  .stat-grid-3 { grid-template-columns: 1fr; gap: 10px; }
+  .stat-cards-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
 }
 
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr; }
+  .latest-item { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+  .latest-item-right { text-align: left !important; min-width: 0 !important; width: 100% !important; }
 }
+
+/* --- Invoices Mobile Pattern --- */
+.invoice-card-list { display: none; }
+@media (max-width: 768px) {
+  .invoice-card-list { 
+    display: flex; flex-direction: column; gap: 14px; padding: 4px;
+  }
+}
+
+.invoice-item-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+
 
 /* ======================== */
 /* CLICKABILITY FIXES       */
@@ -711,7 +766,101 @@ button:disabled {
 
   .responsive-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
   .mobile-hide { display: none !important; }
-  .bv-table-wrap { overflow-x: auto !important; margin-bottom: 15px; }
+}
+
+/* Visibility & Layout Utilities */
+@media (max-width: 768px) {
+  .mobile-hide { display: none !important; }
+  .mobile-only { display: block !important; } /* Changed from flex to block to prevent unintended horizontal stacking */
+  .desktop-only { display: none !important; }
+}
+
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
+  .desktop-only { display: block !important; }
+  div.desktop-only, section.desktop-only, aside.desktop-only { display: flex !important; }
+}
+
+/* Modal Responsiveness Fixes */
+@media (max-width: 480px) {
+  .modal-box {
+    width: 95vw !important;
+    max-height: 90vh !important;
+    padding: 16px !important;
+  }
+}
+
+/* Card List Pattern for Mobile Tables */
+.card-list-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .card-list-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0; /* Reduced from 4px for more width */
+  }
+  
+  .mobile-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100% !important; /* Force full width */
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .mobile-card-label {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .mobile-card-value {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+
+  .bv-table-container {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Dashboard Quick Actions Scrollable Row */
+  .quick-actions-mobile-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 20px !important;
+    margin-bottom: -10px !important;
+  }
+  
+  .quick-actions-mobile-row::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+/* Base style for the table wrapper */
+.bv-table-container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 
