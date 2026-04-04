@@ -144,28 +144,22 @@ async function buildCatalog(language) {
   const catalogMap = []
 
   for (const [cat, items] of Object.entries(categories)) {
-    msg += `\n📁 *${cat}*\n`
     items.forEach(item => {
-      const price = Number(item.price) || 0
-      const stock = Number(item.quantity) || 0
-      const threshold = Number(item.lowStockThreshold) || 10
-      const stockLabel = stock <= threshold ? ' ⚠️' : ''
-      msg += `  ${idx}⃣  ${item.name} — *₹${price}*/${item.unit}${stockLabel}\n`
-      catalogMap.push({ idx, item })
+      catalogMap.push({ idx, item, category: cat })
       idx++
     })
   }
 
-  msg += `\n──────────────\n`
+  // No longer appending items to msg since we send a PDF!
   msg += `💬 *Order Kaise Karein?*\n`
   msg += `🔢 Reply karein sirf numbers: *"1, 3, 5"*\n`
   msg += `📝 Ya likh kar bhejein: *"2 Rice Bag aur 1 Wheat Flour"*\n`
-  msg += `🎙️ Ya ek *Voice Note* bhejein!`
+  msg += `🎙️ Ya ek *Voice Note* bhejein!\n\n`
+  msg += `❓ Sabhi commands ke liye *"help"* likhein`
 
   let pdfUrl = null
   try {
-    const rawInventory = await loadInventory()
-    pdfUrl = await generateAndUploadCataloguePDF(rawInventory)
+    pdfUrl = await generateAndUploadCataloguePDF(catalogMap)
   } catch (err) {
     console.error('PDF Generation Skipped:', err)
   }
