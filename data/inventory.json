@@ -1,0 +1,123 @@
+[
+  {
+    "id": "1775124635567",
+    "name": "Aata",
+    "sku": "SKU-1775124635567",
+    "category": "Food & Grocery",
+    "quantity": 0.5,
+    "unit": "kg",
+    "price": "105",
+    "lowStockThreshold": 2,
+    "createdAt": "2026-04-02T10:10:35.567Z"
+  },
+  {
+    "id": "1775135112904",
+    "name": "Rice Bag",
+    "sku": "SKU001",
+    "category": "General",
+    "quantity": 8,
+    "unit": "kg",
+    "price": 60,
+    "lowStockThreshold": 10,
+    "createdAt": "2026-04-02T13:05:12.904Z"
+  },
+  {
+    "id": "1775135112943",
+    "name": "Wheat Flour",
+    "sku": "SKU002",
+    "category": "General",
+    "quantity": 3,
+    "unit": "kg",
+    "price": 45,
+    "lowStockThreshold": 8,
+    "createdAt": "2026-04-02T13:05:12.943Z"
+  },
+  {
+    "id": "1775135112986",
+    "name": "Sugar",
+    "sku": "SKU003",
+    "category": "General",
+    "quantity": 2,
+    "unit": "kg",
+    "price": 42,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T13:05:12.986Z"
+  },
+  {
+    "id": "1775135113021",
+    "name": "Salt",
+    "sku": "SKU004",
+    "category": "General",
+    "quantity": 20,
+    "unit": "kg",
+    "price": 20,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T13:05:13.021Z"
+  },
+  {
+    "id": "1775135113053",
+    "name": "Cooking Oil",
+    "sku": "SKU005",
+    "category": "General",
+    "quantity": 25,
+    "unit": "pcs",
+    "price": 150,
+    "lowStockThreshold": 6,
+    "createdAt": "2026-04-02T13:05:13.053Z"
+  },
+  {
+    "id": "1775135113087",
+    "name": "Milk Pack",
+    "sku": "SKU006",
+    "category": "General",
+    "quantity": 60,
+    "unit": "pcs",
+    "price": 55,
+    "lowStockThreshold": 15,
+    "createdAt": "2026-04-02T13:05:13.087Z"
+  },
+  {
+    "id": "1775135113118",
+    "name": "Butter",
+    "sku": "SKU007",
+    "category": "General",
+    "quantity": 15,
+    "unit": "kg",
+    "price": 500,
+    "lowStockThreshold": 5,
+    "createdAt": "2026-04-02T13:05:13.118Z"
+  },
+  {
+    "id": "1775135113148",
+    "name": "Egg Tray",
+    "sku": "SKU008",
+    "category": "General",
+    "quantity": 100,
+    "unit": "pcs",
+    "price": "7",
+    "lowStockThreshold": 20,
+    "createdAt": "2026-04-02T13:05:13.149Z"
+  },
+  {
+    "id": "1775135113179",
+    "name": "Soap Bar",
+    "sku": "SKU009",
+    "category": "General",
+    "quantity": 70,
+    "unit": "pcs",
+    "price": 35,
+    "lowStockThreshold": 10,
+    "createdAt": "2026-04-02T13:05:13.179Z"
+  },
+  {
+    "id": "1775135113209",
+    "name": "Shampoo Bottle",
+    "sku": "SKU010",
+    "category": "General",
+    "quantity": 35,
+    "unit": "pcs",
+    "price": 120,
+    "lowStockThreshold": 7,
+    "createdAt": "2026-04-02T13:05:13.209Z"
+  }
+]
