@@ -108,6 +108,7 @@ export default function InvoicesPage() {
   const [filter, setFilter]     = useState('all')
   const [toast, setToast]       = useState('')
   const [result, setResult]     = useState(null)
+  const [viewingInvoice, setViewingInvoice] = useState(null)
 
   useEffect(() => { fetchOrders() }, [])
 
@@ -136,19 +137,39 @@ export default function InvoicesPage() {
     setSending(null)
   }
 
+  async function viewInvoice(orderId) {
+    setViewingInvoice(orderId)
+    try {
+      const storagePath = `invoice-${orderId}.pdf`
+      const { data, error } = await supabase.storage
+        .from('invoices')
+        .createSignedUrl(storagePath, 60 * 60) // 1 hour
+      if (error || !data?.signedUrl) {
+        showToast('⚠ Invoice not found — send invoice first')
+      } else {
+        window.open(data.signedUrl, '_blank')
+      }
+    } catch {
+      showToast('⚠ Failed to load invoice')
+    }
+    setViewingInvoice(null)
+  }
+
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
   const counts = {
     all: orders.length,
     pending:  orders.filter(o => o.status === 'pending').length,
+    confirmed: orders.filter(o => o.status === 'confirmed').length,
     invoiced: orders.filter(o => o.status === 'invoiced').length,
     paid:     orders.filter(o => o.status === 'paid').length,
   }
 
   const TAB_FILTERS = [
-    { key: 'all',      label: 'All' },
-    { key: 'pending',  label: 'Pending' },
-    { key: 'invoiced', label: 'Invoiced' },
-    { key: 'paid',     label: 'Paid' },
+    { key: 'all',       label: 'All' },
+    { key: 'pending',   label: 'Pending' },
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'invoiced',  label: 'Invoiced' },
+    { key: 'paid',      label: 'Paid' },
   ]
 
   const paidOrders   = orders.filter(o => o.status !== 'pending')
@@ -184,7 +205,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {TAB_FILTERS.map(t => (
           <button key={t.key} onClick={() => setFilter(t.key)} className={`filter-tab ${filter === t.key ? 'active' : 'inactive'}`}>
             {t.label}
@@ -228,6 +249,7 @@ export default function InvoicesPage() {
                   const grand = +(sub + cgst + sgst).toFixed(2)
                   const lang  = order.language || 'english'
                   const date  = parseUtc(order.created_at)
+                  const canViewInvoice = ['confirmed', 'invoiced', 'paid'].includes(order.status)
 
                   return (
                     <tr key={order.id}>
@@ -268,27 +290,69 @@ export default function InvoicesPage() {
                       </td>
                       <td><span className={`badge badge-${order.status}`}>{order.status}</span></td>
                       <td>
-                        {order.status === 'pending' ? (
-                          <button
-                            className="btn-primary"
-                            style={{ fontSize: 12, padding: '7px 14px', whiteSpace: 'nowrap' }}
-                            onClick={() => sendInvoice(order)}
-                            disabled={sending === order.id}
-                          >
-                            {sending === order.id ? (
-                              <>⏳ Sending…</>
-                            ) : (
-                              <>📲 Send Invoice</>
-                            )}
-                          </button>
-                        ) : order.status === 'invoiced' ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>📤 Sent</span>
-                            <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>WhatsApp + Razorpay</span>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600 }}>✓ Paid</span>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {order.status === 'pending' ? (
+                            <button
+                              className="btn-primary"
+                              style={{ fontSize: 12, padding: '7px 14px', whiteSpace: 'nowrap' }}
+                              onClick={() => sendInvoice(order)}
+                              disabled={sending === order.id}
+                            >
+                              {sending === order.id ? (
+                                <>⏳ Sending…</>
+                              ) : (
+                                <>📲 Send Invoice</>
+                              )}
+                            </button>
+                          ) : order.status === 'invoiced' ? (
+                            <>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>📤 Sent</span>
+                                <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>WhatsApp + Razorpay</span>
+                              </div>
+                            </>
+                          ) : order.status === 'paid' ? (
+                            <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600 }}>✓ Paid</span>
+                          ) : null}
+
+                          {/* View Invoice button for confirmed/invoiced/paid */}
+                          {canViewInvoice && (
+                            <button
+                              onClick={() => viewInvoice(order.id)}
+                              disabled={viewingInvoice === order.id}
+                              style={{
+                                background: 'rgba(129,140,248,0.08)',
+                                color: '#818cf8',
+                                border: '1px solid rgba(129,140,248,0.2)',
+                                padding: '5px 12px',
+                                borderRadius: 8,
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                                transition: 'all 0.15s',
+                                whiteSpace: 'nowrap',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 5,
+                              }}
+                              onMouseEnter={e => {
+                                e.currentTarget.style.background = 'rgba(129,140,248,0.16)'
+                                e.currentTarget.style.transform = 'translateY(-1px)'
+                              }}
+                              onMouseLeave={e => {
+                                e.currentTarget.style.background = 'rgba(129,140,248,0.08)'
+                                e.currentTarget.style.transform = 'translateY(0)'
+                              }}
+                            >
+                              {viewingInvoice === order.id ? (
+                                <>⏳ Loading…</>
+                              ) : (
+                                <>📄 View Invoice</>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )

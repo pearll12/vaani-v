@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { sendWhatsApp } from '@/lib/twilio'
+import Razorpay from 'razorpay'
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+})
 
 // GET — Derive khata (credit ledger) from orders table
-// NO extra tables needed — calculates per-customer balance from orders
 export async function GET() {
   try {
     const { data: orders = [] } = await supabase
@@ -21,7 +26,7 @@ export async function GET() {
           total_orders: 0,
           total_amount: 0,
           total_paid: 0,
-          balance: 0,  // outstanding (unpaid)
+          balance: 0,
           orders: [],
           last_order_date: null,
         }
@@ -37,7 +42,7 @@ export async function GET() {
       if (o.status === 'paid') {
         c.total_paid += grand
       } else {
-        c.balance += grand  // unpaid = udhaar
+        c.balance += grand
       }
 
       c.orders.push({
@@ -56,7 +61,7 @@ export async function GET() {
 
     const khata = Object.values(customerMap)
       .map(c => ({ ...c, balance: +(c.balance).toFixed(2), total_amount: +(c.total_amount).toFixed(2), total_paid: +(c.total_paid).toFixed(2) }))
-      .sort((a, b) => b.balance - a.balance) // highest udhaar first
+      .sort((a, b) => b.balance - a.balance)
 
     return NextResponse.json(khata)
   } catch (err) {
@@ -64,18 +69,20 @@ export async function GET() {
   }
 }
 
-// POST — Send settlement reminder via WhatsApp
+// POST — Send settlement reminder via WhatsApp with consolidated Razorpay link
 export async function POST(req) {
   try {
     const { phone, action } = await req.json()
 
     if (action === 'settle_reminder') {
-      // Calculate balance on-the-fly from orders
+      // Get all unpaid orders for this customer
       const { data: orders = [] } = await supabase
         .from('orders')
         .select('*')
         .eq('customer_phone', phone)
         .neq('status', 'paid')
+        .neq('status', 'cancelled')
+        .order('created_at', { ascending: false })
 
       const balance = orders.reduce((s, o) => {
         const amt = Number(o.total_amount) || 0
@@ -86,10 +93,43 @@ export async function POST(req) {
         return NextResponse.json({ error: 'No pending balance' }, { status: 400 })
       }
 
-      // Build order list for reminder
-      const orderList = orders.slice(0, 5).map(o =>
-        `  • #${String(o.id).padStart(4, '0')} — ₹${(+(Number(o.total_amount || 0) * 1.18).toFixed(2))}`
-      ).join('\n')
+      // Normalize phone
+      const contactPhone = phone.startsWith('+') ? phone : `+91${phone}`
+
+      // Collect all unpaid order IDs
+      const orderIds = orders.map(o => String(o.id))
+
+      // Create a CONSOLIDATED Razorpay payment link for total balance
+      let paymentLink = null
+      try {
+        const link = await razorpay.paymentLink.create({
+          amount: Math.round(balance * 100),
+          currency: 'INR',
+          accept_partial: false,
+          description: `Outstanding Balance — ${orderIds.length} order${orderIds.length > 1 ? 's' : ''}`,
+          customer: { contact: contactPhone },
+          notify: { sms: false, email: false },
+          reminder_enable: false,
+          callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook/razorpay`,
+          callback_method: 'get',
+          notes: {
+            type: 'khata_consolidated',
+            order_ids: orderIds.join(','),
+            customer_phone: phone,
+          },
+        })
+        paymentLink = link.short_url
+      } catch (err) {
+        console.error('Razorpay consolidated link error:', err.message)
+      }
+
+      // Build order summary text (show individual orders with amounts)
+      const orderList = orders.slice(0, 8).map(o => {
+        const grand = +(Number(o.total_amount || 0) * 1.18).toFixed(2)
+        const items = (o.items || []).map(i => `${i.quantity || 1}× ${i.name}`).join(', ')
+        const date = new Date(o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })
+        return `  📦 #${String(o.id).padStart(4, '0')} — ₹${grand} (${date})\n     ${items || 'Items N/A'}`
+      }).join('\n\n')
 
       const msg = [
         `💰 *Udhaar Reminder — BusinessVaani*`,
@@ -98,18 +138,21 @@ export async function POST(req) {
         ``,
         orderList,
         ``,
+        `━━━━━━━━━━━━━━━━`,
         `📊 *Total Due:* ₹${balance.toFixed(2)}`,
+        orders.length > 8 ? `  _(+${orders.length - 8} more orders)_` : '',
         ``,
-        orders[0]?.payment_link
-          ? `💳 *Pay now:* ${orders[0].payment_link}`
+        paymentLink
+          ? `💳 *Pay All Now:* ${paymentLink}`
           : `Kripya jald se jald payment kar dein.`,
         ``,
         `Thank you! 🙏 — BusinessVaani`,
-      ].join('\n')
+      ].filter(Boolean).join('\n')
 
+      // Send as text only — no PDF attachment for khata reminders
       await sendWhatsApp(phone, msg)
 
-      return NextResponse.json({ success: true, balance })
+      return NextResponse.json({ success: true, balance, paymentLink })
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

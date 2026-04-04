@@ -157,7 +157,9 @@ export default function PaymentsPage() {
           <div>
             <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: 'var(--teal)' }}>Payment Received!</p>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--teal)', opacity: 0.8 }}>
-              Razorpay payment confirmed — order automatically updated to Paid
+              {justPaid === 'consolidated'
+                ? 'All outstanding dues have been settled — orders updated across dashboard'
+                : 'Razorpay payment confirmed — order automatically updated to Paid'}
             </p>
           </div>
         </div>
