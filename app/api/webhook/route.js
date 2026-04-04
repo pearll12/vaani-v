@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { sendWhatsApp } from '@/lib/twilio'
 import { extractOrder } from '@/lib/nlu'
 import { transcribeVoiceNote } from '@/lib/transcribe'
+import { generateAndUploadCataloguePDF } from '@/lib/pdfCatalogue'
 
 const OWNER_PHONE = process.env.BUSINESS_OWNER_PHONE || null
 
@@ -161,7 +162,15 @@ async function buildCatalog(language) {
   msg += `📝 Ya likh kar bhejein: *"2 Rice Bag aur 1 Wheat Flour"*\n`
   msg += `🎙️ Ya ek *Voice Note* bhejein!`
 
-  return { message: msg, catalogMap }
+  let pdfUrl = null
+  try {
+    const rawInventory = await loadInventory()
+    pdfUrl = await generateAndUploadCataloguePDF(rawInventory)
+  } catch (err) {
+    console.error('PDF Generation Skipped:', err)
+  }
+
+  return { message: msg, catalogMap, pdfUrl }
 }
 
 // ───── Selection → Order ─────
@@ -289,12 +298,9 @@ export async function POST(req) {
 
         console.log(`✅ Photo order: #${order.id} — ₹${totalAmount}`)
 
-        // Deduct stock + alert owner
-        const stockAlerts = await handleStockAlerts(itemsWithPrices)
-
         // Confirmation with price breakdown
         const confirmMsg = buildConfirmation(
-          itemsWithPrices, order.id, order.total_amount, extracted.language || 'hinglish', stockAlerts
+          itemsWithPrices, order.id, order.total_amount, extracted.language || 'hinglish'
         )
 
         // Prepend photo acknowledgment
@@ -330,7 +336,7 @@ export async function POST(req) {
       const { data: profiles } = await supabase.from('business_profiles').select('*').limit(1)
       const bName = (profiles && profiles.length > 0 && profiles[0].business_name) ? profiles[0].business_name : 'Aapke Store'
 
-      // Welcome + catalog together
+// Welcome + catalog together
       const welcomeMsg = lang === 'english'
         ? `🙏 Hello! Welcome to *${bName}*\n\nHere\'s what we have:\n`
         : `🙏 Namaste! *${bName}* mein aapka swagat hai!\n\nYe rahi hamari product list:\n`
@@ -346,11 +352,9 @@ export async function POST(req) {
         } catch (e) {
           console.log('Session store skipped (table may not exist):', e.message)
         }
-
-        await sendWhatsApp(from, welcomeMsg + catalog.message)
-      } else {
-        await sendWhatsApp(from, welcomeMsg + catalog.message)
       }
+
+      await sendWhatsApp(from, welcomeMsg + catalog.message, catalog.pdfUrl || null)
       return new NextResponse('OK', { status: 200 })
     }
 
@@ -470,6 +474,9 @@ export async function POST(req) {
         const amt = Number(pendingOrder.total_amount || 0)
         const grand = +(amt * 1.18).toFixed(2)
 
+        // Exact inventory deduction ONLY on confirm
+        await handleStockAlerts(items)
+
         await sendWhatsApp(from,
           `✅ *Order #${String(pendingOrder.id).padStart(4, '0')} Confirmed!*\n\n` +
           `📦 ${itemNames}\n` +
@@ -573,7 +580,7 @@ export async function POST(req) {
         console.log('Session store skipped:', e.message)
       }
 
-      await sendWhatsApp(from, catalog.message)
+      await sendWhatsApp(from, catalog.message, catalog.pdfUrl || null)
       return new NextResponse('OK', { status: 200 })
     }
 
@@ -639,11 +646,8 @@ export async function POST(req) {
 
       console.log(`✅ Selection order: #${order.id} — ₹${totalAmount}`)
 
-      // Deduct stock + get low stock alerts
-      const stockAlerts = await handleStockAlerts(selectedItems)
-
-      // Send confirmation with price breakdown + stock alerts
-      const confirmMsg = buildConfirmation(selectedItems, order.id, totalAmount, extracted.language, stockAlerts)
+      // Send confirmation with price breakdown
+      const confirmMsg = buildConfirmation(selectedItems, order.id, totalAmount, extracted.language)
       await sendWhatsApp(from, confirmMsg)
 
       // Clear session
@@ -731,12 +735,9 @@ export async function POST(req) {
 
       console.log(`✅ Direct order: #${order.id} — ₹${order.total_amount}`)
 
-      // Deduct stock + alert owner
-      const stockAlerts = await handleStockAlerts(itemsWithPrices)
-
       // Confirmation with price breakdown
       const confirmMsg = buildConfirmation(
-        itemsWithPrices, order.id, order.total_amount, extracted.language, stockAlerts
+        itemsWithPrices, order.id, order.total_amount, extracted.language
       )
       await sendWhatsApp(from, confirmMsg)
 
@@ -792,7 +793,8 @@ export async function POST(req) {
       `📝 Ya directly likh sakte hain:\n_"5 Rice Bag aur 2 Wheat Flour bhejdo"_\n\n` +
       `💰 "hisab" — Payment status\n` +
       `📋 "track" — Order status\n` +
-      `❓ "help" — Sab commands dekhein`
+      `❓ "help" — Sab commands dekhein`,
+      catalog.pdfUrl || null
     )
     return new NextResponse('OK', { status: 200 })
 
