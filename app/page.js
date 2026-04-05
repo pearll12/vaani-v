@@ -713,7 +713,7 @@ function ContactUs() {
 /* ═══════════════ WHATSAPP TWILIO FAB ═══════════════ */
 function WhatsAppTwilio() {
   const TWILIO_PHONE = "+14155238886";
-  const TWILIO_JOIN_CODE = "join bee-aware";
+  const TWILIO_JOIN_CODE = "join news-those";
   const [showLabel, setShowLabel] = useState(false);
   return (
     <>
