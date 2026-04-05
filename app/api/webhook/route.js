@@ -198,6 +198,8 @@ function buildOrderFromSelection(selectedNumbers, catalogMap) {
 
 // ───── Main Webhook ─────
 
+import { generateAndSendInvoice } from '@/lib/invoice'
+
 export async function POST(req) {
   try {
     const formData = await req.formData()
@@ -257,18 +259,18 @@ export async function POST(req) {
           `⏳ Generating your invoice and payment link...`,
         ].join('\n'))
 
-        // TRIGGER INVOICE NOW that we have the address
+        // TRIGGER INVOICE RELIABLY (Direct Logic Call)
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin
-          const invoiceUrl = new URL('/api/invoice', baseUrl)
-
-          await fetch(invoiceUrl.toString(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: awaitingOrder.id, phone: from }),
-          })
+          console.log(`📡 Triggering invoice for order #${awaitingOrder.id}...`)
+          const result = await generateAndSendInvoice(awaitingOrder.id, from)
+          
+          if (result && result.success) {
+            console.log(`✅ Invoice successfully generated and sent for order #${awaitingOrder.id}`)
+          } else {
+            console.error(`❌ Invoice generation failed:`, result?.error)
+          }
         } catch (err) {
-          console.error('❌ Invoice trigger after address failed:', err)
+          console.error('❌ Invoice generation error:', err)
         }
 
         // ❌ Removed immediate delivery assignment (Deferred to payment)

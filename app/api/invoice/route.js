@@ -15,8 +15,6 @@ const razorpay = new Razorpay({
 export async function POST(req) {
   try {
     const { orderId, phone } = await req.json()
-
-    // 1. Fetch order
     console.log(`📑 Invoice API: Processing Order #${orderId} for ${phone}`)
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -56,15 +54,15 @@ export async function POST(req) {
         if (subtotal > 0) {
           await supabase.from('orders').update({ items: orderItems, total_amount: subtotal }).eq('id', orderId)
         }
-      } catch(e) { console.error('Inventory lookup for invoice:', e) }
+      } catch (e) { console.error('Inventory lookup for invoice:', e) }
     }
 
-    const cgst       = +(subtotal * 0.09).toFixed(2)
-    const sgst       = +(subtotal * 0.09).toFixed(2)
+    const cgst = +(subtotal * 0.09).toFixed(2)
+    const sgst = +(subtotal * 0.09).toFixed(2)
     const grandTotal = +(subtotal + cgst + sgst).toFixed(2)
 
     // 3. Normalize phone
-    const rawPhone     = phone || order.customer_phone || ''
+    const rawPhone = phone || order.customer_phone || ''
     const contactPhone = rawPhone.startsWith('+') ? rawPhone : `+91${rawPhone}`
 
     // 4. Razorpay link
@@ -98,7 +96,7 @@ export async function POST(req) {
       })
       .eq('id', orderId)
 
-    console.log('--- INVOICE GENERATION START ---', { orderId, contactPhone })
+    console.log('--- DATA RETRIEVAL COMPLETE ---', { orderId, subtotal, grandTotal })
 
     // 6. PDF generation - Use OS temp dir for serverless/Vercel compatibility
     const invoicesDir = os.tmpdir()
@@ -109,14 +107,14 @@ export async function POST(req) {
     const filePath = path.join(invoicesDir, fileName)
 
     console.log('--- INVOICE PROCESS START ---', { orderId, contactPhone, filePath })
-    
+
     const fontPath = path.join(process.cwd(), 'public', 'fonts', 'Roboto-Regular.ttf')
     const hasFonts = fs.existsSync(fontPath)
-    
+
     // Fetch business profile (using first available for now or default)
     const { data: profiles } = await supabase.from('business_profiles').select('*').limit(1)
     const bProfile = (profiles && profiles.length > 0) ? profiles[0] : null
-    
+
     const bName = bProfile?.business_name || 'BusinessVaani Hub'
     const bPhone = bProfile?.whatsapp_number || ''
     const bFooter = bProfile?.invoice_footer || 'Thank you for your business!'
@@ -143,7 +141,7 @@ export async function POST(req) {
 
     doc.fillColor('#818cf8').fontSize(14)
     doc.text(bName, 50, 75)
-    
+
     if (bPhone) {
       doc.fillColor('#94a3b8').fontSize(10)
       doc.text(`WhatsApp: ${bPhone}`, 50, 95)
@@ -151,7 +149,7 @@ export async function POST(req) {
 
     doc.fillColor('#00e5c3').fontSize(12)
     doc.text(`INV-${String(orderId).padStart(4, '0')}`, doc.page.width - 200, 35, { align: 'right', width: 150 })
-    
+
     const now = new Date()
     doc.fillColor('#94a3b8').fontSize(10)
     doc.text(`Date: ${now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}`, doc.page.width - 200, 55, { align: 'right', width: 150 })
@@ -167,7 +165,7 @@ export async function POST(req) {
     doc.text('BILLED TO:', 70, doc.y + 15)
     doc.fillColor('#0f1623').fontSize(11)
     doc.text(contactPhone, 70, doc.y + 30)
-    
+
     if (order.address) {
       doc.fillColor('#475569').fontSize(8)
       doc.text('SHIPPING ADDRESS:', 70, doc.y + 50)
@@ -187,21 +185,21 @@ export async function POST(req) {
     doc.y += 35
     doc.fillColor('#1e293b').fontSize(11)
 
-    // Items
-    ;(orderItems || []).forEach((item, i) => {
-      const qty = Number(item.quantity || 1)
-      const price = Number(item.price || 0)
-      const total = qty * price
-      if (i % 2 !== 0) {
-        doc.rect(50, doc.y - 5, doc.page.width - 100, 25).fill('#f8fafc')
-        doc.fillColor('#1e293b')
-      }
-      doc.text(`${item.name}`, 70, doc.y)
-      doc.text(`${qty}`, 300, doc.y - 12, { width: 60, align: 'center' })
-      doc.text(`₹${price}`, 370, doc.y - 12, { width: 80, align: 'right' })
-      doc.text(`₹${total}`, 460, doc.y - 12, { width: 70, align: 'right' })
-      doc.moveDown(0.8)
-    })
+      // Items
+      ; (orderItems || []).forEach((item, i) => {
+        const qty = Number(item.quantity || 1)
+        const price = Number(item.price || 0)
+        const total = qty * price
+        if (i % 2 !== 0) {
+          doc.rect(50, doc.y - 5, doc.page.width - 100, 25).fill('#f8fafc')
+          doc.fillColor('#1e293b')
+        }
+        doc.text(`${item.name}`, 70, doc.y)
+        doc.text(`${qty}`, 300, doc.y - 12, { width: 60, align: 'center' })
+        doc.text(`₹${price}`, 370, doc.y - 12, { width: 80, align: 'right' })
+        doc.text(`₹${total}`, 460, doc.y - 12, { width: 70, align: 'right' })
+        doc.moveDown(0.8)
+      })
 
     // Totals
     const totalsY = doc.y + 10
@@ -250,7 +248,7 @@ export async function POST(req) {
 
     if (uploadError) {
       console.error('❌ Supabase upload failed. Ensure "invoices" bucket exists and is public/accessible.', uploadError)
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Failed to upload invoice: ' + uploadError.message,
         details: uploadError
       }, { status: 500 })
@@ -266,7 +264,7 @@ export async function POST(req) {
       console.error('❌ Failed to create signed URL:', signedError)
       // Fallback to public URL
       const { data } = supabase.storage.from('invoices').getPublicUrl(storagePath)
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Could not generate download URL',
         pdfUrl: data.publicUrl
       }, { status: 500 })
@@ -278,10 +276,10 @@ export async function POST(req) {
     // WhatsApp Dispatch - Send PDF directly
     console.log('📞 Sending WhatsApp with PDF attachment via Twilio...')
     try {
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Twilio timeout')), 15000)
       )
-      
+
       const twilioRes = await Promise.race([
         sendWhatsApp(
           contactPhone,
@@ -290,17 +288,17 @@ export async function POST(req) {
         ),
         timeoutPromise
       ])
-      
+
       console.log('✅ Twilio WhatsApp sent successfully:', twilioRes.sid)
       console.log('📎 PDF attached to message')
-      
+
     } catch (twError) {
       console.error('❌ Twilio WhatsApp Error:', twError.message, twError)
       // Don't fail the whole request if WhatsApp fails - invoice is still saved
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         pdfUrl: pdfUrl,
-        warning: 'Invoice created but WhatsApp send failed: ' + twError.message 
+        warning: 'Invoice created but WhatsApp send failed: ' + twError.message
       })
     }
 
