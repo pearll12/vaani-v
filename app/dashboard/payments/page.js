@@ -15,17 +15,23 @@ const STATUS = {
   pending: { label: 'Pending', color: '#f59e0b', bg: 'var(--amber-dim)', border: 'var(--amber-border)' },
   invoiced: { label: 'Invoiced', color: '#818cf8', bg: 'var(--indigo-dim)', border: 'var(--indigo-border)' },
   paid: { label: 'Paid', color: '#00e5c3', bg: 'var(--teal-dim)', border: 'var(--teal-border)' },
+  shipped: { label: 'Shipped', color: '#f472b6', bg: 'rgba(244,114,182,0.1)', border: 'rgba(244,114,182,0.2)' },
+  delivered: { label: 'Delivered', color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)' },
 }
 
 function PaymentTimeline({ status }) {
   const steps = [
     { key: 'pending', icon: '◦', label: 'Order' },
-    { key: 'invoiced', icon: '→', label: 'Invoiced' },
-    { key: 'paid', icon: '✓', label: 'Paid' },
+    { key: 'invoiced', icon: '→', label: 'Invoice' },
+    { key: 'paid', icon: '₹', label: 'Paid' },
+    { key: 'shipped', icon: '🚚', label: 'Shipped' },
+    { key: 'delivered', icon: '📦', label: 'Delivered' },
   ]
-  const idx = ['pending', 'invoiced', 'paid'].indexOf(status)
+  const keys = ['pending', 'invoiced', 'paid', 'shipped', 'delivered']
+  const idx = keys.indexOf(status)
+  
   return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
       {steps.map((s, i) => {
         const done = i <= idx
         const curr = i === idx
@@ -33,20 +39,32 @@ function PaymentTimeline({ status }) {
         return (
           <div key={s.key} style={{ display: 'flex', alignItems: 'center' }}>
             <div title={s.label} style={{
-              width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-              background: done ? sc.bg : 'rgba(255,255,255,0.04)',
-              border: `2px solid ${done ? sc.color : 'rgba(255,255,255,0.08)'}`,
+              width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+              background: done ? sc.bg : 'rgba(255,255,255,0.03)',
+              border: `1.5px solid ${done ? sc.color : 'rgba(255,255,255,0.08)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 9, color: done ? sc.color : 'var(--muted)',
-              boxShadow: curr ? `0 0 12px ${sc.color}40` : 'none',
-              transition: 'all 0.3s', fontWeight: 700,
+              fontSize: s.icon.length > 1 ? 9 : 10, color: done ? sc.color : 'rgba(255,255,255,0.15)',
+              boxShadow: curr ? `0 0 12px ${sc.color}30` : 'none',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+              fontWeight: 800,
+              cursor: 'help',
+              position: 'relative'
             }}>
               {done ? s.icon : ''}
+              {curr && (
+                <span style={{
+                  position: 'absolute', bottom: -18, left: '50%', transform: 'translateX(-50%)',
+                  fontSize: 7, color: sc.color, textTransform: 'uppercase', letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap', fontWeight: 900
+                }}>
+                  {s.label}
+                </span>
+              )}
             </div>
             {i < steps.length - 1 && (
               <div style={{
-                width: 24, height: 2,
-                background: i < idx ? 'rgba(0,229,195,0.35)' : 'rgba(255,255,255,0.06)',
+                width: 18, height: 1.5,
+                background: i < idx ? STATUS[steps[i+1].key].color + '40' : 'rgba(255,255,255,0.04)',
                 transition: 'background 0.3s',
               }} />
             )}
@@ -79,8 +97,19 @@ export default function PaymentsPage() {
     }
 
     fetchOrders()
-    interval.current = setInterval(fetchOrders, 5000) // fast refresh for payment tracking (5s)
-    return () => clearInterval(interval.current)
+
+    // 🚀 REAL-TIME SUBSCRIPTION for instant circle updates
+    const channel = supabase
+      .channel('orders-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        console.log('Real-time update received:', payload)
+        fetchOrders() // refresh data immediately on any change
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   async function fetchOrders() {
