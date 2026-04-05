@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/theme'
 
+const parseUtc = (ds) => !ds ? null : new Date(typeof ds === 'string' && !ds.endsWith('Z') && !ds.includes('+') ? ds + 'Z' : ds)
+
 export default function DeliveryPage() {
   const { theme } = useTheme()
   const [loading, setLoading] = useState(true)
@@ -46,7 +48,7 @@ export default function DeliveryPage() {
       .from('orders')
       .select('*')
       .not('delivery_status', 'is', null)
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
     if (ords) setOrders(ords)
 
     setLoading(false)
@@ -212,7 +214,7 @@ export default function DeliveryPage() {
                     <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '30%' }}>Order</th>
                     <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '20%' }}>Status</th>
                     <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Partner</th>
-                    <th style={{ textAlign: 'right', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Time (IST)</th>
+                    <th style={{ textAlign: 'right', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Updated (IST)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -234,8 +236,8 @@ export default function DeliveryPage() {
                         </td>
                         <td style={{ padding: '16px 20px', color: 'var(--text-soft)', fontWeight: 600 }}>{o.delivery_agent || '---'}</td>
                         <td style={{ padding: '16px 20px', textAlign: 'right', color: 'var(--muted)', fontSize: 11 }}>
-                          <div>{new Date(o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}</div>
-                          <div>{new Date(o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}</div>
+                          <div>{parseUtc(o.updated_at || o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}</div>
+                          <div>{parseUtc(o.updated_at || o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}</div>
                         </td>
                       </tr>
                     ))
@@ -271,8 +273,8 @@ export default function DeliveryPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                         <div style={{ fontSize: 12, color: 'var(--text-soft)', fontWeight: 600 }}>🛵 {o.delivery_agent || '---'}</div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'right' }}>
-                          {new Date(o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}{', '}
-                          {new Date(o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}
+                          {parseUtc(o.updated_at || o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}{', '}
+                          {parseUtc(o.updated_at || o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}
                         </div>
                       </div>
                     </div>
