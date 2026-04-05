@@ -79,7 +79,7 @@ export default function PaymentsPage() {
     }
 
     fetchOrders()
-    interval.current = setInterval(fetchOrders, 8000) // fast refresh for payment tracking
+    interval.current = setInterval(fetchOrders, 5000) // fast refresh for payment tracking (5s)
     return () => clearInterval(interval.current)
   }, [])
 
@@ -139,7 +139,7 @@ export default function PaymentsPage() {
           <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Payments</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
             <span className="live-dot" style={{ width: 7, height: 7, background: 'var(--teal)' }} />
-            <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, fontWeight: 500 }}>Razorpay sync · refreshes every 8s</p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, fontWeight: 500 }}>Razorpay sync · refreshes every 5s</p>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>

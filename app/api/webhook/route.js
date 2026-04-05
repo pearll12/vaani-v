@@ -525,8 +525,7 @@ export async function POST(req) {
           `✅ *Order #${String(pendingOrder.id).padStart(4, '0')} Confirmed!*\n\n` +
           `📦 ${itemNames}\n` +
           `💰 Total: ₹${grand}\n\n` +
-          `⏳ Generating your PDF invoice...\n` +
-          `🚚 *Track your order:* Send "track ${pendingOrder.id}"`
+          `⏳ Generating your PDF invoice...`
         )
 
         // Notify owner

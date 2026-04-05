@@ -65,7 +65,7 @@ export async function POST(req) {
               `✅ Delivery partner *${agent.name}* has been assigned!`,
               `📞 Contact: ${agent.phone}`,
               ``,
-              `🛵 *Track order:* Reply "track ${orderId}" for updates.`,
+              `🛵 *Track order:* Reply "track ${orderId}" for status updates.`,
               ``,
               `Thank you! 🙏 — BusinessVaani`,
             ].join('\n'))

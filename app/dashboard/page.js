@@ -134,7 +134,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData()
-    const t = setInterval(fetchData, 30000)
+    const t = setInterval(fetchData, 5000) // fast refresh for demo (5s)
     return () => clearInterval(t)
   }, [selectedDays])
 
@@ -165,7 +165,7 @@ export default function DashboardPage() {
       <div>
         <h1 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Analytics</h1>
         <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, fontWeight: 500 }}>
-          Real-time business overview · refreshes every 30s
+          Real-time business overview · refreshes every 5s
         </p>
       </div>
 

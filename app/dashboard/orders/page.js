@@ -534,7 +534,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders()
-    intervalRef.current = setInterval(fetchOrders, 12000)
+    intervalRef.current = setInterval(fetchOrders, 5000) // fast refresh for demo (5s)
     return () => clearInterval(intervalRef.current)
   }, [fetchOrders])
 
@@ -654,7 +654,7 @@ export default function OrdersPage() {
           <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Orders</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
             <span className="live-dot" style={{ width: 7, height: 7, background: 'var(--teal)' }} />
-            <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, fontWeight: 500 }}>Live · refreshes every 12s</p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, fontWeight: 500 }}>Live · refreshes every 5s</p>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
