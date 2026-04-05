@@ -414,7 +414,6 @@ export async function POST(req) {
         `❌ *"cancel"* — Cancel pending order\n` +
         `💰 *"hisab"* — Check payment status\n` +
         `🎙️ *Voice Note* — Send voice order!\n` +
-        `📸 *Photo* — Send photo of grocery list!\n` +
         `❓ *"help"* — Show this guide\n\n` +
         `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
         : `📖 *BusinessVaani Help Guide*\n\n` +
@@ -426,7 +425,6 @@ export async function POST(req) {
         `❌ *"cancel"* — Order cancel karein\n` +
         `💰 *"hisab"* — Payment status check karein\n` +
         `🎙️ *Voice Note* — Voice se order bhejein!\n` +
-        `📸 *Photo* — Grocery list ki photo bhejein!\n` +
         `❓ *"help"* — Ye guide dikhao\n\n` +
         `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
 

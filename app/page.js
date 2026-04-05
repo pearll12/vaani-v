@@ -4,7 +4,7 @@ import { motion, useInView, AnimatePresence, useScroll, useTransform } from "fra
 import {
   MessageSquare, Mic, FileText, CreditCard, BarChart3, Bell,
   Package, Phone, Mail, ArrowRight, AlertTriangle, ShoppingCart,
-  Zap, Globe, ChevronDown, Layers, Users, ShoppingBag, Send, Heart,
+  Zap, Globe, ChevronDown, Layers, Users, ShoppingBag, Send, Heart, Check,
 } from "lucide-react";
 
 /* ═══════════════ WARM EARTHY PALETTE ═══════════════ */
@@ -567,6 +567,92 @@ function Features() {
   );
 }
 
+
+/* ═══════════════ PRICING ═══════════════ */
+function PricingCard({ title, price, features, color, bg, isPopular, delay }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay, duration: 0.5 }} onHoverStart={() => setHov(true)} onHoverEnd={() => setHov(false)}
+      style={{
+        padding: "40px 32px", borderRadius: 28, background: P.card, 
+        border: `1px solid ${isPopular ? color : P.border}`,
+        position: "relative", display: "flex", flexDirection: "column",
+        boxShadow: hov ? P.shadowL : isPopular ? P.shadowM : P.shadow,
+        transform: hov ? "translateY(-8px)" : "none",
+        transition: "all 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
+      }}>
+      {isPopular && (
+        <div style={{
+          position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
+          background: color, color: "#fff", padding: "6px 14px", borderRadius: 20,
+          fontSize: 11, fontWeight: 800, letterSpacing: "0.05em"
+        }}>MOST POPULAR</div>
+      )}
+      <div style={{ marginBottom: 32 }}>
+        <h3 style={{ fontSize: 18, fontWeight: 800, color: P.text, marginBottom: 8 }}>{title}</h3>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+          <span style={{ fontSize: 32, fontWeight: 900, color: P.text }}>{price}</span>
+          {price !== "Free" && <span style={{ fontSize: 14, color: P.soft }}>/month</span>}
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1, marginBottom: 36 }}>
+        {features.map((f, i) => (
+          <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", fontSize: 14, color: P.soft }}>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Check size={12} color={color} strokeWidth={3} />
+            </div>
+            <span>{f}</span>
+          </div>
+        ))}
+      </div>
+      <motion.button 
+        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+        style={{
+          width: "100%", padding: "14px", borderRadius: 14, border: `1.5px solid ${color}`,
+          background: hov ? color : "transparent", color: hov ? "#fff" : color,
+          fontSize: 14, fontWeight: 700, transition: "all 0.2s"
+        }}>
+        Get Started
+      </motion.button>
+    </motion.div>
+  );
+}
+
+function Pricing() {
+  const plans = [
+    {
+      title: "Basic / Starter", price: "Free", color: P.sage, bg: P.sageL,
+      features: ["WhatsApp Text Orders", "Multilingual Support", "Digital Stock Catalog", "Basic Store Dashboard", "Up to 10 Items Limit"]
+    },
+    {
+      title: "Standard / Growth", price: "₹499", color: P.purple, bg: P.purpleL, isPopular: true,
+      features: ["Unlimited Order Items", "GST-Compliant Invoices", "Razorpay Payment Links", "Auto Payment Reminders", "Advanced Sales Analytics"]
+    },
+    {
+      title: "Premium / Pro", price: "₹1,499", color: P.teal, bg: P.tealL,
+      features: ["AI Voice Note Orders", "Delivery Agent Fleet Mgt", "Customer Khata/Credit Log", "Dedicated Account Manager", "Business Management App"]
+    }
+  ];
+  return (
+    <section id="pricing" style={{ padding: "100px 40px", background: P.bg }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <Reveal>
+          <div style={{ textAlign: "center", marginBottom: 60 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: P.purple, marginBottom: 14 }}>PRICING</div>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em", color: P.text, margin: "0 0 16px" }}>
+              Tailored plans for <span style={{ color: P.purple }}>every shop size.</span>
+            </h2>
+            <p style={{ fontSize: 15, color: P.soft, maxWidth: 600, margin: "0 auto" }}>Start for free and scale as your orders grow. No hidden fees.</p>
+          </div>
+        </Reveal>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 32 }}>
+          {plans.map((p, i) => <PricingCard key={i} {...p} delay={i * 0.1} />)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ═══════════════ CONTACT US ═══════════════ */
 function ContactUs() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
@@ -725,6 +811,8 @@ export default function Page() {
       </WaveDivider>
       <div id="features"><Features /></div>
       <WaveDivider from={P.surface} to={P.bg} />
+      <div id="pricing"><Pricing /></div>
+      <WaveDivider from={P.bg} to={P.surface} />
       <ContactUs />
       <Footer />
     </>
