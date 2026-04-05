@@ -7,6 +7,8 @@ import { transcribeVoiceNote } from '@/lib/transcribe'
 import { isDeliveryAgent } from '@/lib/delivery-config'
 import { assignDeliveryAgent, handleDeliveryAgentMessage, getDeliveryStatus } from '@/lib/delivery'
 import { generateAndUploadCataloguePDF } from '@/lib/pdfCatalogue'
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
 
 const OWNER_PHONE = process.env.BUSINESS_OWNER_PHONE || null
 
@@ -620,15 +622,26 @@ export async function POST(req) {
         }
         // Auto-generate invoice
         try {
-          const invoiceUrl = new URL('/api/invoice', req.url)
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin
+          const invoiceUrl = new URL('/api/invoice', baseUrl)
+          
+          console.log(`🧾 Triggering invoice for Order #${pendingOrder.id} at ${invoiceUrl.toString()}`)
+          
           // We MUST await this so Vercel serverless function doesn't terminate early
-          await fetch(invoiceUrl.toString(), {
+          const invRes = await fetch(invoiceUrl.toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ orderId: pendingOrder.id, phone: from }),
           })
+          
+          if (!invRes.ok) {
+            const errorText = await invRes.text()
+            console.error(`❌ Invoice generation failed (HTTP ${invRes.status}):`, errorText)
+          } else {
+            console.log(`✅ Invoice generation triggered successfully for Order #${pendingOrder.id}`)
+          }
         } catch (err) {
-          console.error('Auto-invoice error:', err)
+          console.error('❌ Auto-invoice fetch error:', err.message)
         }
       }
       return new NextResponse('OK', { status: 200 })
