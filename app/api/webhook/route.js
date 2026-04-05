@@ -254,8 +254,22 @@ export async function POST(req) {
           `🔖 Order #${String(awaitingOrder.id).padStart(4, '0')}`,
           `📍 ${body.trim()}`,
           ``,
-          `🚚 Assigning delivery partner now...`,
+          `⏳ Generating your invoice and payment link...`,
         ].join('\n'))
+
+        // TRIGGER INVOICE NOW that we have the address
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin
+          const invoiceUrl = new URL('/api/invoice', baseUrl)
+          
+          await fetch(invoiceUrl.toString(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: awaitingOrder.id, phone: from }),
+          })
+        } catch (err) {
+          console.error('❌ Invoice trigger after address failed:', err)
+        }
 
         // Now assign delivery agent
         try {
@@ -536,28 +550,30 @@ if (extracted.intent === 'CONFIRM') {
         console.error('Address request error (non-blocking):', err)
       }
     }
-    // Auto-generate invoice
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin
-      const invoiceUrl = new URL('/api/invoice', baseUrl)
+    // Auto-generate invoice (ONLY if NO delivery, otherwise we wait for address)
+    if (!hasDelivery) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin
+        const invoiceUrl = new URL('/api/invoice', baseUrl)
 
-      console.log(`🧾 Triggering invoice for Order #${pendingOrder.id} at ${invoiceUrl.toString()}`)
+        console.log(`🧾 Triggering invoice for Order #${pendingOrder.id} at ${invoiceUrl.toString()}`)
 
-      // We MUST await this so Vercel serverless function doesn't terminate early
-      const invRes = await fetch(invoiceUrl.toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: pendingOrder.id, phone: from }),
-      })
+        // We MUST await this so Vercel serverless function doesn't terminate early
+        const invRes = await fetch(invoiceUrl.toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: pendingOrder.id, phone: from }),
+        })
 
-      if (!invRes.ok) {
-        const errorText = await invRes.text()
-        console.error(`❌ Invoice generation failed (HTTP ${invRes.status}):`, errorText)
-      } else {
-        console.log(`✅ Invoice generation triggered successfully for Order #${pendingOrder.id}`)
+        if (!invRes.ok) {
+          const errorText = await invRes.text()
+          console.error(`❌ Invoice generation failed (HTTP ${invRes.status}):`, errorText)
+        } else {
+          console.log(`✅ Invoice generation triggered successfully for Order #${pendingOrder.id}`)
+        }
+      } catch (err) {
+        console.error('❌ Auto-invoice fetch error:', err.message)
       }
-    } catch (err) {
-      console.error('❌ Auto-invoice fetch error:', err.message)
     }
   }
   return new NextResponse('OK', { status: 200 })

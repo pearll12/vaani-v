@@ -161,12 +161,20 @@ export async function POST(req) {
 
     // Customer Detail
     doc.y = headerHeight + 30
-    doc.rect(50, doc.y, doc.page.width - 100, 70).fillAndStroke('#f8fafc', '#e2e8f0')
+    const detailBoxHeight = order.address ? 90 : 70
+    doc.rect(50, doc.y, doc.page.width - 100, detailBoxHeight).fillAndStroke('#f8fafc', '#e2e8f0')
     doc.fillColor('#475569').fontSize(9)
     doc.text('BILLED TO:', 70, doc.y + 15)
-    doc.fillColor('#0f1623').fontSize(12)
-    doc.text(contactPhone, 70, doc.y + 35)
-    doc.y += 80
+    doc.fillColor('#0f1623').fontSize(11)
+    doc.text(contactPhone, 70, doc.y + 30)
+    
+    if (order.address) {
+      doc.fillColor('#475569').fontSize(8)
+      doc.text('SHIPPING ADDRESS:', 70, doc.y + 50)
+      doc.fillColor('#1e293b').fontSize(9)
+      doc.text(order.address, 70, doc.y + 62, { width: 400 })
+    }
+    doc.y += detailBoxHeight + 20
 
     // Headers
     doc.rect(50, doc.y, doc.page.width - 100, 30).fill('#0f1623')
