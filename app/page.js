@@ -574,7 +574,7 @@ function PricingCard({ title, price, features, color, bg, isPopular, delay }) {
   return (
     <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay, duration: 0.5 }} onHoverStart={() => setHov(true)} onHoverEnd={() => setHov(false)}
       style={{
-        padding: "40px 32px", borderRadius: 28, background: P.card, 
+        padding: "40px 32px", borderRadius: 28, background: P.card,
         border: `1px solid ${isPopular ? color : P.border}`,
         position: "relative", display: "flex", flexDirection: "column",
         boxShadow: hov ? P.shadowL : isPopular ? P.shadowM : P.shadow,
@@ -605,7 +605,7 @@ function PricingCard({ title, price, features, color, bg, isPopular, delay }) {
           </div>
         ))}
       </div>
-      <motion.button 
+      <motion.button
         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
         style={{
           width: "100%", padding: "14px", borderRadius: 14, border: `1.5px solid ${color}`,
@@ -713,7 +713,7 @@ function ContactUs() {
 /* ═══════════════ WHATSAPP TWILIO FAB ═══════════════ */
 function WhatsAppTwilio() {
   const TWILIO_PHONE = "+14155238886";
-  const TWILIO_JOIN_CODE = "join separate-while";
+  const TWILIO_JOIN_CODE = "join bee-aware";
   const [showLabel, setShowLabel] = useState(false);
   return (
     <>
