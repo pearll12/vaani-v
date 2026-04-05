@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
-  const [savedAlert, setSavedAlert] = useState(false)
+  const [toast, setToast] = useState(null)
   const [profile, setProfile] = useState({
     business_name: '',
     logo_url: '',
@@ -19,6 +19,13 @@ export default function SettingsPage() {
     upi_id: '',
     invoice_footer: ''
   })
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   useEffect(() => {
     async function initLoadProfile() {
@@ -82,46 +89,28 @@ export default function SettingsPage() {
       console.error('Supabase save error:', error)
       setErrorMsg('Error saving profile: ' + error.message)
     } else {
-      setSavedAlert(true) // show success message
+      setToast('✅ Settings saved successfully!')
       window.dispatchEvent(new Event('profileUpdated'))
+      router.refresh()
       
-      // Reload data after save with proper async handling
-      const refreshData = async () => {
-        try {
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            const { data } = await supabase
-              .from('business_profiles')
-              .select('*')
-              .eq('id', user.id)
-              .single()
-
-            if (data) {
-              setProfile(data)
-              console.log('✅ Profile refreshed with latest data:', data)
-            }
-          }
-        } catch (e) {
-          console.error('❌ Error refreshing profile:', e)
-        }
-      }
-      
-      // Call refresh after 1.5s, then close alert after 4s
-      setTimeout(refreshData, 1500)
+      // Force hardware reload after a short delay to ensure global UI (sidebar/header) syncs
       setTimeout(() => {
-        setSavedAlert(false)
-      }, 4000)
+        window.location.reload()
+      }, 1000)
+      
+      // Refresh local state
+      const { data: updated } = await supabase
+        .from('business_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      if (updated) setProfile(updated)
     }
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading settings...</div>
-  if (savedAlert) return (
-    <div style={{ padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16 }}>
-      <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(0,229,195,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5c3' }}>
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="32" height="32"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-      </div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--text)' }}>Saved Successfully</h2>
-      <p style={{ color: 'var(--muted)', margin: 0 }}>Updating your workspace...</p>
+  if (loading) return (
+    <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
+      <div className="skeleton" style={{ width: 300, height: 400, borderRadius: 16 }} />
     </div>
   )
 
@@ -151,11 +140,14 @@ export default function SettingsPage() {
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--muted-light)', marginBottom: 8 }}>Business Logo</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {profile.logo_url ? (
-              <img src={profile.logo_url} alt="Logo Preview" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'contain', background: 'var(--surface)' }} />
-            ) : (
-              <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--muted)' }}>Logo</div>
-            )}
+            <div style={{ position: 'relative' }}>
+              <img 
+                src={profile.logo_url || "/logo1.png"} 
+                alt="Logo Preview" 
+                onError={(e) => e.target.src = "/logo1.png"}
+                style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'contain', background: 'var(--bg)', border: '1px solid var(--border)' }} 
+              />
+            </div>
             <div style={{ flex: 1 }}>
               <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploading}
                 style={{ width: '100%', padding: '10px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 13 }} />
@@ -194,6 +186,13 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {toast && (
+        <div className="toast">
+          <span style={{ fontSize: 16 }}>⚙️</span>
+          {toast}
+        </div>
+      )}
     </div>
   )
 }

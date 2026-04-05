@@ -537,128 +537,89 @@ export default function InventoryPage() {
           </div>
         ) : (
           <>
-            <div className="desktop-only">
-              <div className="bv-table-wrap">
-                <table className="bv-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 220 }}>Item Name</th>
-                      <th className="mobile-hide" style={{ width: 140 }}>Category</th>
-                      <th className="mobile-hide" style={{ width: 120 }}>SKU</th>
-                      <th style={{ width: 110, textAlign: 'right' }}>Price</th>
-                      <th style={{ width: 100, textAlign: 'right' }}>Qty</th>
-                      <th style={{ width: 130, textAlign: 'right' }}>Stock Value</th>
-                      {customColumns.map(col => (
-                        <th key={col} style={{ textTransform: 'capitalize' }}>{col.replace(/_/g, ' ')}</th>
-                      ))}
-                      <th style={{ width: 120 }}>Status</th>
-                      <th style={{ width: 160 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginated.map(item => {
-                      const low = Number(item.quantity) <= Number(item.lowStockThreshold)
-                      const cm  = CAT_META[item.category] || CAT_META.General
-                      return (
-                        <tr key={item.id}>
-                          <td>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{item.name}</span>
-                              <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{item.sku || 'No SKU'}</span>
-                            </div>
+          {/* Unified Table View (Scrollable on Mobile) */}
+          <div className="bv-table-wrap" style={{ 
+            background: 'var(--card)', 
+            border: '1px solid var(--border)', 
+            borderRadius: 16, 
+            overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+          }}>
+            <div className="bv-table-scroll" style={{ minWidth: 1000 }}>
+              <table className="bv-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 220 }}>Item Name</th>
+                    <th style={{ width: 140 }}>Category</th>
+                    <th style={{ width: 120 }}>SKU</th>
+                    <th style={{ width: 110, textAlign: 'right' }}>Price</th>
+                    <th style={{ width: 100, textAlign: 'right' }}>Qty</th>
+                    <th style={{ width: 130, textAlign: 'right' }}>Stock Value</th>
+                    {customColumns.map(col => (
+                      <th key={col} style={{ textTransform: 'capitalize' }}>{col.replace(/_/g, ' ')}</th>
+                    ))}
+                    <th style={{ width: 120 }}>Status</th>
+                    <th style={{ width: 120 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map(item => {
+                    const low = Number(item.quantity) <= Number(item.lowStockThreshold)
+                    const cm  = CAT_META[item.category] || CAT_META.General
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{item.name}</span>
+                            <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{item.sku || 'No SKU'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{
+                            fontSize: 10, padding: '3px 8px', borderRadius: 6, fontWeight: 700,
+                            background: cm.bg, color: cm.color, border: `1px solid ${cm.color}20`
+                          }}>{item.category}</span>
+                        </td>
+                        <td>
+                          <code style={{ fontSize: 11.5, color: 'var(--muted-light)' }}>{item.sku || '—'}</code>
+                        </td>
+                        <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>₹{Number(item.price).toLocaleString('en-IN')}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: low ? 'var(--rose)' : 'var(--teal)' }}>
+                            {item.quantity}
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 4 }}>{item.unit}</span>
+                        </td>
+                        <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--text-dim)' }}>₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN')}</td>
+                        {customColumns.map(col => (
+                          <td key={col} style={{ color: 'var(--muted-light)', fontSize: 13 }}>
+                            {(item.custom_data && item.custom_data[col]) ? String(item.custom_data[col]) : '—'}
                           </td>
-                          <td className="mobile-hide">
-                            <span style={{
-                              fontSize: 10, padding: '3px 8px', borderRadius: 6, fontWeight: 700,
-                              background: cm.bg, color: cm.color, border: `1px solid ${cm.color}20`
-                            }}>{item.category}</span>
-                          </td>
-                          <td className="mobile-hide">
-                            <code style={{ fontSize: 11.5, color: 'var(--muted-light)' }}>{item.sku || '—'}</code>
-                          </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>₹{Number(item.price).toLocaleString('en-IN')}</td>
-                          <td style={{ textAlign: 'right' }}>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: low ? 'var(--rose)' : 'var(--teal)' }}>
-                              {item.quantity}
-                            </span>
-                            <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 4 }}>{item.unit}</span>
-                          </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--text-dim)' }}>₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN')}</td>
-                          {customColumns.map(col => (
-                            <td key={col} style={{ color: 'var(--muted-light)', fontSize: 13 }}>
-                              {(item.custom_data && item.custom_data[col]) ? String(item.custom_data[col]) : '—'}
-                            </td>
-                          ))}
-                          <td><span className={`badge ${low ? 'badge-low' : 'badge-ok'}`}>{low ? 'Low Stock' : 'In Stock'}</span></td>
-                          <td>
-                            <div style={{ display: 'flex', gap: 8 }}>
-                              <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setModal(item)}>Edit</button>
-                              <button
-                                onClick={() => handleDelete(item.id)}
-                                style={{
-                                  background: 'rgba(244, 96, 123, 0.08)', color: '#f4607b',
-                                  border: '1px solid rgba(244, 96, 123, 0.2)', padding: '6px 12px',
-                                  borderRadius: 10, fontSize: 12, cursor: 'pointer',
-                                  fontWeight: 700, transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(244, 96, 123, 0.15)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(244, 96, 123, 0.08)'}
-                              >Delete</button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        ))}
+                        <td><span className={`badge ${low ? 'badge-low' : 'badge-ok'}`}>{low ? 'Low Stock' : 'In Stock'}</span></td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setModal(item)}>Edit</button>
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              style={{
+                                background: 'rgba(244, 96, 123, 0.08)', color: '#f4607b',
+                                border: '1px solid rgba(244, 96, 123, 0.2)', padding: '6px 12px',
+                                borderRadius: 10, fontSize: 12, cursor: 'pointer',
+                                fontWeight: 700, transition: 'all 0.2s',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(244, 96, 123, 0.15)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'rgba(244, 96, 123, 0.08)'}
+                            >Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
-
-            {/* Mobile card list */}
-            <div className="mobile-only" style={{ padding: '0px' }}>
-              <div className="card-list-mobile">
-                {paginated.map(item => {
-                  const low = Number(item.quantity) <= Number(item.lowStockThreshold)
-                  const cm  = CAT_META[item.category] || CAT_META.General
-                  return (
-                    <div key={item.id} className="mobile-card">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{item.name}</h4>
-                          <p style={{ margin: '2px 0 0', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{item.sku || 'No SKU'}</p>
-                        </div>
-                        <span style={{ 
-                          fontSize: 10, padding: '3px 8px', borderRadius: 6, fontWeight: 800,
-                          background: cm.bg, color: cm.color, border: `1px solid ${cm.color}25`
-                        }}>{item.category}</span>
-                      </div>
-
-                      <div className="mobile-card-row" style={{ background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)' }}>
-                        <div>
-                          <p className="mobile-card-label" style={{ fontSize: 9 }}>Price</p>
-                          <p className="mobile-card-value" style={{ fontSize: 15, color: 'var(--emerald)', fontWeight: 700 }}>₹{Number(item.price).toLocaleString('en-IN')}</p>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <p className="mobile-card-label" style={{ fontSize: 9 }}>Qty left</p>
-                          <p className="mobile-card-value" style={{ fontSize: 14, fontWeight: 700, color: low ? 'var(--rose)' : 'var(--teal)' }}>
-                            {item.quantity} <span style={{ fontSize: 10, opacity: 0.6 }}>{item.unit}</span>
-                          </p>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                        <button className="btn-ghost" style={{ flex: 1, padding: '8px' }} onClick={() => setModal(item)}>Edit</button>
-                        <button 
-                          className="btn-ghost" 
-                          style={{ flex: 1, color: 'var(--rose)', borderColor: 'rgba(225,29,72,0.2)', padding: '8px' }}
-                          onClick={() => { if(confirm('Delete item?')) handleDelete(item.id) }}
-                        >Delete</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+          </div>
           </>
         )}
       </div>

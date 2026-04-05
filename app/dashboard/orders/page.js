@@ -736,138 +736,83 @@ export default function OrdersPage() {
           </div>
         ) : (
           <>
-            {/* Desktop table */}
-            <div className="desktop-only">
-              <div className="bv-table-wrap" style={{ 
-                background: 'var(--card)', 
-                border: '1px solid var(--border)', 
-                borderRadius: 16, 
-                overflow: 'hidden' 
-              }}>
-                <div className="bv-table-scroll">
-                  <table className="bv-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: 80 }}>Order</th>
-                        <th style={{ width: 140 }}>Customer</th>
-                        <th>Items</th>
-                        <th style={{ textAlign: 'right', width: 90 }}>Subtotal</th>
-                        <th style={{ textAlign: 'right', width: 90 }}>w/ GST</th>
-                        <th style={{ width: 110 }}>Status</th>
-                        <th style={{ width: 100 }}>Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                    {paginated.map(order => {
-                      const { sub, grand } = calcGST(order.total_amount)
-                      const date      = parseUtc(order.created_at)
-                      const isToday   = new Date().toDateString() === date.toDateString()
-                      const lang      = order.language || 'english'
-                      const langColor = LANG_COLOR[lang] || '#c87137'
-                      const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
-                        (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
+            {/* Unified Table View (Scrollable on Mobile) */}
+            <div className="bv-table-wrap" style={{ 
+              background: 'var(--card)', 
+              border: '1px solid var(--border)', 
+              borderRadius: 16, 
+              overflow: 'hidden',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+            }}>
+              <div className="bv-table-scroll" style={{ minWidth: 1000 }}>
+                <table className="bv-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 80 }}>Order</th>
+                      <th style={{ width: 140 }}>Customer</th>
+                      <th>Items</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>Subtotal</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>w/ GST</th>
+                      <th style={{ width: 110 }}>Status</th>
+                      <th style={{ width: 100 }}>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {paginated.map(order => {
+                    const { sub, grand } = calcGST(order.total_amount)
+                    const date      = parseUtc(order.created_at)
+                    const isToday   = new Date().toDateString() === date.toDateString()
+                    const lang      = order.language || 'english'
+                    const langColor = LANG_COLOR[lang] || '#c87137'
+                    const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
+                      (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
 
-                      return (
-                        <tr key={order.id} onClick={() => setSelected(order)} style={{ cursor: 'pointer' }}>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)', fontWeight: 500 }}>
-                                #{String(order.id).padStart(4, '0')}
-                              </span>
-                              {isOverdue && <span title="Payment overdue" style={{ fontSize: 12 }}>⏰</span>}
-                            </div>
-                          </td>
-                          <td style={{ width: 180 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 170 }}>
-                              <div style={{
-                                width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                                background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
-                                border: `1px solid ${langColor}30`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 11, fontWeight: 800, color: langColor,
-                              }}>
-                                {order.customer_phone?.slice(-2)}
-                              </div>
-                              <div style={{ minWidth: 0 }}>
-                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{order.customer_phone}</p>
-                                <span style={{
-                                  fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 600, textTransform: 'capitalize',
-                                  background: `${langColor}15`, color: langColor, border: `1px solid ${langColor}25`,
-                                }}>{lang}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ maxWidth: 220 }}>
-                            <p className="line-clamp-1" style={{ margin: 0, fontSize: 12, color: 'var(--muted-light)' }}>
-                              {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
-                            </p>
-                          </td>
-                          <td style={{ textAlign: 'right', width: 110, fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--muted-light)' }}>
-                            ₹{sub.toFixed(2)}
-                          </td>
-                          <td style={{ textAlign: 'right', width: 110 }}>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>
-                              ₹{grand.toFixed(2)}
+                    return (
+                      <tr key={order.id} onClick={() => setSelected(order)} style={{ cursor: 'pointer' }}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11.5, color: 'var(--muted-light)', fontWeight: 500 }}>
+                              #{String(order.id).padStart(4, '0')}
                             </span>
-                          </td>
-                          <td style={{ width: 110 }}><StatusBadge status={order.status} /></td>
-                          <td style={{ width: 100, fontSize: 11.5, color: 'var(--muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
-                            {isToday
-                              ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
-                              : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile card list */}
-            <div className="mobile-only">
-              <div className="card-list-mobile">
-                {paginated.map(order => {
-                  const { sub, grand } = calcGST(order.total_amount)
-                  const date      = parseUtc(order.created_at)
-                  const isToday   = new Date().toDateString() === date.toDateString()
-                  const lang      = order.language || 'english'
-                  const langColor = LANG_COLOR[lang] || '#94a3b8'
-
-                  return (
-                    <div key={order.id} onClick={() => setSelected(order)} className="mobile-card" style={{ cursor: 'pointer' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                            background: `linear-gradient(135deg, ${langColor}30, ${langColor}15)`,
-                            border: `1px solid ${langColor}30`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 800, color: langColor,
-                          }}>{order.customer_phone?.slice(-2)}</div>
-                          <div>
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{order.customer_phone}</p>
-                            <span style={{ fontSize: 10, color: 'var(--muted)' }}>
-                              #{String(order.id).padStart(4, '0')} · {isToday
-                                ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
-                                : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
-                            </span>
+                            {isOverdue && <span title="Payment overdue" style={{ fontSize: 12 }}>⏰</span>}
                           </div>
-                        </div>
-                        <StatusBadge status={order.status} />
-                      </div>
-                      <div className="mobile-card-row" style={{ alignItems: 'center' }}>
-                        <p className="line-clamp-1" style={{ margin: 0, fontSize: 11.5, color: 'var(--muted-light)', flex: 1, marginRight: 12 }}>
-                          {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
-                        </p>
-                        <span style={{ flexShrink: 0, fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: 'var(--teal)' }}>
-                          ₹{grand.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
+                        </td>
+                        <td style={{ width: 180 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <p style={{ margin: 0, color: 'var(--text-dim)', fontSize: 13, fontWeight: 800 }}>{order.customer_name || 'Anonymous'}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>{order.customer_phone}</p>
+                              <span style={{ 
+                                fontSize: 9, padding: '1px 5px', borderRadius: 4, fontWeight: 700, 
+                                textTransform: 'uppercase', background: `${langColor}15`, color: langColor, border: `1px solid ${langColor}30` 
+                              }}>{lang === 'hindi' ? 'हिं' : 'EN'}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ maxWidth: 220 }}>
+                          <p className="line-clamp-1" style={{ margin: 0, fontSize: 12, color: 'var(--muted-light)' }}>
+                            {(order.items || []).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
+                          </p>
+                        </td>
+                        <td style={{ textAlign: 'right', width: 110, fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--muted-light)' }}>
+                          ₹{sub.toFixed(2)}
+                        </td>
+                        <td style={{ textAlign: 'right', width: 110 }}>
+                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>
+                            ₹{grand.toFixed(2)}
+                          </span>
+                        </td>
+                        <td style={{ width: 110 }}><StatusBadge status={order.status} /></td>
+                        <td style={{ width: 100, fontSize: 11.5, color: 'var(--muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                          {isToday
+                            ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
+                            : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  </tbody>
+                </table>
               </div>
             </div>
           </>

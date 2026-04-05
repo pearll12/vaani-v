@@ -89,6 +89,8 @@ export default function BuyersPage() {
   const [sort, setSort] = useState('orders')
   const [isMobile, setIsMobile] = useState(false)
 
+  const [toast, setToast] = useState(null)
+
   useEffect(() => { load() }, [])
 
   useEffect(() => {
@@ -97,6 +99,31 @@ export default function BuyersPage() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
+
+  async function handleCongratulate(buyer) {
+    try {
+      const res = await fetch('/api/buyers/congratulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: buyer.phone, totalSpent: buyer.totalSpent })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setToast(`✅ Congratulated ${buyer.phone}!`)
+      } else {
+        setToast(`❌ Failed: ${data.error}`)
+      }
+    } catch (e) {
+      setToast('❌ Error sending message')
+    }
+  }
 
   async function load() {
     const { data: orders = [] } = await supabase.from('orders').select('*')
@@ -223,13 +250,15 @@ export default function BuyersPage() {
                     <span style={{ fontSize: 11, color: 'var(--muted-light)' }}>
                       Avg: ₹{b.avgOrder.toLocaleString('en-IN')}
                     </span>
-                    <a
-                      href={`https://wa.me/${b.phone.replace(/\D/g, '')}`}
-                      target="_blank" rel="noreferrer"
-                      style={{ fontSize: 11, color: 'var(--emerald)', textDecoration: 'none', fontWeight: 700 }}
+                    <button
+                      onClick={() => handleCongratulate(b)}
+                      style={{ 
+                        fontSize: 11, color: 'var(--emerald)', background: 'none', border: 'none', 
+                        cursor: 'pointer', fontWeight: 700, padding: 0 
+                      }}
                     >
-                      💬 Message
-                    </a>
+                      💬 Congratulate
+                    </button>
                   </div>
                 </div>
               )
@@ -279,14 +308,13 @@ export default function BuyersPage() {
                         {b.lastOrder ? parseUtc(b.lastOrder).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                       </td>
                       <td>
-                        <a
-                          href={`https://wa.me/${b.phone.replace(/\D/g, '')}`}
-                          target="_blank" rel="noreferrer"
+                        <button
+                          onClick={() => handleCongratulate(b)}
                           className="btn-ghost"
                           style={{ fontSize: 11, padding: '6px 12px' }}
                         >
                           💬 WhatsApp
-                        </a>
+                        </button>
                       </td>
                     </tr>
                   )
@@ -296,6 +324,12 @@ export default function BuyersPage() {
           </div>
         )}
       </div>
+      {toast && (
+        <div className="toast">
+          <span style={{ fontSize: 16 }}>🚀</span>
+          {toast}
+        </div>
+      )}
     </div>
   )
 }

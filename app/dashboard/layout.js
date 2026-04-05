@@ -80,7 +80,11 @@ export default function DashboardLayout({ children }) {
 
     const handleProfileUpdate = () => {
       supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) fetchProfile(user.id)
+        if (user) {
+          supabase.from('business_profiles').select('*').eq('id', user.id).single().then(({ data }) => {
+            if (data) setProfile(data)
+          })
+        }
       })
     }
     window.addEventListener('profileUpdated', handleProfileUpdate)
@@ -156,11 +160,16 @@ export default function DashboardLayout({ children }) {
           height: 62, borderBottom: '1px solid var(--border)',
           flexShrink: 0, position: 'relative',
         }}>
-          <img src={profile?.logo_url || "/logo.png"} alt="Logo" style={{
-            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-            objectFit: 'contain', background: '#fff',
-            padding: 2, border: '1px solid var(--border-mid)'
-          }} />
+          <img 
+            src={profile?.logo_url || "/logo1.png"} 
+            alt="Logo" 
+            onError={(e) => e.target.src = "/logo1.png"}
+            style={{
+              width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+              objectFit: 'contain', background: '#fff',
+              padding: 2, border: '1px solid var(--border-mid)'
+            }} 
+          />
           {(!collapsed || isMobile) && (
             <div style={{ overflow: 'hidden' }}>
               <p style={{ fontWeight: 800, fontSize: 14.5, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
@@ -351,19 +360,15 @@ export default function DashboardLayout({ children }) {
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
               <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600, display: isMobile ? 'none' : 'block' }}>{user?.email}</span>
-              {profile?.logo_url ? (
-                <img src={profile.logo_url} alt="Logo" style={{
+              <img 
+                src={profile?.logo_url || "/logo1.png"} 
+                alt="Logo" 
+                onError={(e) => e.target.src = "/logo1.png"}
+                style={{
                   width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                   objectFit: 'contain', background: '#fff'
-                }} />
-              ) : (
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #00e5c3 0%, #818cf8 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 800, color: '#021a15',
-                }}>{profile?.business_name ? profile.business_name[0].toUpperCase() : 'V'}</div>
-              )}
+                }} 
+              />
             </div>
           </div>
         </header>
