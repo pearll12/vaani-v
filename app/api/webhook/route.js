@@ -7,6 +7,7 @@ import { transcribeVoiceNote } from '@/lib/transcribe'
 import { isDeliveryAgent } from '@/lib/delivery-config'
 import { assignDeliveryAgent, handleDeliveryAgentMessage, getDeliveryStatus } from '@/lib/delivery'
 import { generateAndUploadCataloguePDF } from '@/lib/pdfCatalogue'
+import { getAddressFromCoords } from '@/lib/geocoding'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 
@@ -208,8 +209,10 @@ export async function POST(req) {
     const body = formData.get('Body') || ''
     const mediaType = formData.get('MediaContentType0')
     const mediaUrl = formData.get('MediaUrl0')
+    const latitude = formData.get('Latitude')
+    const longitude = formData.get('Longitude')
 
-    console.log(`📩 Message from ${from}: ${body}, Media: ${mediaType}`)
+    console.log(`📩 Message from ${from}: ${body}, Media: ${mediaType}, Lat: ${latitude}, Lng: ${longitude}`)
 
     // Fetch business profile configuration
     const { data: profiles } = await supabase.from('business_profiles').select('*').order('updated_at', { ascending: false }).limit(1);
@@ -241,41 +244,54 @@ export async function POST(req) {
         .limit(1)
         .maybeSingle()
 
-      if (awaitingOrder && body && body.trim().length > 3) {
-        // Save the address
-        await supabase
-          .from('orders')
-          .update({ address: body.trim(), delivery_status: 'CONFIRMED' })
-          .eq('id', awaitingOrder.id)
-
-        console.log(`📍 Address saved for Order #${awaitingOrder.id}: ${body.trim()}`)
-
-        await sendWhatsApp(from, [
-          `📍 *Address saved!*`,
-          ``,
-          `🔖 Order #${String(awaitingOrder.id).padStart(4, '0')}`,
-          `📍 ${body.trim()}`,
-          ``,
-          `⏳ Generating your invoice and payment link...`,
-        ].join('\n'))
-
-        // TRIGGER INVOICE RELIABLY (Direct Logic Call)
-        try {
-          console.log(`📡 Triggering invoice for order #${awaitingOrder.id}...`)
-          const result = await generateAndSendInvoice(awaitingOrder.id, from)
-          
-          if (result && result.success) {
-            console.log(`✅ Invoice successfully generated and sent for order #${awaitingOrder.id}`)
+      if (awaitingOrder) {
+        let finalAddress = (body || '').trim()
+        
+        // Handle Map/Location Pin
+        if (latitude && longitude) {
+          console.log(`📍 Location pin received for Order #${awaitingOrder.id}: ${latitude}, ${longitude}`)
+          const geoAddress = await getAddressFromCoords(latitude, longitude)
+          if (geoAddress) {
+            finalAddress = geoAddress
           } else {
-            console.error(`❌ Invoice generation failed:`, result?.error)
+            finalAddress = `Location Pin: ${latitude}, ${longitude}`
           }
-        } catch (err) {
-          console.error('❌ Invoice generation error:', err)
         }
 
-        // ❌ Removed immediate delivery assignment (Deferred to payment)
-        
-        return new NextResponse('OK', { status: 200 })
+        if (finalAddress && finalAddress.length > 3) {
+          // Save the address
+          await supabase
+            .from('orders')
+            .update({ address: finalAddress, delivery_status: 'CONFIRMED' })
+            .eq('id', awaitingOrder.id)
+
+          console.log(`📍 Address saved for Order #${awaitingOrder.id}: ${finalAddress}`)
+
+          await sendWhatsApp(from, [
+            `📍 *Address saved!*`,
+            ``,
+            `🔖 Order #${String(awaitingOrder.id).padStart(4, '0')}`,
+            `📍 ${finalAddress}`,
+            ``,
+            `⏳ Generating your invoice and payment link...`,
+          ].join('\n'))
+
+          // TRIGGER INVOICE RELIABLY (Direct Logic Call)
+          try {
+            console.log(`📡 Triggering invoice for order #${awaitingOrder.id}...`)
+            const result = await generateAndSendInvoice(awaitingOrder.id, from)
+            
+            if (result && result.success) {
+              console.log(`✅ Invoice successfully generated and sent for order #${awaitingOrder.id}`)
+            } else {
+              console.error(`❌ Invoice generation failed:`, result?.error)
+            }
+          } catch (err) {
+            console.error('❌ Invoice generation error:', err)
+          }
+
+          return new NextResponse('OK', { status: 200 })
+        }
       }
     }
 
@@ -511,7 +527,8 @@ export async function POST(req) {
           `✅ *Order #${String(pendingOrder.id).padStart(4, '0')} Confirmed!*\n\n` +
           `📦 ${itemNames}\n` +
           `💰 Total: ₹${grand}\n\n` +
-          `⏳ Generating your PDF invoice and payment link...`
+          `⏳ Generating your PDF invoice...\n` +
+          `🚚 *Track your order:* Send "track ${pendingOrder.id}"`
         )
 
         // Notify owner
@@ -536,7 +553,7 @@ export async function POST(req) {
             await sendWhatsApp(from, [
               `📍 *Please share your delivery address:*`,
               ``,
-              `Just type your full address (e.g. "123, MG Road, Sector 5, Jaipur")`,
+              `📎 Click the *+* or *📎* icon and select *Location* to send a pin, or simply type your full address.`,
               ``,
               `_This helps our delivery partner find you quickly!_ 🚚`,
             ].join('\n'))
