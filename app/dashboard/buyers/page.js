@@ -84,9 +84,9 @@ function PodiumCard({ buyer, rank, podiumIdx }) {
 }
 
 export default function BuyersPage() {
-  const [buyers, setBuyers]   = useState([])
+  const [buyers, setBuyers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [sort, setSort]       = useState('orders')
+  const [sort, setSort] = useState('orders')
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => { load() }, [])
@@ -108,7 +108,7 @@ export default function BuyersPage() {
       if (o.status === 'paid') map[p].totalSpent += (o.total_amount || 0)
       if (o.language) map[p].languages.add(o.language)
       if (o.created_at < map[p].firstOrder) map[p].firstOrder = o.created_at
-      if (o.created_at > map[p].lastOrder)  map[p].lastOrder  = o.created_at
+      if (o.created_at > map[p].lastOrder) map[p].lastOrder = o.created_at
     })
     const arr = Object.values(map).map(b => ({
       ...b,
@@ -121,12 +121,12 @@ export default function BuyersPage() {
 
   const sorted = [...buyers].sort((a, b) =>
     sort === 'orders' ? b.totalOrders - a.totalOrders :
-    sort === 'spent'  ? b.totalSpent  - a.totalSpent  :
-                        b.avgOrder    - a.avgOrder
+      sort === 'spent' ? b.totalSpent - a.totalSpent :
+        b.avgOrder - a.avgOrder
   )
 
   const totalRevenue = buyers.reduce((s, b) => s + b.totalSpent, 0)
-  const totalOrders  = buyers.reduce((s, b) => s + b.totalOrders, 0)
+  const totalOrders = buyers.reduce((s, b) => s + b.totalOrders, 0)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 60 }}>
@@ -138,7 +138,7 @@ export default function BuyersPage() {
             {buyers.length} customers <span className="mobile-hide">· ₹{totalRevenue.toLocaleString('en-IN')} revenue · {totalOrders} orders total</span>
           </p>
         </div>
-        
+
         {/* Sort controls */}
         <div style={{ display: 'flex', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
           {[['orders', 'Orders'], ['spent', 'Spend'], ['avg', 'Avg']].map(([key, label]) => (
@@ -156,15 +156,18 @@ export default function BuyersPage() {
 
       {/* Podium */}
       {!loading && sorted.length >= 3 && (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr 1fr', 
-          gap: isMobile ? 6 : 14, 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr',
+          gap: isMobile ? 6 : 14,
           alignItems: 'flex-end',
           overflowX: 'visible',
+          paddingTop: 0,
+          paddingLeft: 0,
+          paddingRight: 0,
           paddingBottom: isMobile ? 8 : 0,
           margin: 0,
-          padding: 0,
+          // padding: 0,
           msOverflowStyle: 'none',
           scrollbarWidth: 'none'
         }}>
@@ -179,7 +182,7 @@ export default function BuyersPage() {
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[1,2,3,4,5].map(i => <div key={i} className="skeleton" style={{ height: 56 }} />)}
+            {[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton" style={{ height: 56 }} />)}
           </div>
         ) : sorted.length === 0 ? (
           <div style={{ padding: '64px 32px', textAlign: 'center', color: 'var(--muted)' }}>
@@ -192,7 +195,7 @@ export default function BuyersPage() {
             {sorted.map((b, i) => {
               const medals = ['🥇', '🥈', '🥉']
               return (
-                <div key={b.phone} className="mobile-card" style={{ 
+                <div key={b.phone} className="mobile-card" style={{
                   background: i < 3 ? 'rgba(255,255,255,0.02)' : 'var(--card)',
                   border: i < 3 ? `1px solid ${i === 0 ? 'var(--emerald)' : 'var(--border-strong)'}` : '1px solid var(--border)',
                   padding: 14

@@ -5,10 +5,8 @@ import Link from 'next/link'
 import { useTheme } from '@/lib/theme'
 import Chatbot from './chatbot'
 import Tour from './Tour'
-import InstallPrompt from './InstallPrompt'
 import OfflineStatus from './OfflineStatus'
 import InstallPrompt from './InstallPrompt'
-import OfflineStatus from './OfflineStatus'
 
 import { supabase } from '@/lib/supabase'
 

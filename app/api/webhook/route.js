@@ -127,11 +127,11 @@ async function buildCatalog(language) {
   }
 
   const header = {
-    hindi: '📦 *Hamare Products:*\n_Order ke liye number bhejein (jaise: 1, 3, 5)_\n',
-    tamil: '📦 *எங்கள் பொருட்கள்:*\n_ஆர்டர் செய்ய எண்களை அனுப்புங்கள் (எ.கா: 1, 3, 5)_\n',
-    telugu: '📦 *మా ఉత్పత్తులు:*\n_ఆర్డర్ చేయడానికి నంబర్లు పంపండి (ఉదా: 1, 3, 5)_\n',
-    english: '📦 *Our Products:*\n_Reply with item numbers to order (e.g: 1, 3, 5)_\n',
-    hinglish: '📦 *Hamare Products:*\n_Order ke liye number bhejein (jaise: 1, 3, 5)_\n',
+    hindi: '📦 *Hamare Products:*\n',
+    tamil: '📦 *எங்கள் பொருட்கள்:*\n',
+    telugu: '📦 *మా ఉత్పత్తులు:*\n',
+    english: '📦 *Our Products:*\n',
+    hinglish: '📦 *Hamare Products:*\n',
   }
 
   let msg = header[language] || header.hinglish
@@ -153,7 +153,7 @@ async function buildCatalog(language) {
       const stock = Number(item.quantity) || 0
       const threshold = Number(item.lowStockThreshold) || 10
       const stockLabel = stock <= threshold ? ' ⚠️' : ''
-      msg += `  ${idx}⃣  ${item.name} — *₹${price}*/${item.unit}${stockLabel}\n`
+      msg += `  • ${item.name} — *₹${price}*/${item.unit}${stockLabel}\n`
       catalogMap.push({ idx, item, category: cat })
       idx++
     })
@@ -161,9 +161,9 @@ async function buildCatalog(language) {
 
   msg += `\n──────────────\n`
   msg += `💬 *Order Kaise Karein?*\n`
-  msg += `🔢 Reply karein sirf numbers: *"1, 3, 5"*\n`
-  msg += `📝 Ya likh kar bhejein: *"2 Rice Bag aur 1 Wheat Flour"*\n`
-  msg += `🎙️ Ya ek *Voice Note* bhejein!\n\n`
+  msg += `📝 Likh kar bhejein: *"2 Rice Bag aur 1 Wheat Flour"*\n`
+  msg += `🎙️ Ya ek *Voice Note* bhejein!\n`
+  msg += `📸 Ya Grocery List ki photo bhejein!\n\n`
   msg += `❓ Sabhi commands ke liye *"help"* likhein`
 
   let pdfUrl = null
@@ -467,24 +467,24 @@ export async function POST(req) {
         `Here's what you can do:\n\n` +
         `📦 *"hi"* or *"catalog"* — View product list\n` +
         `🛒 *"5 Rice Bag"* — Place an order directly\n` +
-        `🔢 *"1, 3, 5"* — Select items from catalog\n` +
         `📋 *"track"* — Track your latest order\n` +
         `✅ *"confirm"* — Confirm pending order\n` +
         `❌ *"cancel"* — Cancel pending order\n` +
         `💰 *"hisab"* — Check payment status\n` +
         `🎙️ *Voice Note* — Send voice order!\n` +
+        `📸 *Photo* — Send photo of grocery list!\n` +
         `❓ *"help"* — Show this guide\n\n` +
         `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
         : `📖 *BusinessVaani Help Guide*\n\n` +
         `Aap ye sab kar sakte hain:\n\n` +
-        `📦 *"hi"* ya *"catalog"* — Product list dekhein\n` +
+        `📦 *"hi" ya "catalog"* — Product list dekhein\n` +
         `🛒 *"5 Rice Bag"* — Direct order karein\n` +
-        `🔢 *"1, 3, 5"* — Catalog se select karein\n` +
         `📋 *"track"* — Order ka status dekhein\n` +
         `✅ *"confirm"* — Pending order confirm karein\n` +
         `❌ *"cancel"* — Order cancel karein\n` +
         `💰 *"hisab"* — Payment status check karein\n` +
         `🎙️ *Voice Note* — Voice se order bhejein!\n` +
+        `📸 *Photo* — Grocery list ki photo bhejein!\n` +
         `❓ *"help"* — Ye guide dikhao\n\n` +
         `_Supported: Hindi, Tamil, Telugu, Marathi, English_ 🌐`
 
