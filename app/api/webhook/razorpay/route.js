@@ -4,6 +4,8 @@ import { sendWhatsApp } from '@/lib/twilio'
 import crypto from 'crypto'
 import Razorpay from 'razorpay'
 
+import { assignDeliveryAgent } from '@/lib/delivery'
+
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -12,13 +14,28 @@ const razorpay = new Razorpay({
 // ─── Helper: Mark orders as paid + send confirmation ───
 async function markOrdersPaid(orderIds, amount, paymentId, customerPhone) {
   const now = new Date().toISOString()
+  const assignments = []
 
   for (const oid of orderIds) {
-    await supabase.from('orders').update({
+    // 1. Update status to paid
+    const { data: order } = await supabase.from('orders').update({
       status: 'paid',
       paid_at: now,
       razorpay_payment_id: paymentId,
-    }).eq('id', oid).neq('status', 'paid')
+    }).eq('id', oid).neq('status', 'paid').select().single()
+
+    // 2. Trigger delivery assignment IF an address exists (ready for dispatch)
+    if (order && order.address) {
+      try {
+        console.log(`🚚 Payment confirmed for Order #${oid}. Assigning delivery partner...`)
+        const agent = await assignDeliveryAgent(oid)
+        if (agent) {
+          assignments.push({ orderId: oid, agentName: agent.name })
+        }
+      } catch (err) {
+        console.error(`❌ Delivery assignment failed for Order #${oid}:`, err)
+      }
+    }
   }
 
   console.log(`✅ Marked ${orderIds.length} orders as paid: [${orderIds.join(', ')}]`)
@@ -26,6 +43,15 @@ async function markOrdersPaid(orderIds, amount, paymentId, customerPhone) {
   // Send confirmation WhatsApp
   if (customerPhone) {
     const isConsolidated = orderIds.length > 1
+    
+    // Build assignment notice
+    let assignmentNotice = ''
+    if (assignments.length > 0) {
+      assignmentNotice = assignments.length === 1 
+        ? `\n\n✅ Delivery partner *${assignments[0].agentName}* has been assigned! You'll get updates when the order is picked up.`
+        : `\n\n✅ Delivery partners assigned for your orders: \n` + assignments.map(a => `• INV-${String(a.orderId).padStart(4, '0')}: ${a.agentName}`).join('\n')
+    }
+
     const msg = isConsolidated
       ? [
           `✅ *Payment Confirmed!*`,
@@ -36,8 +62,9 @@ async function markOrdersPaid(orderIds, amount, paymentId, customerPhone) {
           ...orderIds.map(id => `  ✓ INV-${String(id).padStart(4, '0')}`),
           ``,
           `🆔 Payment ID: ${paymentId || 'N/A'}`,
+          assignmentNotice,
           ``,
-          `All dues are now settled. Thank you! 🙏`,
+          `Thank you! 🙏`,
           `— BusinessVaani`,
         ].join('\n')
       : [
@@ -47,8 +74,9 @@ async function markOrdersPaid(orderIds, amount, paymentId, customerPhone) {
           ``,
           `📋 Order: INV-${String(orderIds[0]).padStart(4, '0')}`,
           `🆔 Payment ID: ${paymentId || 'N/A'}`,
+          assignmentNotice,
           ``,
-          `Your order will be processed soon. Thank you! 🙏`,
+          `Thank you! 🙏`,
           `— BusinessVaani`,
         ].join('\n')
 
