@@ -106,15 +106,41 @@ function CSVUploadModal({ onClose, onImport }) {
       const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
       const obj  = {}
       headers.forEach((h, idx) => { obj[h] = vals[idx] || '' })
-      return {
-        name:              obj.name || obj.item || obj.product || `Item ${i + 1}`,
-        sku:               obj.sku || obj.code || '',
-        category:          CATS.includes(obj.category) ? obj.category : 'General',
-        quantity:          Number(obj.quantity || obj.qty || obj.stock || 0),
-        unit:              UNITS.includes(obj.unit) ? obj.unit : 'pcs',
-        price:             Number(obj.price || obj.rate || obj.cost || 0),
-        lowStockThreshold: Number(obj.lowstockthreshold || obj.threshold || obj.reorder || 10),
+      
+      const nameAliases = ['name', 'itemname', 'item-name', 'item_name', 'product', 'productname', 'product-name', 'product_name', 'item']
+      const skuAliases  = ['sku', 'code', 'itemcode', 'item-code', 'item_code', 'id']
+      const qtyAliases  = ['quantity', 'qty', 'stock', 'count', 'inventory']
+      const priceAliases = ['price', 'rate', 'cost', 'unitprice', 'unit-price', 'unit_price']
+      const thresholdAliases = ['lowstockthreshold', 'threshold', 'reorder', 'minstock', 'alert']
+
+      const findVal = (aliases) => {
+        for (const a of aliases) {
+          if (obj[a] !== undefined && obj[a] !== '') return obj[a]
+        }
+        return null
       }
+
+      const mapped = {
+        name:              findVal(nameAliases) || `Item ${i + 1}`,
+        sku:               findVal(skuAliases) || '',
+        category:          CATS.includes(obj.category) ? obj.category : 'General',
+        quantity:          Number(findVal(qtyAliases) || 0),
+        unit:              UNITS.includes(obj.unit) ? obj.unit : 'pcs',
+        price:             Number(findVal(priceAliases) || 0),
+        lowStockThreshold: Number(findVal(thresholdAliases) || 10),
+      }
+      
+      // Keep any other columns as custom fields, but exclude anything we've already mapped
+      const allAliases = [...nameAliases, ...skuAliases, ...qtyAliases, ...priceAliases, ...thresholdAliases, 'unit', 'category']
+      Object.keys(obj).forEach(k => {
+        const lowerK = k.toLowerCase().replace(/[^a-z0-9]/g, '')
+        const isMapped = allAliases.some(a => a.toLowerCase().replace(/[^a-z0-9]/g, '') === lowerK)
+        if (!isMapped) {
+          mapped[k] = obj[k]
+        }
+      })
+      
+      return mapped
     }).filter(r => r.name)
     setRows(parsed)
     setPreview(true)
@@ -135,7 +161,7 @@ function CSVUploadModal({ onClose, onImport }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" style={{ maxWidth: preview ? 640 : 480 }} onClick={e => e.stopPropagation()}>
+      <div className="modal-box" style={{ maxWidth: preview ? 860 : 480 }} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -197,17 +223,17 @@ function CSVUploadModal({ onClose, onImport }) {
                 </span>
               </div>
 
-              <div className="bv-table-wrap" style={{ borderRadius: 10, border: '1px solid var(--border)', marginBottom: 16 }}>
+              <div className="bv-table-wrap" style={{ borderRadius: 10, border: '1px solid var(--border)', marginBottom: 16, maxHeight: '40vh', overflowY: 'auto' }}>
                 <table className="bv-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'left', padding: '12px 14px' }}>Name</th>
-                      <th style={{ textAlign: 'left', padding: '12px 14px' }}>SKU</th>
-                      <th style={{ textAlign: 'left', padding: '12px 14px' }}>Category</th>
-                      <th style={{ textAlign: 'right', padding: '12px 14px' }}>Qty</th>
-                      <th style={{ textAlign: 'right', padding: '12px 14px' }}>Price (₹)</th>
+                      <th style={{ textAlign: 'left', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>Name</th>
+                      <th style={{ textAlign: 'left', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>SKU</th>
+                      <th style={{ textAlign: 'left', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>Category</th>
+                      <th style={{ textAlign: 'right', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>Qty</th>
+                      <th style={{ textAlign: 'right', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>Price (₹)</th>
                       {rows.length > 0 && Object.keys(rows[0]).filter(k => !['name','sku','category','quantity','unit','price','lowStockThreshold'].includes(k)).map(key => (
-                        <th key={key} style={{ textAlign: 'left', padding: '12px 14px', textTransform: 'capitalize' }}>{key}</th>
+                        <th key={key} style={{ textAlign: 'left', padding: '12px 14px', textTransform: 'capitalize', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>{key}</th>
                       ))}
                     </tr>
                   </thead>
@@ -322,6 +348,24 @@ export default function InventoryPage() {
     showToast(`✓ Imported ${imported} items from CSV`)
   }
 
+  async function handleClearAll() {
+    if (items.length === 0) return
+    if (!confirm('!!! DANGER !!!\nThis will PERMANENTLY DELETE ALL ITEMS in your inventory.\n\nAre you absolutely sure?')) return
+    if (!confirm('FINAL CONFIRMATION: There is no undo. Delete everything?')) return
+    
+    setLoading(true)
+    try {
+      const res = await fetch('/api/inventory?clear=true', { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
+      await load()
+      showToast('🗑 Inventory cleared')
+    } catch (err) {
+      showToast('❌ Error clearing inventory')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const cats = ['all', ...new Set(items.map(i => i.category).filter(Boolean))]
 
   const filtered = items.filter(i => {
@@ -359,6 +403,15 @@ export default function InventoryPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
+          {items.length > 0 && (
+            <button 
+              className="btn-ghost mobile-hide" 
+              onClick={handleClearAll}
+              style={{ color: 'var(--rose)', borderColor: 'rgba(225, 29, 72, 0.2)' }}
+            >
+              Clear All
+            </button>
+          )}
           <button className="btn-ghost" onClick={() => setCsvModal(true)}>
             <span>📊</span> Import CSV
           </button>

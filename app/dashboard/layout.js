@@ -5,21 +5,21 @@ import Link from 'next/link'
 import { useTheme } from '@/lib/theme'
 import Chatbot from './chatbot'
 import Tour from './Tour'
-import InstallPrompt from './InstallPrompt'
 import OfflineStatus from './OfflineStatus'
+import InstallPrompt from './InstallPrompt'
 
 import { supabase } from '@/lib/supabase'
 
 const NAV = [
-  { href: '/dashboard',           icon: '▦',  label: 'Dashboard',  color: '#38bdf8' },
-  { href: '/dashboard/orders',    icon: '◦',  label: 'Orders',     color: '#818cf8' },
-  { href: '/dashboard/khata',     icon: '▤',  label: 'Khata',      color: '#ffb233' },
-  { href: '/dashboard/inventory', icon: '⬡',  label: 'Inventory',  color: '#a3e635' },
-  { href: '/dashboard/invoices',  icon: '⬕',  label: 'Invoices',   color: '#f59e0b' },
-  { href: '/dashboard/payments',  icon: '💳', label: 'Payments',   color: '#eab308' },
-  { href: '/dashboard/buyers',    icon: '◉',  label: 'Buyers',     color: '#a78bfa' },
-  { href: '/dashboard/delivery',  icon: '🚚', label: 'Delivery',   color: '#ff4757' },
-  { href: '/dashboard/settings',  icon: '⚙️',  label: 'Settings',   color: '#cbd5e1' },
+  { href: '/dashboard', icon: '▦', label: 'Dashboard', color: '#38bdf8' },
+  { href: '/dashboard/orders', icon: '◦', label: 'Orders', color: '#818cf8' },
+  { href: '/dashboard/khata', icon: '▤', label: 'Khata', color: '#ffb233' },
+  { href: '/dashboard/inventory', icon: '⬡', label: 'Inventory', color: '#a3e635' },
+  { href: '/dashboard/invoices', icon: '⬕', label: 'Invoices', color: '#f59e0b' },
+  { href: '/dashboard/payments', icon: '💳', label: 'Payments', color: '#eab308' },
+  { href: '/dashboard/buyers', icon: '◉', label: 'Buyers', color: '#a78bfa' },
+  { href: '/dashboard/delivery', icon: '🚚', label: 'Delivery', color: '#ff4757' },
+  { href: '/dashboard/settings', icon: '⚙️', label: 'Settings', color: '#cbd5e1' },
 ]
 
 
@@ -54,13 +54,24 @@ export default function DashboardLayout({ children }) {
       setAuthLoading(false)
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error && (error.message?.includes('Refresh Token Not Found') || error.status === 401)) {
+        console.warn('Session expired or corrupted, clearing state...')
+        supabase.auth.signOut().then(() => {
+          setAuthLoading(false)
+        })
+        return
+      }
       const u = session?.user ?? null
       setUser(u)
       if (u) fetchProfile(u.id)
       else setAuthLoading(false)
+    }).catch(err => {
+      console.error('Session recovery error:', err)
+      setAuthLoading(false)
     })
-    
+
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null
       setUser(u)
@@ -75,13 +86,19 @@ export default function DashboardLayout({ children }) {
     window.addEventListener('profileUpdated', handleProfileUpdate)
 
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      const registerSW = () => {
         navigator.serviceWorker.register('/sw.js').then((reg) => {
           console.log('SW registered:', reg);
         }).catch((err) => {
           console.log('SW registration failed:', err);
         });
-      });
+      };
+
+      if (document.readyState === 'complete') {
+        registerSW();
+      } else {
+        window.addEventListener('load', registerSW);
+      }
     }
 
     return () => {
@@ -93,7 +110,7 @@ export default function DashboardLayout({ children }) {
   const sidebarWidth = isMobile ? 260 : (collapsed ? 64 : 236)
 
   if (authLoading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--muted)' }}>Loading...</div>
-  
+
   if (!user) {
     if (typeof window !== 'undefined') {
       window.location.href = '/login'
@@ -186,8 +203,8 @@ export default function DashboardLayout({ children }) {
                 whiteSpace: 'nowrap', overflow: 'hidden',
                 position: 'relative',
               }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'var(--text)' } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted-light)' } }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'var(--text)' } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted-light)' } }}
               >
                 {active && (
                   <div style={{
@@ -351,11 +368,11 @@ export default function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <main className="dashboard-content" style={{ 
-          flex: 1, 
-          overflowY: 'auto', 
-          padding: isMobile ? '16px' : '28px 32px', 
-          paddingBottom: isMobile ? 160 : 32 
+        <main className="dashboard-content" style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: isMobile ? '16px' : '28px 32px',
+          paddingBottom: isMobile ? 160 : 32
         }}>
           {children}
         </main>
@@ -373,10 +390,10 @@ export default function DashboardLayout({ children }) {
           boxShadow: '0 -4px 12px rgba(0,0,0,0.05)'
         }}>
           {[
-            { href: '/dashboard',           icon: '▦',  label: 'Home',     color: '#38bdf8' },
-            { href: '/dashboard/orders',    icon: '◦',  label: 'Orders',   color: '#818cf8' },
-            { href: '/dashboard/khata',     icon: '▤',  label: 'Khata',    color: '#ffb233' },
-            { href: '/dashboard/inventory', icon: '⬡',  label: 'Stock',    color: '#a3e635' },
+            { href: '/dashboard', icon: '▦', label: 'Home', color: '#38bdf8' },
+            { href: '/dashboard/orders', icon: '◦', label: 'Orders', color: '#818cf8' },
+            { href: '/dashboard/khata', icon: '▤', label: 'Khata', color: '#ffb233' },
+            { href: '/dashboard/inventory', icon: '⬡', label: 'Stock', color: '#a3e635' },
           ].map(n => {
             const active = pathname === n.href
             return (
@@ -400,10 +417,14 @@ export default function DashboardLayout({ children }) {
       <InstallPrompt />
       {/* Chatbot Widget */}
       <Chatbot />
-      
+
       {/* Onboarding Tour */}
       <Tour />
-      {/* Offline Status Alert */}
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
+
+      {/* Offline Status indicator */}
       <OfflineStatus />
     </div>
   )

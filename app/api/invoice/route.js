@@ -17,6 +17,7 @@ export async function POST(req) {
     const { orderId, phone } = await req.json()
 
     // 1. Fetch order
+    console.log(`📑 Invoice API: Processing Order #${orderId} for ${phone}`)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*')
@@ -24,6 +25,7 @@ export async function POST(req) {
       .single()
 
     if (!order || orderError) {
+      console.error(`❌ Order #${orderId} not found in database.`, orderError)
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
@@ -68,19 +70,22 @@ export async function POST(req) {
     // 4. Razorpay link
     let paymentLink = null
     try {
+      console.log(`💳 Creating Razorpay payment link for ₹${grandTotal}...`)
       const razorpayOrder = await razorpay.paymentLink.create({
         amount: Math.round(grandTotal * 100),
         currency: 'INR',
         accept_partial: false,
         description: `Invoice INV-${String(orderId).padStart(4, '0')}`,
-        customer: { contact: contactPhone },
+        customer: { contact: contactPhone.replace('whatsapp:', '') },
         notify: { sms: false, email: false },
         reminder_enable: false,
         notes: { order_id: String(orderId) },
       })
       paymentLink = razorpayOrder.short_url
+      console.log(`✅ Razorpay link created: ${paymentLink}`)
     } catch (err) {
-      console.error('Razorpay error:', JSON.stringify(err, null, 2))
+      console.error('❌ Razorpay error:', JSON.stringify(err, null, 2))
+      // Continue even if payment link fails - we still want the invoice
     }
 
     // 5. Update order metadata
@@ -230,18 +235,19 @@ export async function POST(req) {
     const fileBuffer = fs.readFileSync(filePath)
     const storagePath = `invoice-${orderId}.pdf`
 
-    console.log('📤 Uploading to Supabase:', storagePath, 'Size:', fileBuffer.length, 'bytes')
+    console.log('📤 Uploading to Supabase storage bucket "invoices":', storagePath, 'Size:', fileBuffer.length, 'bytes')
     const { error: uploadError } = await supabase.storage
       .from('invoices')
       .upload(storagePath, fileBuffer, { upsert: true, contentType: 'application/pdf' })
 
     if (uploadError) {
-      console.error('❌ Supabase upload error:', uploadError)
+      console.error('❌ Supabase upload failed. Ensure "invoices" bucket exists and is public/accessible.', uploadError)
       return NextResponse.json({ 
         error: 'Failed to upload invoice: ' + uploadError.message,
         details: uploadError
       }, { status: 500 })
     }
+    console.log('✅ PDF uploaded successfully.')
 
     // Get signed URL valid for 7 days (more reliable than public URL)
     const { data: signedUrlData, error: signedError } = await supabase.storage
@@ -271,7 +277,7 @@ export async function POST(req) {
       const twilioRes = await Promise.race([
         sendWhatsApp(
           contactPhone,
-          `🧾 *Invoice Ready* 📄\n\nOrder: #${orderId}\nAmount: ₹${grandTotal}\n\n📄 Download Invoice: ${pdfUrl}\n\n${paymentLink ? `💳 Pay now: ${paymentLink}` : 'Contact us for payment details'}\n\nThank you! 🙏 — BusinessVaani`,
+          `🧾 *Invoice Ready* 📄\n\nOrder: #${orderId}\nAmount: ₹${grandTotal}\n\n${paymentLink ? `💳 Pay now: ${paymentLink}` : 'Contact us for payment details'}\n\nThank you! 🙏 — BusinessVaani`,
           pdfUrl  // Send PDF directly as attachment
         ),
         timeoutPromise
