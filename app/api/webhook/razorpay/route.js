@@ -30,7 +30,7 @@ async function markOrdersPaid(orderIds, amount, paymentId, customerPhone) {
         console.log(`🚚 Payment confirmed for Order #${oid}. Assigning delivery partner...`)
         const agent = await assignDeliveryAgent(oid)
         if (agent) {
-          assignments.push({ orderId: oid, agentName: agent.name })
+          assignments.push({ orderId: oid, agentName: agent.name, agentPhone: agent.phone })
         }
       } catch (err) {
         console.error(`❌ Delivery assignment failed for Order #${oid}:`, err)
@@ -48,8 +48,8 @@ async function markOrdersPaid(orderIds, amount, paymentId, customerPhone) {
     let assignmentNotice = ''
     if (assignments.length > 0) {
       assignmentNotice = assignments.length === 1 
-        ? `\n\n✅ Delivery partner *${assignments[0].agentName}* has been assigned! You'll get updates when the order is picked up.`
-        : `\n\n✅ Delivery partners assigned for your orders: \n` + assignments.map(a => `• INV-${String(a.orderId).padStart(4, '0')}: ${a.agentName}`).join('\n')
+        ? `\n\n✅ Delivery partner *${assignments[0].agentName}* has been assigned!\n📞 Contact: ${assignments[0].agentPhone}\n\n🛵 *Track order:* Reply "track ${assignments[0].orderId}" for updates.`
+        : `\n\n✅ Delivery partners assigned for your orders:\n` + assignments.map(a => `• INV-${String(a.orderId).padStart(4, '0')}: ${a.agentName} (${a.agentPhone})`).join('\n') + `\n\n_Reply "track <order_id>" for updates_`
     }
 
     const msg = isConsolidated

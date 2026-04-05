@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { assignDeliveryAgent } from '@/lib/delivery'
+import { sendWhatsApp } from '@/lib/twilio'
 
 export async function GET() {
   try {
@@ -45,6 +47,32 @@ export async function POST(req) {
           await supabase.from('inventory').update({ quantity: newQty }).eq('id', inv.id)
         }
         console.log(`📦 Inventory re-deducted for reactivated order #${orderId}`)
+      }
+    }
+
+    // NEW — Trigger delivery assignment if status changed to 'paid'
+    if (status === 'paid' && existingOrder && existingOrder.status !== 'paid') {
+      if (existingOrder.address) {
+        try {
+          console.log(`🚚 (Manual) Payment confirmed for Order #${orderId}. Assigning delivery partner...`)
+          const agent = await assignDeliveryAgent(orderId)
+          if (agent) {
+             await sendWhatsApp(existingOrder.customer_phone, [
+              `✅ *Payment Confirmed!* (Manual update)`,
+              ``,
+              `We've received your payment for order INV-${String(orderId).padStart(4, '0')}.`,
+              ``,
+              `✅ Delivery partner *${agent.name}* has been assigned!`,
+              `📞 Contact: ${agent.phone}`,
+              ``,
+              `🛵 *Track order:* Reply "track ${orderId}" for updates.`,
+              ``,
+              `Thank you! 🙏 — BusinessVaani`,
+            ].join('\n'))
+          }
+        } catch (err) {
+          console.error(`❌ (Manual) Delivery assignment failed for Order #${orderId}:`, err)
+        }
       }
     }
 
