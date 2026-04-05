@@ -267,16 +267,36 @@ export async function POST(req) {
 
           console.log(`📍 Address saved for Order #${awaitingOrder.id}: ${finalAddress}`)
 
+          // STEP 1: Auto-assign delivery partner
+          let assignedAgent = null
+          try {
+            console.log(`🚚 Auto-assigning delivery partner for Order #${awaitingOrder.id}...`)
+            assignedAgent = await assignDeliveryAgent(awaitingOrder.id)
+            if (assignedAgent) {
+              console.log(`✅ Delivery partner assigned: ${assignedAgent.name} (${assignedAgent.phone})`)
+            } else {
+              console.log(`⚠️ No delivery partner available for assignment`)
+            }
+          } catch (err) {
+            console.error('❌ Delivery assignment error:', err)
+          }
+
+          // STEP 2: Notify customer (address saved + partner assigned + invoice coming)
           await sendWhatsApp(from, [
             `📍 *Address saved!*`,
             ``,
             `🔖 Order #${String(awaitingOrder.id).padStart(4, '0')}`,
             `📍 ${finalAddress}`,
+            ...(assignedAgent ? [
+              ``,
+              `🚚 *Delivery Partner:* ${assignedAgent.name}`,
+              `📱 Contact: ${assignedAgent.phone}`,
+            ] : []),
             ``,
             `⏳ Generating your invoice and payment link...`,
           ].join('\n'))
 
-          // TRIGGER INVOICE RELIABLY (Direct Logic Call)
+          // STEP 3: Generate & send invoice + Razorpay link
           try {
             console.log(`📡 Triggering invoice for order #${awaitingOrder.id}...`)
             const result = await generateAndSendInvoice(awaitingOrder.id, from)

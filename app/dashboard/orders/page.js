@@ -767,22 +767,16 @@ export default function OrdersPage() {
           </div>
         ) : (
           <>
-            {/* Unified Table View (Scrollable on Mobile) */}
-            <div className="bv-table-wrap" style={{ 
-              background: 'var(--card)', 
-              border: '1px solid var(--border)', 
-              borderRadius: 16, 
-              overflowX: 'auto',
-              width: '100%',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'auto',
-              scrollbarColor: 'var(--teal) transparent'
-            }}>
-              <div className="mobile-only hint-text" style={{ padding: '8px 16px', background: 'var(--teal-dim)', borderBottom: '1px solid var(--border)', fontSize: 11, color: 'var(--teal)', fontWeight: 600 }}>
-                ↔ Scroll horizontally to see all columns
-              </div>
-              <div className="bv-table-scroll" style={{ minWidth: 1000 }}>
+            {/* Desktop Table */}
+            <div className="desktop-only">
+              <div className="bv-table-wrap" style={{ 
+                background: 'var(--card)', 
+                border: '1px solid var(--border)', 
+                borderRadius: 16, 
+                overflowX: 'auto',
+                width: '100%',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              }}>
                 <table className="bv-table">
                   <thead>
                     <tr>
@@ -817,7 +811,6 @@ export default function OrdersPage() {
                         </td>
                         <td style={{ width: 180 }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <p style={{ margin: 0, color: 'var(--text-dim)', fontSize: 13, fontWeight: 800 }}>{order.customer_name || 'Anonymous'}</p>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>{order.customer_phone}</p>
                               <span style={{ 
@@ -853,15 +846,68 @@ export default function OrdersPage() {
                 </table>
               </div>
             </div>
+
+            {/* Mobile Card List */}
+            <div className="mobile-only">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {paginated.map(order => {
+                  const { grand } = calcGST(order.total_amount)
+                  const date    = parseUtc(order.created_at)
+                  const isToday = new Date().toDateString() === date.toDateString()
+                  const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
+                    (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
+
+                  return (
+                    <div key={order.id} onClick={() => setSelected(order)} style={{
+                      background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14,
+                      padding: '14px 16px', cursor: 'pointer', transition: 'all 0.15s',
+                    }}>
+                      {/* Top row: Order ID + Status */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                            #{String(order.id).padStart(4, '0')}
+                          </span>
+                          {isOverdue && <span style={{ fontSize: 12 }}>⏰</span>}
+                        </div>
+                        <StatusBadge status={order.status} />
+                      </div>
+
+                      {/* Customer phone */}
+                      <p style={{ margin: '0 0 6px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {order.customer_phone}
+                      </p>
+
+                      {/* Items summary */}
+                      <p style={{ margin: '0 0 10px', fontSize: 11.5, color: 'var(--muted-light)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {(order.items || []).map(i => `${i.quantity || 1}× ${i.name}`).join(' · ')}
+                      </p>
+
+                      {/* Bottom row: Amount + Time */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 14, fontWeight: 700, color: 'var(--teal)' }}>
+                          ₹{grand.toFixed(2)}
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                          {isToday
+                            ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })
+                            : date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </>
         )}
       </div>
 
       {/* Pagination Controls */}
       {filtered.length > 0 && rowsPerPage !== -1 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 8px' }}>
-          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
-            Showing <strong>{((currentPage - 1) * rowsPerPage) + 1}</strong> to <strong>{Math.min(currentPage * rowsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong> orders
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 8px', flexWrap: 'wrap', gap: 10 }}>
+          <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
+            Showing <strong>{((currentPage - 1) * rowsPerPage) + 1}</strong> to <strong>{Math.min(currentPage * rowsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong>
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <button 
