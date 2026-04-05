@@ -277,7 +277,7 @@ export async function POST(req) {
       const twilioRes = await Promise.race([
         sendWhatsApp(
           contactPhone,
-          `🧾 *Invoice Ready* 📄\n\nOrder: #${orderId}\nAmount: ₹${grandTotal}\n\n📄 Download Invoice: ${pdfUrl}\n\n${paymentLink ? `💳 Pay now: ${paymentLink}` : 'Contact us for payment details'}\n\nThank you! 🙏 — BusinessVaani`,
+          `🧾 *Invoice Ready* 📄\n\nOrder: #${orderId}\nAmount: ₹${grandTotal}\n\n${paymentLink ? `💳 Pay now: ${paymentLink}` : 'Contact us for payment details'}\n\nThank you! 🙏 — BusinessVaani`,
           pdfUrl  // Send PDF directly as attachment
         ),
         timeoutPromise

@@ -213,7 +213,8 @@ export async function POST(req) {
     // Fetch business profile configuration
     const { data: profiles } = await supabase.from('business_profiles').select('*').limit(1)
     const profile = profiles?.[0]
-    const hasDelivery = profile?.has_delivery_partner ?? false
+    // Default to true for testing/missing profile so address is always asked
+    const hasDelivery = (profile && profile.has_delivery_partner === false) ? false : true
 
     // ═══════════════════════════════
     // EXTENSION — Delivery Agent Message Routing
