@@ -211,11 +211,8 @@ export async function POST(req) {
     console.log(`📩 Message from ${from}: ${body}, Media: ${mediaType}`)
 
     // Fetch business profile configuration
-    const { data: profiles } = await supabase
-      .from('business_profiles')
-      .select('*')
-      .order('updated_at', { ascending: false }) // Forces it to get the newest profile
-      .limit(1)
+    const { data: profiles } = await supabase.from('business_profiles').select('*').order('updated_at', { ascending: false }).limit(1);
+
     const profile = profiles?.[0]
     // Default to true for testing/missing profile so address is always asked
     const hasDelivery = (profile && profile.has_delivery_partner === false) ? false : true
