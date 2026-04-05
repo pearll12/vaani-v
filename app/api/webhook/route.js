@@ -8,6 +8,9 @@ import { isDeliveryAgent } from '@/lib/delivery-config'
 import { assignDeliveryAgent, handleDeliveryAgentMessage, getDeliveryStatus } from '@/lib/delivery'
 import { generateAndUploadCataloguePDF } from '@/lib/pdfCatalogue'
 
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+
 const OWNER_PHONE = process.env.BUSINESS_OWNER_PHONE || null
 
 // ───── Inventory Helpers ─────
@@ -208,8 +211,12 @@ export async function POST(req) {
 
     console.log(`📩 Message from ${from}: ${body}, Media: ${mediaType}`)
 
-    // Fetch business profile configuration
-    const { data: profiles } = await supabase.from('business_profiles').select('*').limit(1)
+    // Fetch business profile configuration (getting the latest active one)
+    const { data: profiles } = await supabase
+      .from('business_profiles')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
     const profile = profiles?.[0]
     const hasDelivery = profile?.has_delivery_partner ?? false
 
