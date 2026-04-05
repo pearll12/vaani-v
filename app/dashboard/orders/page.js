@@ -19,18 +19,24 @@ const STATUS_META = {
   pending:  { label: 'Pending',  color: '#f59e0b', bg: 'var(--amber-dim)',  border: 'var(--amber-border)' },
   invoiced: { label: 'Invoiced', color: '#818cf8', bg: 'var(--indigo-dim)', border: 'var(--indigo-border)' },
   paid:     { label: 'Paid',     color: '#00e5c3', bg: 'var(--teal-dim)',   border: 'var(--teal-border)' },
+  assigned: { label: 'Assigned', color: '#38bdf8', bg: 'var(--indigo-dim)', border: 'var(--indigo-border)' },
+  shipped:  { label: 'Shipped',  color: '#818cf8', bg: 'var(--indigo-dim)', border: 'var(--indigo-border)' },
+  delivered:{ label: 'Delivered',color: '#10b981', bg: 'var(--teal-dim)',   border: 'var(--teal-border)' },
 }
 
 // Enrich order items with inventory prices if missing
 function enrichOrdersWithPrices(orders, inventory) {
-  if (!inventory || inventory.length === 0) return orders
+  if (!Array.isArray(orders)) return []
+  const invArray = Array.isArray(inventory) ? inventory : []
+  if (invArray.length === 0) return orders
+  
   return orders.map(order => {
     const items = (order.items || []).map(item => {
       if (Number(item.price) > 0) return item // already has price
       const itemNameLower = (item.name || '').toLowerCase().trim()
-      const match = inventory.find(inv =>
+      const match = invArray.find(inv =>
         (inv.name || '').toLowerCase().trim() === itemNameLower
-      ) || inventory.find(inv =>
+      ) || invArray.find(inv =>
         (inv.name || '').toLowerCase().trim().includes(itemNameLower) ||
         itemNameLower.includes((inv.name || '').toLowerCase().trim())
       )
@@ -95,7 +101,7 @@ function EditOrderModal({ order, inventory, onClose, onSave, saving }) {
   // Auto-fill price from inventory when name changes
   const handleNameChange = (idx, val) => {
     updateItem(idx, 'name', val)
-    const match = inventory.find(inv =>
+    const match = (Array.isArray(inventory) ? inventory : []).find(inv =>
       (inv.name || '').toLowerCase().trim() === val.toLowerCase().trim()
     )
     if (match) {
@@ -155,7 +161,7 @@ function EditOrderModal({ order, inventory, onClose, onSave, saving }) {
                     style={{ fontSize: 13 }}
                   />
                   <datalist id={`inv-list-${idx}`}>
-                    {inventory.map(inv => (
+                    {Array.isArray(inventory) && inventory.map(inv => (
                       <option key={inv.id} value={inv.name}>{inv.name} — ₹{inv.price}/{inv.unit}</option>
                     ))}
                   </datalist>
@@ -413,6 +419,32 @@ function OrderDrawer({ order, onClose, onSendInvoice, onSendReminder, onEdit, se
             </div>
           )}
 
+          {/* Delivery Info */}
+          {(['assigned', 'shipped', 'delivered'].includes(order.status)) && (
+            <div style={{ background: 'var(--indigo-dim)', border: '1px solid var(--indigo-border)', borderRadius: 12, padding: '14px 16px' }}>
+              <p style={{ fontSize: 10, color: 'var(--indigo)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px' }}>
+                Delivery Tracking
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {order.delivery_agent_name && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14 }}>🛵</span>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{order.delivery_agent_name}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)' }}>Agent Assigned</p>
+                    </div>
+                  </div>
+                )}
+                {order.tracking_link && (
+                  <a href={order.tracking_link} target="_blank" rel="noreferrer" className="btn-indigo"
+                    style={{ width: '100%', justifyContent: 'center', padding: '10px', textDecoration: 'none', fontSize: 13 }}>
+                    📍 Track Delivery
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Original message */}
           {order.raw_message && (
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
@@ -492,7 +524,7 @@ export default function OrdersPage() {
       .order('created_at', { ascending: false })
     if (data) {
       // 🔥 FIX: Enrich old orders that have price=0 with actual inventory prices
-      const enriched = enrichOrdersWithPrices(data, inv)
+      const enriched = enrichOrdersWithPrices(data, Array.isArray(inv) ? inv : [])
       setOrders(enriched)
       // FIX: keep drawer in sync with live data
       setSelected(prev => prev ? (enriched.find(o => o.id === prev.id) ?? prev) : null)
@@ -615,10 +647,9 @@ export default function OrdersPage() {
   }).length
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-up">
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%', maxWidth: 'none' }} className="animate-fade-up">
       {/* Header */}
-      <div className="orders-header">
+      <div className="orders-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Orders</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
@@ -660,7 +691,7 @@ export default function OrdersPage() {
       )}
 
       {/* Stat pills */}
-      <div className="stat-pills-grid">
+      <div className="stat-pills-grid" style={{ width: '100%' }}>
         {[
           { key: 'pending',  label: 'Pending',  ...STATUS_META.pending },
           { key: 'invoiced', label: 'Invoiced', ...STATUS_META.invoiced },
@@ -683,7 +714,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Search + filters */}
-      <div className="search-filters-row">
+      <div className="search-filters-row" style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 320, minWidth: 200 }}>
           <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 14, pointerEvents: 'none' }}>⌕</span>
           <input className="bv-input" style={{ paddingLeft: 34 }}
@@ -723,7 +754,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Table & Mobile Card List Wrapper */}
-      <div className="bv-table-container">
+      <div className="bv-table-container" style={{ width: '100%' }}>
         {loading ? (
           <div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1,2,3,4,5].map(i => <div key={i} className="skeleton" style={{ height: 56 }} />)}
@@ -741,20 +772,27 @@ export default function OrdersPage() {
               background: 'var(--card)', 
               border: '1px solid var(--border)', 
               borderRadius: 16, 
-              overflow: 'hidden',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+              overflowX: 'auto',
+              width: '100%',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'auto',
+              scrollbarColor: 'var(--teal) transparent'
             }}>
+              <div className="mobile-only hint-text" style={{ padding: '8px 16px', background: 'var(--teal-dim)', borderBottom: '1px solid var(--border)', fontSize: 11, color: 'var(--teal)', fontWeight: 600 }}>
+                ↔ Scroll horizontally to see all columns
+              </div>
               <div className="bv-table-scroll" style={{ minWidth: 1000 }}>
                 <table className="bv-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 80 }}>Order</th>
-                      <th style={{ width: 140 }}>Customer</th>
-                      <th>Items</th>
-                      <th style={{ textAlign: 'right', width: 90 }}>Subtotal</th>
-                      <th style={{ textAlign: 'right', width: 90 }}>w/ GST</th>
-                      <th style={{ width: 110 }}>Status</th>
-                      <th style={{ width: 100 }}>Time</th>
+                      <th style={{ width: 80, minWidth: 80 }}>Order</th>
+                      <th style={{ width: 140, minWidth: 140 }}>Customer</th>
+                      <th style={{ minWidth: 150 }}>Items</th>
+                      <th style={{ textAlign: 'right', width: 90, minWidth: 90 }}>Subtotal</th>
+                      <th style={{ textAlign: 'right', width: 100, minWidth: 100 }}>w/ GST</th>
+                      <th style={{ width: 110, minWidth: 110 }}>Status</th>
+                      <th style={{ width: 100, minWidth: 100 }}>Time</th>
                     </tr>
                   </thead>
                   <tbody>

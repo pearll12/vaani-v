@@ -101,9 +101,30 @@ function CSVUploadModal({ onClose, onImport }) {
   function parseCSV(text) {
     const lines = text.trim().split('\n')
     if (lines.length < 2) { setError('CSV must have a header row + data rows'); return }
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''))
+
+    // Improved CSV parser to handle quoted fields with commas
+    const parseCSVLine = (line) => {
+      const result = [];
+      let cell = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(cell.trim());
+          cell = '';
+        } else {
+          cell += char;
+        }
+      }
+      result.push(cell.trim());
+      return result.map(v => v.replace(/^"|"$/g, '').trim());
+    }
+
+    const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''))
     const parsed = lines.slice(1).map((line, i) => {
-      const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      const vals = parseCSVLine(line);
       const obj  = {}
       headers.forEach((h, idx) => { obj[h] = vals[idx] || '' })
       
@@ -124,13 +145,12 @@ function CSVUploadModal({ onClose, onImport }) {
         name:              findVal(nameAliases) || `Item ${i + 1}`,
         sku:               findVal(skuAliases) || '',
         category:          CATS.includes(obj.category) ? obj.category : 'General',
-        quantity:          Number(findVal(qtyAliases) || 0),
+        stock:             Number(findVal(qtyAliases) || 0), // Use 'stock' for API compatibility
         unit:              UNITS.includes(obj.unit) ? obj.unit : 'pcs',
         price:             Number(findVal(priceAliases) || 0),
         lowStockThreshold: Number(findVal(thresholdAliases) || 10),
       }
       
-      // Keep any other columns as custom fields, but exclude anything we've already mapped
       const allAliases = [...nameAliases, ...skuAliases, ...qtyAliases, ...priceAliases, ...thresholdAliases, 'unit', 'category']
       Object.keys(obj).forEach(k => {
         const lowerK = k.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -295,19 +315,28 @@ export default function InventoryPage() {
 
   const customColumns = useMemo(() => {
     const cols = new Set()
-    items.forEach(i => {
-      if (i.custom_data) {
-        Object.keys(i.custom_data).forEach(k => cols.add(k))
-      }
-    })
+    if (Array.isArray(items)) {
+      items.forEach(i => {
+        if (i.custom_data) {
+          Object.keys(i.custom_data).forEach(k => cols.add(k))
+        }
+      })
+    }
     return Array.from(cols)
   }, [items])
   useEffect(() => { load() }, [])
 
   async function load() {
-    const res = await fetch('/api/inventory')
-    setItems(await res.json())
-    setLoading(false)
+    try {
+      const res = await fetch('/api/inventory')
+      const data = await res.json()
+      setItems(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Failed to load inventory:', err)
+      setItems([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(''), 2800) }
@@ -332,24 +361,26 @@ export default function InventoryPage() {
   }
 
   async function handleCSVImport(rows) {
-    let imported = 0
-    for (const row of rows) {
-      try {
-        await fetch('/api/inventory', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(row),
-        })
-        imported++
-      } catch {}
+    setLoading(true)
+    try {
+      const res = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rows),
+      })
+      if (!res.ok) throw new Error('Import failed')
+      setCsvModal(false)
+      await load()
+      showToast(`✓ Imported ${rows.length} items from CSV`)
+    } catch (err) {
+      showToast('❌ Error importing CSV')
+    } finally {
+      setLoading(false)
     }
-    setCsvModal(false)
-    await load()
-    showToast(`✓ Imported ${imported} items from CSV`)
   }
 
   async function handleClearAll() {
-    if (items.length === 0) return
+    if (!Array.isArray(items) || items.length === 0) return
     if (!confirm('!!! DANGER !!!\nThis will PERMANENTLY DELETE ALL ITEMS in your inventory.\n\nAre you absolutely sure?')) return
     if (!confirm('FINAL CONFIRMATION: There is no undo. Delete everything?')) return
     
@@ -366,9 +397,9 @@ export default function InventoryPage() {
     }
   }
 
-  const cats = ['all', ...new Set(items.map(i => i.category).filter(Boolean))]
+  const cats = ['all', ...new Set((Array.isArray(items) ? items : []).map(i => i.category).filter(Boolean))]
 
-  const filtered = items.filter(i => {
+  const filtered = (Array.isArray(items) ? items : []).filter(i => {
     const matchSearch = !search ||
       i.name?.toLowerCase().includes(search.toLowerCase()) ||
       i.sku?.toLowerCase().includes(search.toLowerCase()) ||
@@ -387,8 +418,8 @@ export default function InventoryPage() {
     setCurrentPage(1)
   }, [search, catFilter, rowsPerPage])
 
-  const totalValue = items.reduce((s, i) => s + (Number(i.price) * Number(i.quantity)), 0)
-  const lowStock   = items.filter(i => Number(i.quantity) <= Number(i.lowStockThreshold))
+  const totalValue = (Array.isArray(items) ? items : []).reduce((s, i) => s + (Number(i.price || 0) * Number(i.quantity || 0)), 0)
+  const lowStock   = (Array.isArray(items) ? items : []).filter(i => Number(i.quantity || 0) <= Number(i.lowStockThreshold || 0))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-up">
@@ -397,13 +428,13 @@ export default function InventoryPage() {
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Inventory</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0', fontWeight: 500 }}>
-            {items.length} items ·{' '}
+            {Array.isArray(items) ? items.length : 0} items ·{' '}
             <span style={{ color: 'var(--teal)' }}>₹{totalValue.toLocaleString('en-IN')}</span> stock value
             {lowStock.length > 0 && <span style={{ color: 'var(--rose)' }}> · {lowStock.length} low stock</span>}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          {items.length > 0 && (
+          {Array.isArray(items) && items.length > 0 && (
             <button 
               className="btn-ghost mobile-hide" 
               onClick={handleClearAll}
@@ -425,7 +456,7 @@ export default function InventoryPage() {
       <div className="stat-grid">
         {[
           {
-            label: 'Total Items', value: items.length, icon: '⬡',
+            label: 'Total Items', value: Array.isArray(items) ? items.length : 0, icon: '⬡',
             color: 'var(--sky)', bg: 'var(--sky-dim)', border: 'var(--sky-border)',
           },
           {
@@ -538,14 +569,35 @@ export default function InventoryPage() {
         ) : (
           <>
           {/* Unified Table View (Scrollable on Mobile) */}
-          <div className="bv-table-wrap" style={{ 
-            background: 'var(--card)', 
-            border: '1px solid var(--border)', 
-            borderRadius: 16, 
-            overflow: 'hidden',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
-          }}>
-            <div className="bv-table-scroll" style={{ minWidth: 1000 }}>
+            <div className="bv-table-wrap" style={{ 
+              background: 'var(--card)', 
+              border: '1px solid var(--border)', 
+              borderRadius: 16, 
+              overflowX: 'auto',
+              width: '100%',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'var(--teal) var(--border)',
+              display: 'block'
+            }}>
+              {/* Mobile-only scroll hint */}
+              <div className="mobile-only" style={{ 
+                padding: '10px 16px', 
+                background: 'var(--teal-dim)', 
+                borderBottom: '1px solid var(--teal-border)',
+                fontSize: 12,
+                color: 'var(--teal)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                letterSpacing: '0.02em',
+                textTransform: 'uppercase'
+              }}>
+                <span style={{ fontSize: 16 }}>↔</span> Swipe left/right to view more columns
+              </div>
+              <div className="bv-table-scroll" style={{ minWidth: 1000 }}>
               <table className="bv-table">
                 <thead>
                   <tr>

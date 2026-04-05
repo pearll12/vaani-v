@@ -251,9 +251,9 @@ export default function InvoicesPage() {
                       <th style={{ textAlign: 'right' }}>Subtotal</th>
                       <th style={{ textAlign: 'right' }}>CGST 9%</th>
                       <th style={{ textAlign: 'right' }}>SGST 9%</th>
-                      <th style={{ textAlign: 'right' }}>Total</th>
-                      <th>Status</th>
-                      <th>Action</th>
+                      <th style={{ textAlign: 'right', minWidth: 100 }}>Total</th>
+                      <th style={{ minWidth: 110 }}>Status</th>
+                      <th style={{ minWidth: 160 }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -305,24 +305,28 @@ export default function InvoicesPage() {
                           </td>
                           <td><span className={`badge badge-${order.status}`}>{order.status}</span></td>
                           <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                              <div style={{ width: 130 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                              <div style={{ width: 140, display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 {order.status === 'pending' ? (
                                   <button
                                     className="btn-primary"
-                                    style={{ fontSize: 12, padding: '7px 14px', whiteSpace: 'nowrap', width: '100%' }}
+                                    style={{ fontSize: 12, padding: '7px 14px', whiteSpace: 'nowrap', width: '100%', fontWeight: 700 }}
                                     onClick={() => sendInvoice(order)}
                                     disabled={sending === order.id}
                                   >
                                     {sending === order.id ? <>⏳ Sending…</> : <>📲 Send Invoice</>}
                                   </button>
                                 ) : order.status === 'invoiced' ? (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                    <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>📤 Sent</span>
-                                    <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>WhatsApp + Razorpay</span>
-                                  </div>
+                                  <>
+                                    <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} /> Sent
+                                    </span>
+                                    <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>WhatsApp + Razorpay</span>
+                                  </>
                                 ) : order.status === 'paid' ? (
-                                  <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600 }}>✓ Paid</span>
+                                  <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} /> Paid
+                                  </span>
                                 ) : null}
                               </div>
 
@@ -332,10 +336,10 @@ export default function InvoicesPage() {
                                   disabled={viewingInvoice === order.id}
                                   style={{
                                     background: 'rgba(129,140,248,0.08)', color: '#818cf8',
-                                    border: '1px solid rgba(129,140,248,0.2)', padding: '5px 12px',
-                                    borderRadius: 8, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+                                    border: '1px solid rgba(129,140,248,0.2)', padding: '6px 14px',
+                                    borderRadius: 9, fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
                                     fontFamily: 'Plus Jakarta Sans, sans-serif', transition: 'all 0.15s',
-                                    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+                                    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
                                   }}
                                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(129,140,248,0.16)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
                                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(129,140,248,0.08)'; e.currentTarget.style.transform = 'translateY(0)' }}

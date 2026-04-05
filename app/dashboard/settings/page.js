@@ -92,12 +92,7 @@ export default function SettingsPage() {
       setToast('✅ Settings saved successfully!')
       window.dispatchEvent(new Event('profileUpdated'))
       router.refresh()
-      
-      // Force hardware reload after a short delay to ensure global UI (sidebar/header) syncs
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
-      
+
       // Refresh local state
       const { data: updated } = await supabase
         .from('business_profiles')
@@ -122,7 +117,12 @@ export default function SettingsPage() {
         <p style={{ color: 'var(--muted)', fontSize: 14.5, margin: 0 }}>Update your storefront details below.</p>
       </div>
 
-      <form onSubmit={handleSave} style={{ background: 'var(--surface)', padding: 32, borderRadius: 16, border: '1px solid var(--border)' }}>
+      {/* FIX 1: onKeyDown blocks Enter from submitting the form */}
+      <form
+        onSubmit={handleSave}
+        onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault() }}
+        style={{ background: 'var(--surface)', padding: 32, borderRadius: 16, border: '1px solid var(--border)' }}
+      >
         <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 24px', color: 'var(--text)' }}>Invoice & Branding</h2>
 
         {errorMsg && (
@@ -141,11 +141,11 @@ export default function SettingsPage() {
           <label style={{ display: 'block', fontSize: 13, color: 'var(--muted-light)', marginBottom: 8 }}>Business Logo</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ position: 'relative' }}>
-              <img 
-                src={profile.logo_url || "/logo1.png"} 
-                alt="Logo Preview" 
+              <img
+                src={profile.logo_url || "/logo1.png"}
+                alt="Logo Preview"
                 onError={(e) => e.target.src = "/logo1.png"}
-                style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'contain', background: 'var(--bg)', border: '1px solid var(--border)' }} 
+                style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'contain', background: 'var(--bg)', border: '1px solid var(--border)' }}
               />
             </div>
             <div style={{ flex: 1 }}>
