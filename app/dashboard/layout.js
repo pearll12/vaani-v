@@ -53,12 +53,23 @@ export default function DashboardLayout({ children }) {
       setAuthLoading(false)
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error && (error.message?.includes('Refresh Token Not Found') || error.status === 401)) {
+        console.warn('Session expired or corrupted, clearing state...')
+        supabase.auth.signOut().then(() => {
+          setAuthLoading(false)
+        })
+        return
+      }
       const u = session?.user ?? null
       setUser(u)
       if (u) fetchProfile(u.id)
       else setAuthLoading(false)
+    }).catch(err => {
+      console.error('Session recovery error:', err)
+      setAuthLoading(false)
     })
+
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null
