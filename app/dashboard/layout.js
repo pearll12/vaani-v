@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }) {
   // Auth check
   useEffect(() => {
     async function fetchProfile(userId) {
-      const { data } = await supabase.from('business_profiles').select('*').eq('id', userId).single()
+      const { data } = await supabase.from('business_profiles').select('*').eq('id', userId).maybeSingle()
       if (data) setProfile(data)
       setAuthLoading(false)
     }
@@ -81,7 +81,7 @@ export default function DashboardLayout({ children }) {
     const handleProfileUpdate = () => {
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (user) {
-          supabase.from('business_profiles').select('*').eq('id', user.id).single().then(({ data }) => {
+          supabase.from('business_profiles').select('*').eq('id', user.id).maybeSingle().then(({ data }) => {
             if (data) setProfile(data)
           })
         }

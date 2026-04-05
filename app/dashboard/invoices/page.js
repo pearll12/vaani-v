@@ -59,8 +59,8 @@ function InvoiceResult({ result, onClose }) {
 
         {result.success && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-            {result.invoiceUrl && (
-              <a href={result.invoiceUrl} target="_blank" rel="noreferrer" style={{
+            {result.pdfUrl && (
+              <a href={result.pdfUrl} target="_blank" rel="noreferrer" style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
                 background: 'var(--blue-dim)', border: '1px solid rgba(59,158,255,0.2)',
                 borderRadius: 10, textDecoration: 'none', color: 'var(--blue)',
@@ -264,7 +264,7 @@ export default function InvoicesPage() {
                       const grand = +(sub + cgst + sgst).toFixed(2)
                       const lang  = order.language || 'english'
                       const date  = parseUtc(order.created_at)
-                      const canViewInvoice = ['confirmed', 'invoiced', 'paid'].includes(order.status)
+                      const canViewInvoice = !['pending', 'confirmed'].includes(order.status)
 
                       return (
                         <tr key={order.id}>
@@ -307,7 +307,7 @@ export default function InvoicesPage() {
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                               <div style={{ width: 140, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {order.status === 'pending' ? (
+                                {(order.status === 'pending' || order.status === 'confirmed') ? (
                                   <button
                                     className="btn-primary"
                                     style={{ fontSize: 12, padding: '7px 14px', whiteSpace: 'nowrap', width: '100%', fontWeight: 700 }}
@@ -323,11 +323,11 @@ export default function InvoicesPage() {
                                     </span>
                                     <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>WhatsApp + Razorpay</span>
                                   </>
-                                ) : order.status === 'paid' ? (
+                                ) : (
                                   <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} /> Paid
                                   </span>
-                                ) : null}
+                                )}
                               </div>
 
                               {canViewInvoice && (
@@ -364,7 +364,7 @@ export default function InvoicesPage() {
                   const sub   = Number(order.total_amount) || 0
                   const grand = +(sub * 1.18).toFixed(2)
                   const date  = parseUtc(order.created_at)
-                  const canViewInvoice = ['confirmed', 'invoiced', 'paid'].includes(order.status)
+                  const canViewInvoice = !['pending', 'confirmed'].includes(order.status)
 
                   return (
                     <div key={order.id} className="mobile-card">
@@ -404,7 +404,7 @@ export default function InvoicesPage() {
                       </div>
 
                       <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                        {order.status === 'pending' ? (
+                        {(order.status === 'pending' || order.status === 'confirmed') ? (
                           <button
                             className="btn-primary"
                             style={{ flex: 1, padding: '8px', fontSize: 12 }}
@@ -413,11 +413,11 @@ export default function InvoicesPage() {
                           >
                             {sending === order.id ? 'Sending…' : 'Send Invoice'}
                           </button>
-                        ) : order.status === 'paid' ? (
-                          <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center' }}>✓ Paid</span>
                         ) : order.status === 'invoiced' ? (
                           <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center' }}>📤 Sent</span>
-                        ) : null}
+                        ) : (
+                          <span style={{ fontSize: 12, color: 'var(--emerald)', fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center' }}>✓ Paid</span>
+                        )}
 
                         {canViewInvoice && (
                           <button

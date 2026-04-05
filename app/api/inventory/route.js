@@ -26,6 +26,8 @@ export async function GET() {
 
 /**
  * POST — Upsert inventory item(s) (supports single object or array of objects)
+ * DB columns: id (text), name, sku, category, quantity (int), unit, price (numeric),
+ *             "lowStockThreshold" (int), "createdAt", custom_data (jsonb)
  */
 export async function POST(req) {
   try {
@@ -33,24 +35,44 @@ export async function POST(req) {
     const isBatch = Array.isArray(body)
     const items = isBatch ? body : [body]
 
+    // Known DB columns (besides id and createdAt which are auto-managed)
+    const KNOWN_KEYS = ['name', 'sku', 'category', 'quantity', 'stock', 'unit', 'price', 'lowStockThreshold']
+
     const processedItems = items.map(item => {
-      const { id, name, price, stock, quantity, description, image_url, category } = item
-      
-      if (!name && !isBatch) {
+      if (!item.name && !isBatch) {
         throw new Error('Item name is required')
       }
 
-      return {
-        ...(id ? { id } : {}),
-        name: name || 'Unnamed Item',
-        price: Number(price) || 0,
-        // Support both 'stock' and 'quantity' from frontend
-        stock: Number(stock ?? quantity ?? 0),
-        description: description || '',
-        image_url: image_url || '',
-        category: category || 'General',
-        updated_at: new Date().toISOString()
+      // Collect any extra keys into custom_data
+      const customData = {}
+      Object.keys(item).forEach(key => {
+        if (!KNOWN_KEYS.includes(key) && key !== 'id' && key !== 'createdAt' && key !== 'custom_data') {
+          if (item[key] !== undefined && item[key] !== '') {
+            customData[key] = item[key]
+          }
+        }
+      })
+      // Merge with any existing custom_data passed in
+      if (item.custom_data && typeof item.custom_data === 'object') {
+        Object.assign(customData, item.custom_data)
       }
+
+      const row = {
+        ...(item.id ? { id: item.id } : { id: `inv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` }),
+        name: item.name || 'Unnamed Item',
+        sku: item.sku || '',
+        category: item.category || 'General',
+        quantity: Number(item.quantity ?? item.stock ?? 0),
+        unit: item.unit || 'pcs',
+        price: Number(item.price) || 0,
+        lowStockThreshold: Number(item.lowStockThreshold) || 10,
+      }
+
+      if (Object.keys(customData).length > 0) {
+        row.custom_data = customData
+      }
+
+      return row
     }).filter(item => item.name !== 'Unnamed Item' || !isBatch)
 
     if (processedItems.length === 0) {
@@ -94,8 +116,15 @@ export async function DELETE(req) {
       return NextResponse.json({ success: true, message: 'Inventory cleared' })
     }
 
-    const body = await req.json()
-    const { id } = body
+    // Support id from query params (frontend sends ?id=xxx) or body
+    const idFromParams = searchParams.get('id')
+    let id = idFromParams
+    if (!id) {
+      try {
+        const body = await req.json()
+        id = body.id
+      } catch {}
+    }
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required for deletion' }, { status: 400 })

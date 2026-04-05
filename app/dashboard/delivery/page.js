@@ -126,7 +126,7 @@ export default function DeliveryPage() {
   if (loading) return <div style={{ padding: 40, color: 'var(--muted)' }}>Loading delivery management...</div>
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }} className="animate-fade-up">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, overflow: 'hidden' }} className="animate-fade-up delivery-page">
       
       {/* Header */}
       <div>
@@ -139,27 +139,28 @@ export default function DeliveryPage() {
       </div>
 
       {/* Feature Toggle Card */}
-      <div style={{
+      <div className="toggle-card" style={{
         background: profile?.has_delivery_partner ? 'var(--teal-dim)' : 'var(--surface)',
         border: `1px solid ${profile?.has_delivery_partner ? 'var(--teal-border)' : 'var(--border)'}`,
         borderRadius: 16, padding: '24px 28px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 16, flexWrap: 'wrap',
         transition: 'all 0.3s'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
           <div style={{
-            width: 52, height: 52, borderRadius: 14,
+            width: 48, height: 48, borderRadius: 14, flexShrink: 0,
             background: profile?.has_delivery_partner ? 'var(--teal)' : 'var(--bg)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
             boxShadow: profile?.has_delivery_partner ? '0 8px 16px rgba(0, 229, 195, 0.2)' : 'none',
           }}>
             🚚
           </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+          <div style={{ minWidth: 0 }}>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
               Own Delivery Partners
             </h3>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--muted-light)' }}>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted-light)' }}>
               Enable this to manage your own partners and track their status via WhatsApp.
             </p>
           </div>
@@ -170,7 +171,7 @@ export default function DeliveryPage() {
           disabled={saving}
           style={{
             background: profile?.has_delivery_partner ? 'var(--teal)' : 'var(--muted)',
-            border: 'none', width: 64, height: 32, borderRadius: 20,
+            border: 'none', width: 64, height: 32, borderRadius: 20, flexShrink: 0,
             cursor: saving ? 'wait' : 'pointer', position: 'relative',
           }}
         >
@@ -202,14 +203,16 @@ export default function DeliveryPage() {
               </div>
             </div>
 
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            {/* Desktop Table */}
+            <div className="desktop-only" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 500, tableLayout: 'fixed' }}>
                 <thead>
                   <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)' }}>Order</th>
-                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)' }}>Status</th>
-                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)' }}>Partner</th>
-                    <th style={{ textAlign: 'right', padding: '14px 20px', color: 'var(--muted)' }}>Time</th>
+                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '30%' }}>Order</th>
+                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '20%' }}>Status</th>
+                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Partner</th>
+                    <th style={{ textAlign: 'right', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Time (IST)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -231,13 +234,51 @@ export default function DeliveryPage() {
                         </td>
                         <td style={{ padding: '16px 20px', color: 'var(--text-soft)', fontWeight: 600 }}>{o.delivery_agent || '---'}</td>
                         <td style={{ padding: '16px 20px', textAlign: 'right', color: 'var(--muted)', fontSize: 11 }}>
-                          {new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                          <div>{new Date(o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}</div>
+                          <div>{new Date(o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}</div>
                         </td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
+              </div>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="mobile-only">
+              {filteredOrders.length === 0 ? (
+                <div style={{ padding: 48, textAlign: 'center', color: 'var(--muted)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16 }}>
+                  No orders in delivery lifecycle.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {filteredOrders.map(o => (
+                    <div key={o.id} style={{
+                      background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '14px 16px',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div>
+                          <span style={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'JetBrains Mono', fontSize: 13 }}>#{String(o.id).padStart(4, '0')}</span>
+                          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--muted)' }}>{o.customer_phone}</p>
+                        </div>
+                        <span style={{
+                          padding: '4px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
+                          background: o.delivery_status === 'DELIVERED' ? 'var(--teal-dim)' : 'var(--amber-dim)',
+                          color: o.delivery_status === 'DELIVERED' ? 'var(--teal)' : 'var(--amber)',
+                        }}>{o.delivery_status}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                        <div style={{ fontSize: 12, color: 'var(--text-soft)', fontWeight: 600 }}>🛵 {o.delivery_agent || '---'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'right' }}>
+                          {new Date(o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}{', '}
+                          {new Date(o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -308,19 +349,28 @@ export default function DeliveryPage() {
         .delivery-grid {
           display: flex;
           flex-direction: row;
-          gap: 32px;
+          gap: 24px;
           align-items: start;
         }
         
-        .tracking-section { flex: 1; min-width: 0; }
+        .tracking-section { flex: 1; min-width: 0; overflow: hidden; }
         .management-section { width: 340px; flex-shrink: 0; transition: all 0.3s; }
 
         @media (max-width: 1100px) {
-          .delivery-grid { flex-direction: column; }
+          .delivery-grid { flex-direction: column; gap: 16px; }
           .management-section { width: 100%; order: -1; }
         }
 
-        .bv-input { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none; transition: border-color 0.2s; }
+        @media (max-width: 768px) {
+          .delivery-page { gap: 16px !important; max-width: 100%; }
+          .toggle-card { padding: 16px !important; gap: 12px !important; }
+          .delivery-grid { width: 100% !important; max-width: 100% !important; }
+          .tracking-section { width: 100% !important; max-width: 100% !important; }
+          .management-section { width: 100% !important; }
+          .management-section > div { padding: 14px !important; }
+        }
+
+        .bv-input { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none; transition: border-color 0.2s; box-sizing: border-box; }
         .bv-input:focus { border-color: var(--indigo); }
         .btn-primary { background: var(--indigo); color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
         .btn-primary:hover { opacity: 0.9; }

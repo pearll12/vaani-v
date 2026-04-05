@@ -1,9 +1,8 @@
-const CACHE_NAME = 'vaani-cache-v2';
+const CACHE_NAME = 'vaani-cache-v3';
 const ASSETS_TO_CACHE = [
   '/dashboard',
   '/logo.png',
-  '/manifest.json',
-  '/globals.css'
+  '/manifest.json'
 ];
 
 // Install event - cache core assets

@@ -23,7 +23,8 @@ export async function POST(req) {
       return NextResponse.json({ 
         success: true, 
         message: 'Invoice generated and sent successfully',
-        pdfUrl: result.pdfUrl 
+        pdfUrl: result.pdfUrl,
+        paymentUrl: result.paymentUrl,
       })
     } else {
       return NextResponse.json({ 

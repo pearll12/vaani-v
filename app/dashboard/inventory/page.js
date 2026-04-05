@@ -145,13 +145,13 @@ function CSVUploadModal({ onClose, onImport }) {
         name:              findVal(nameAliases) || `Item ${i + 1}`,
         sku:               findVal(skuAliases) || '',
         category:          CATS.includes(obj.category) ? obj.category : 'General',
-        stock:             Number(findVal(qtyAliases) || 0), // Use 'stock' for API compatibility
+        quantity:          Number(findVal(qtyAliases) || 0),
         unit:              UNITS.includes(obj.unit) ? obj.unit : 'pcs',
         price:             Number(findVal(priceAliases) || 0),
         lowStockThreshold: Number(findVal(thresholdAliases) || 10),
       }
       
-      const allAliases = [...nameAliases, ...skuAliases, ...qtyAliases, ...priceAliases, ...thresholdAliases, 'unit', 'category']
+      const allAliases = [...nameAliases, ...skuAliases, ...qtyAliases, ...priceAliases, ...thresholdAliases, 'unit', 'category', 'stock']
       Object.keys(obj).forEach(k => {
         const lowerK = k.toLowerCase().replace(/[^a-z0-9]/g, '')
         const isMapped = allAliases.some(a => a.toLowerCase().replace(/[^a-z0-9]/g, '') === lowerK)
@@ -252,7 +252,7 @@ function CSVUploadModal({ onClose, onImport }) {
                       <th style={{ textAlign: 'left', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>Category</th>
                       <th style={{ textAlign: 'right', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>Qty</th>
                       <th style={{ textAlign: 'right', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>Price (₹)</th>
-                      {rows.length > 0 && Object.keys(rows[0]).filter(k => !['name','sku','category','quantity','unit','price','lowStockThreshold'].includes(k)).map(key => (
+                      {rows.length > 0 && Object.keys(rows[0]).filter(k => !['name','sku','category','quantity','stock','unit','price','lowStockThreshold'].includes(k)).map(key => (
                         <th key={key} style={{ textAlign: 'left', padding: '12px 14px', textTransform: 'capitalize', position: 'sticky', top: 0, zIndex: 1, background: '#111114' }}>{key}</th>
                       ))}
                     </tr>
@@ -260,7 +260,7 @@ function CSVUploadModal({ onClose, onImport }) {
                   <tbody>
                     {rows.map((r, i) => {
                       const cm = CAT_META[r.category] || CAT_META.General
-                      const extras = Object.keys(r).filter(k => !['name','sku','category','quantity','unit','price','lowStockThreshold'].includes(k))
+                      const extras = Object.keys(r).filter(k => !['name','sku','category','quantity','stock','unit','price','lowStockThreshold'].includes(k))
                       return (
                         <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
                           <td style={{ fontWeight: 600, color: 'var(--text)', padding: '12px 14px' }}>{r.name}</td>
@@ -344,7 +344,7 @@ export default function InventoryPage() {
   async function handleSave(form) {
     const isEdit = !!form.id
     await fetch('/api/inventory', {
-      method: isEdit ? 'PUT' : 'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
