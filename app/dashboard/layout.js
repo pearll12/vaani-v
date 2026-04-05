@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useTheme } from '@/lib/theme'
 import Chatbot from './chatbot'
 import Tour from './Tour'
+import InstallPrompt from './InstallPrompt'
+import OfflineStatus from './OfflineStatus'
 
 import { supabase } from '@/lib/supabase'
 
@@ -72,13 +74,19 @@ export default function DashboardLayout({ children }) {
     window.addEventListener('profileUpdated', handleProfileUpdate)
 
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      const registerSW = () => {
         navigator.serviceWorker.register('/sw.js').then((reg) => {
           console.log('SW registered:', reg);
         }).catch((err) => {
           console.log('SW registration failed:', err);
         });
-      });
+      };
+
+      if (document.readyState === 'complete') {
+        registerSW();
+      } else {
+        window.addEventListener('load', registerSW);
+      }
     }
 
     return () => {
@@ -398,6 +406,12 @@ export default function DashboardLayout({ children }) {
       
       {/* Onboarding Tour */}
       <Tour />
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
+
+      {/* Offline Status indicator */}
+      <OfflineStatus />
     </div>
   )
 }
