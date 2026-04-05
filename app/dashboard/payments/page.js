@@ -12,24 +12,24 @@ const parseUtc = (ds) => !ds ? null : new Date(typeof ds === 'string' && !ds.end
 
 
 const STATUS = {
-  pending:  { label: 'Pending',  color: '#f59e0b', bg: 'var(--amber-dim)',  border: 'var(--amber-border)' },
+  pending: { label: 'Pending', color: '#f59e0b', bg: 'var(--amber-dim)', border: 'var(--amber-border)' },
   invoiced: { label: 'Invoiced', color: '#818cf8', bg: 'var(--indigo-dim)', border: 'var(--indigo-border)' },
-  paid:     { label: 'Paid',     color: '#00e5c3', bg: 'var(--teal-dim)',   border: 'var(--teal-border)' },
+  paid: { label: 'Paid', color: '#00e5c3', bg: 'var(--teal-dim)', border: 'var(--teal-border)' },
 }
 
 function PaymentTimeline({ status }) {
   const steps = [
-    { key: 'pending',  icon: '◦', label: 'Order' },
+    { key: 'pending', icon: '◦', label: 'Order' },
     { key: 'invoiced', icon: '→', label: 'Invoiced' },
-    { key: 'paid',     icon: '✓', label: 'Paid' },
+    { key: 'paid', icon: '✓', label: 'Paid' },
   ]
-  const idx = ['pending','invoiced','paid'].indexOf(status)
+  const idx = ['pending', 'invoiced', 'paid'].indexOf(status)
   return (
     <div style={{ display: 'flex', alignItems: 'center' }}>
       {steps.map((s, i) => {
         const done = i <= idx
         const curr = i === idx
-        const sc   = STATUS[s.key]
+        const sc = STATUS[s.key]
         return (
           <div key={s.key} style={{ display: 'flex', alignItems: 'center' }}>
             <div title={s.label} style={{
@@ -58,15 +58,15 @@ function PaymentTimeline({ status }) {
 }
 
 export default function PaymentsPage() {
-  const [orders, setOrders]     = useState([])
-  const [loading, setLoading]   = useState(true)
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
-  const [filter, setFilter]     = useState('all')
-  const [toast, setToast]       = useState(null)
+  const [filter, setFilter] = useState('all')
+  const [toast, setToast] = useState(null)
   const [justPaid, setJustPaid] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const interval                = useRef(null)
+  const interval = useRef(null)
 
   useEffect(() => {
     // Check for Razorpay callback
@@ -104,7 +104,7 @@ export default function PaymentsPage() {
   async function sendReminder(order) {
     setUpdating(`remind-${order.id}`)
     try {
-      const res  = await fetch('/api/reminders', {
+      const res = await fetch('/api/reminders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: order.id }),
@@ -119,15 +119,15 @@ export default function PaymentsPage() {
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 2800) }
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
-  const totalPages  = rowsPerPage === -1 ? 1 : Math.ceil(filtered.length / rowsPerPage)
-  const paginated   = rowsPerPage === -1 ? filtered : filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+  const totalPages = rowsPerPage === -1 ? 1 : Math.ceil(filtered.length / rowsPerPage)
+  const paginated = rowsPerPage === -1 ? filtered : filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
 
 
   const stats = {
-    pending:  orders.filter(o => o.status === 'pending').length,
+    pending: orders.filter(o => o.status === 'pending').length,
     invoiced: orders.filter(o => o.status === 'invoiced').length,
-    paid:     orders.filter(o => o.status === 'paid').length,
-    revenue:  orders.filter(o => o.status === 'paid').reduce((s, o) => s + (o.total_amount || 0) * 1.18, 0),
+    paid: orders.filter(o => o.status === 'paid').length,
+    revenue: orders.filter(o => o.status === 'paid').reduce((s, o) => s + (o.total_amount || 0) * 1.18, 0),
     pending_value: orders.filter(o => o.status !== 'paid').reduce((s, o) => s + (o.total_amount || 0) * 1.18, 0),
   }
 
@@ -172,14 +172,14 @@ export default function PaymentsPage() {
 
       {/* Stat cards */}
       <div style={{
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-  gap: 14,
-}}>
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: 14,
+      }}>
         {[
-          { label: 'Pending',  count: stats.pending,  ...STATUS.pending },
+          { label: 'Pending', count: stats.pending, ...STATUS.pending },
           { label: 'Invoiced', count: stats.invoiced, ...STATUS.invoiced },
-          { label: 'Paid',     count: stats.paid,     ...STATUS.paid },
+          { label: 'Paid', count: stats.paid, ...STATUS.paid },
           {
             label: 'Pending Value', count: `₹${Math.round(stats.pending_value).toLocaleString('en-IN')}`,
             color: '#f59e0b', bg: 'var(--amber-dim)', border: 'var(--amber-border)',
@@ -212,10 +212,10 @@ export default function PaymentsPage() {
       <div className="filter-row-container" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 6 }}>
           {[
-            { key: 'all',      label: 'All',      count: orders.length },
-            { key: 'pending',  label: 'Pending',  count: stats.pending },
+            { key: 'all', label: 'All', count: orders.length },
+            { key: 'pending', label: 'Pending', count: stats.pending },
             { key: 'invoiced', label: 'Invoiced', count: stats.invoiced },
-            { key: 'paid',     label: 'Paid',     count: stats.paid },
+            { key: 'paid', label: 'Paid', count: stats.paid },
           ].map(t => (
             <button key={t.key} onClick={() => { setFilter(t.key); setCurrentPage(1); }} className={`filter-tab ${filter === t.key ? 'active' : 'inactive'}`}>
               {t.label}
@@ -225,11 +225,11 @@ export default function PaymentsPage() {
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>Rows:</span>
-          <select 
-            value={rowsPerPage} 
+          <select
+            value={rowsPerPage}
             onChange={e => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-            style={{ 
-              background: 'var(--card)', border: '1px solid var(--border)', 
+            style={{
+              background: 'var(--card)', border: '1px solid var(--border)',
               color: 'var(--text)', fontSize: 12, padding: '4px 8px', borderRadius: 8,
               outline: 'none', cursor: 'pointer'
             }}
@@ -245,7 +245,7 @@ export default function PaymentsPage() {
       {/* Orders list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {loading ? (
-          [1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 88, borderRadius: 16 }} />)
+          [1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 88, borderRadius: 16 }} />)
         ) : filtered.length === 0 ? (
           <div style={{
             padding: '56px 32px', textAlign: 'center',
@@ -257,8 +257,8 @@ export default function PaymentsPage() {
             </p>
           </div>
         ) : paginated.map(order => {
-          const grand  = +(Number(order.total_amount) * 1.18).toFixed(2)
-          const time   = parseUtc(order.created_at)
+          const grand = +(Number(order.total_amount) * 1.18).toFixed(2)
+          const time = parseUtc(order.created_at)
           const isToday = new Date().toDateString() === time.toDateString()
           const isOverdue = order.status === 'invoiced' && order.invoice_sent_at &&
             (Date.now() - new Date(order.invoice_sent_at)) > 24 * 60 * 60 * 1000
@@ -385,6 +385,7 @@ export default function PaymentsPage() {
         })}
       </div>
 
+
       {/* Pagination Controls */}
       {filtered.length > 0 && rowsPerPage !== -1 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 8px' }}>
@@ -392,16 +393,16 @@ export default function PaymentsPage() {
             Showing <strong>{((currentPage - 1) * rowsPerPage) + 1}</strong> to <strong>{Math.min(currentPage * rowsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong>
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button 
-              className="btn-ghost" 
+            <button
+              className="btn-ghost"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
               style={{ padding: '6px 14px', opacity: currentPage === 1 ? 0.5 : 1 }}
             >
               Previous
             </button>
-            <button 
-              className="btn-ghost" 
+            <button
+              className="btn-ghost"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
               style={{ padding: '6px 14px', opacity: currentPage === totalPages ? 0.5 : 1 }}
