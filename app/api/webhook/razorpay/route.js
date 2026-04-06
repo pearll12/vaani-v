@@ -24,8 +24,8 @@ async function markOrdersPaid(orderIds, amount, paymentId, customerPhone) {
       razorpay_payment_id: paymentId,
     }).eq('id', oid).neq('status', 'paid').select().single()
 
-    // 2. Trigger delivery assignment IF an address exists (ready for dispatch)
-    if (order && order.address) {
+    // 2. Trigger delivery assignment IF an address exists (ready for dispatch) AND not already assigned
+    if (order && order.address && !order.delivery_agent) {
       try {
         console.log(`🚚 Payment confirmed for Order #${oid}. Assigning delivery partner...`)
         const agent = await assignDeliveryAgent(oid)
