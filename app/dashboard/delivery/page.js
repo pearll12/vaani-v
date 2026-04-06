@@ -13,7 +13,7 @@ export default function DeliveryPage() {
   const [orders, setOrders] = useState([])
   const [agents, setAgents] = useState([])
   const [filter, setFilter] = useState('active') // 'active' or 'all'
-  
+
   // Agent form state
   const [newAgent, setNewAgent] = useState({ name: '', phone: '' })
   const [addingAgent, setAddingAgent] = useState(false)
@@ -28,7 +28,7 @@ export default function DeliveryPage() {
       .select('*')
       .eq('id', user.id)
       .maybeSingle()
-    
+
     if (prof) setProfile(prof)
     else {
       // If profile doesn't exist, we'll create a stub one on first toggle
@@ -47,8 +47,8 @@ export default function DeliveryPage() {
     const { data: ords } = await supabase
       .from('orders')
       .select('*')
-      .not('delivery_status', 'is', null)
-      .order('updated_at', { ascending: false })
+      .in('delivery_status', ['AWAITING_ADDRESS', 'CONFIRMED', 'PICKED', 'DELIVERED'])
+      .order('created_at', { ascending: false })
     if (ords) setOrders(ords)
 
     setLoading(false)
@@ -64,11 +64,11 @@ export default function DeliveryPage() {
     if (!profile) return
     setSaving(true)
     const newVal = !profile.has_delivery_partner
-    
+
     const { error } = await supabase
       .from('business_profiles')
-      .upsert({ 
-        id: profile.id, 
+      .upsert({
+        id: profile.id,
         has_delivery_partner: newVal,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' })
@@ -107,7 +107,7 @@ export default function DeliveryPage() {
 
   const handleDeleteAgent = async (id) => {
     if (!confirm('Are you sure you want to remove this partner?')) return
-    
+
     const { error } = await supabase
       .from('delivery_agents')
       .delete()
@@ -129,7 +129,7 @@ export default function DeliveryPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, overflow: 'hidden' }} className="animate-fade-up delivery-page">
-      
+
       {/* Header */}
       <div>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>
@@ -167,9 +167,9 @@ export default function DeliveryPage() {
             </p>
           </div>
         </div>
-        
-        <button 
-          onClick={toggleDeliveryFeature} 
+
+        <button
+          onClick={toggleDeliveryFeature}
           disabled={saving}
           style={{
             background: profile?.has_delivery_partner ? 'var(--teal)' : 'var(--muted)',
@@ -178,7 +178,7 @@ export default function DeliveryPage() {
           }}
         >
           <div style={{
-            position: 'absolute', top: 4, 
+            position: 'absolute', top: 4,
             left: profile?.has_delivery_partner ? 36 : 4,
             width: 24, height: 24, borderRadius: '50%', background: '#fff',
             transition: 'left 0.2s',
@@ -188,7 +188,7 @@ export default function DeliveryPage() {
 
       {profile?.has_delivery_partner && (
         <div className="delivery-grid">
-          
+
           {/* Main: Tracking Table */}
           <div className="tracking-section">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -208,42 +208,42 @@ export default function DeliveryPage() {
             {/* Desktop Table */}
             <div className="desktop-only" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 500, tableLayout: 'fixed' }}>
-                <thead>
-                  <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '30%' }}>Order</th>
-                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '20%' }}>Status</th>
-                    <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Partner</th>
-                    <th style={{ textAlign: 'right', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Updated (IST)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.length === 0 ? (
-                    <tr><td colSpan="4" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>No orders in delivery lifecycle.</td></tr>
-                  ) : (
-                    filteredOrders.map(o => (
-                      <tr key={o.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ padding: '16px 20px' }}>
-                          <span style={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'JetBrains Mono' }}>#{String(o.id).padStart(4, '0')}</span>
-                          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--muted)' }}>{o.customer_phone}</p>
-                        </td>
-                        <td style={{ padding: '16px 20px' }}>
-                          <span style={{
-                            padding: '4px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
-                            background: o.delivery_status === 'DELIVERED' ? 'var(--teal-dim)' : 'var(--amber-dim)',
-                            color: o.delivery_status === 'DELIVERED' ? 'var(--teal)' : 'var(--amber)',
-                          }}>{o.delivery_status}</span>
-                        </td>
-                        <td style={{ padding: '16px 20px', color: 'var(--text-soft)', fontWeight: 600 }}>{o.delivery_agent || '---'}</td>
-                        <td style={{ padding: '16px 20px', textAlign: 'right', color: 'var(--muted)', fontSize: 11 }}>
-                          <div>{parseUtc(o.updated_at || o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}</div>
-                          <div>{parseUtc(o.updated_at || o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}</div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 500, tableLayout: 'fixed' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '30%' }}>Order</th>
+                      <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '20%' }}>Status</th>
+                      <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Partner</th>
+                      <th style={{ textAlign: 'right', padding: '14px 20px', color: 'var(--muted)', width: '25%' }}>Time (IST)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.length === 0 ? (
+                      <tr><td colSpan="4" style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>No orders in delivery lifecycle.</td></tr>
+                    ) : (
+                      filteredOrders.map(o => (
+                        <tr key={o.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '16px 20px' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'JetBrains Mono' }}>#{String(o.id).padStart(4, '0')}</span>
+                            <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--muted)' }}>{o.customer_phone}</p>
+                          </td>
+                          <td style={{ padding: '16px 20px' }}>
+                            <span style={{
+                              padding: '4px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
+                              background: o.delivery_status === 'DELIVERED' ? 'var(--teal-dim)' : 'var(--amber-dim)',
+                              color: o.delivery_status === 'DELIVERED' ? 'var(--teal)' : 'var(--amber)',
+                            }}>{o.delivery_status}</span>
+                          </td>
+                          <td style={{ padding: '16px 20px', color: 'var(--text-soft)', fontWeight: 600 }}>{o.delivery_agent || '---'}</td>
+                          <td style={{ padding: '16px 20px', textAlign: 'right', color: 'var(--muted)', fontSize: 11 }}>
+                            <div>{parseUtc(o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}</div>
+                            <div>{parseUtc(o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}</div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -273,8 +273,8 @@ export default function DeliveryPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                         <div style={{ fontSize: 12, color: 'var(--text-soft)', fontWeight: 600 }}>🛵 {o.delivery_agent || '---'}</div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'right' }}>
-                          {parseUtc(o.updated_at || o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}{', '}
-                          {parseUtc(o.updated_at || o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}
+                          {parseUtc(o.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}{', '}
+                          {parseUtc(o.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}
                         </div>
                       </div>
                     </div>
@@ -288,10 +288,10 @@ export default function DeliveryPage() {
           <div className="management-section">
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
               <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', margin: '0 0 16px' }}>Manage Partners</h2>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
                 {agents.length === 0 ? (
-                  <div style={{ 
+                  <div style={{
                     padding: '20px 0', textAlign: 'center', border: '1px dashed var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.01)'
                   }}>
                     <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>No partners added yet.</p>
@@ -307,7 +307,7 @@ export default function DeliveryPage() {
                         <p style={{ margin: 0, fontSize: 11, color: 'var(--muted-light)' }}>{a.phone}</p>
                       </div>
                       <button onClick={() => handleDeleteAgent(a.id)} style={{
-                        background: 'rgba(255, 71, 87, 0.1)', border: 'none', color: '#ff4757', cursor: 'pointer', 
+                        background: 'rgba(255, 71, 87, 0.1)', border: 'none', color: '#ff4757', cursor: 'pointer',
                         width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 18, fontWeight: 400
                       }}>×</button>
@@ -318,12 +318,12 @@ export default function DeliveryPage() {
 
               <form onSubmit={handleAddAgent} style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', margin: 0 }}>Add New Partner</p>
-                <input 
+                <input
                   placeholder="Partner Name" className="bv-input" value={newAgent.name}
                   onChange={e => setNewAgent({ ...newAgent, name: e.target.value })}
                   style={{ fontSize: 13 }}
                 />
-                <input 
+                <input
                   placeholder="WhatsApp (e.g. 9876543210)" className="bv-input" value={newAgent.phone}
                   onChange={e => setNewAgent({ ...newAgent, phone: e.target.value })}
                   style={{ fontSize: 13 }}
@@ -340,7 +340,7 @@ export default function DeliveryPage() {
               </p>
             </div>
           </div>
-          
+
         </div>
       )}
 

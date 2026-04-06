@@ -77,7 +77,7 @@ async function lookupInventoryPrices(items) {
   })
 }
 
-async function deductAndCheckStock(items) {
+async function deductAndCheckStock(items, shouldDeduct = true) {
   const inventory = await loadInventory()
   const lowStockAlerts = []
   const itemsToUpdate = []
@@ -92,21 +92,25 @@ async function deductAndCheckStock(items) {
 
     const qty = Number(item.quantity) || 1
     const currentQty = Number(inventory[idx].quantity) || 0
-    inventory[idx].quantity = Math.max(0, currentQty - qty)
-    itemsToUpdate.push(inventory[idx])
+    const newQty = Math.max(0, currentQty - qty)
+    
+    if (shouldDeduct) {
+      inventory[idx].quantity = newQty
+      itemsToUpdate.push(inventory[idx])
+    }
 
     const threshold = Number(inventory[idx].lowStockThreshold) || 10
-    if (inventory[idx].quantity <= threshold) {
+    if (newQty <= threshold) {
       lowStockAlerts.push({
         name: inventory[idx].name,
-        remaining: inventory[idx].quantity,
+        remaining: newQty,
         unit: inventory[idx].unit || 'pcs',
         threshold,
       })
     }
   })
 
-  if (itemsToUpdate.length > 0) {
+  if (shouldDeduct && itemsToUpdate.length > 0) {
     await saveInventory(itemsToUpdate)
   }
   return lowStockAlerts
@@ -743,7 +747,7 @@ export async function POST(req) {
       console.log(`✅ Selection order: #${order.id} — ₹${totalAmount}`)
 
       // Deduct stock + get low stock alerts
-      const stockAlerts = await handleStockAlerts(selectedItems)
+      const stockAlerts = await handleStockAlerts(selectedItems, false)
 
       // Send confirmation with price breakdown + stock alerts
       const confirmMsg = buildConfirmation(selectedItems, order.id, totalAmount, extracted.language, stockAlerts)
@@ -835,7 +839,7 @@ export async function POST(req) {
       console.log(`✅ Direct order: #${order.id} — ₹${order.total_amount}`)
 
       // Deduct stock + alert owner
-      const stockAlerts = await handleStockAlerts(itemsWithPrices)
+      const stockAlerts = await handleStockAlerts(itemsWithPrices, false)
 
       // Confirmation with price breakdown
       const confirmMsg = buildConfirmation(
@@ -908,8 +912,8 @@ export async function POST(req) {
 
 // ───── Stock Alert Helper ─────
 
-async function handleStockAlerts(items) {
-  const lowStockAlerts = await deductAndCheckStock(items)
+async function handleStockAlerts(items, shouldDeduct = true) {
+  const lowStockAlerts = await deductAndCheckStock(items, shouldDeduct)
 
   // Notify OWNER of low stock 🔔
   if (lowStockAlerts.length > 0 && OWNER_PHONE) {
