@@ -16,7 +16,6 @@
 
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-vaani--v--neon.vercel.app-00C896?style=for-the-badge)](https://vaani-v-neon.vercel.app/)
 [![GitHub](https://img.shields.io/badge/GitHub-pearll12%2Fvaani--v-181717?style=for-the-badge&logo=github)](https://github.com/pearll12/vaani-v)
-[![Hackathon](https://img.shields.io/badge/PROTEX_Hackathon-LevelUp_Team-6C63FF?style=for-the-badge)](https://vaani-v-neon.vercel.app/)
 
 </div>
 
@@ -335,7 +334,6 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Pearl Vashistha** 
 | **Priya Agrasen** 
 
-*Built at **PROTEX Hackathon** 🏆*
 
 ---
 
