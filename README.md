@@ -326,15 +326,14 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 👥 Team — LevelUp
 
-| Name |
-|---|---|
-| **Anushree Jain** 
-| **Pearl Vashistha** 
-| **Priya Agrasen** 
+## 👩‍💻 Team Members
 
-
+| Name              |
+|-------------------|
+| Anushree Jain     |
+| Pearl Vashistha   |
+| Priya Agrasen     |
 ---
 
 ## 📄 License
